@@ -1,0 +1,122 @@
+/**
+\mainpage The Essential GNSS Project
+
+\section intro_sec Introduction
+
+This project provides essential Global Navigation Satellite Systems (GNSS) algorithms and software. Software includes simple GNSS applications and a GNSS post processing software package.
+
+The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-restrictive use for commercial and open source development.
+
+\html <br><img src="gnss.jpg">
+
+\section goals_sec General Goals
+
+- Facilitate many users by programming well and simply. 
+- Facilitate growth of the code. 
+- Allow users to get started easily and quickly. 
+- This library intends to provide simple but robust and efficient functions for solving GNSS problems.
+- Facilitate this library becoming part of other open source applications.
+
+\subsection pg_sec Programming Goals
+
+- Program from the ground up using 'c' for simple applications and 'c++' for more complicated applications. The following figure illustrates this principle.
+- Minimize dependancies - allows lots of simple applications from a small part of the core code base.
+- All code must be well commented. Comments for variables include units. Comments for algorithms include academic references.
+- All core code algorithms require a corresponding unit test.
+- Avoid complicated programming concepts. Keep it Simple S.....
+- Include an example code snippet in the comment block whenever possible.
+
+\html <img src="CodingStructure.png">
+
+\html <hr>
+
+\section general_features_sec General Features
+- Non-restrictive license that allows inclusion in proprietary commercial software (BSD-style license).
+- Algorithms are properly referenced.
+- Thorough documentation. Always refer to the .h files.
+- Units provided for each parameter in the documenation.
+
+\section postprocessing_sec GNSS Post Processing
+- Easy to interpret and configure the option file. \html <a href="example_options.txt">click here for an example.</a>
+- Stand alone and differential modes.
+- Least squares.
+- Extended Kalman filtering.
+- Estimates position, velocity, ambiguities, receiver clock offset and drift.
+- Utilize pseudorange, Doppler, and accumulated Doppler range (ADR, also called carrier phase) measurements.
+- Data containers: Receiver objects have an array of channel objects.
+- Data containers utilize a simple C++ style with minimal encapsulation.
+- Uses the \html <a href="http://www.zenautics.com/matrixdoc/index.html">Zenautics Matrix/Vector class library</a>.
+
+\section geodesy_sec Geodesy 
+- Compute coordinate conversion between Geodetic Curvilinear and Earth Centered Earth Fixed (ECEF)coordinates (16 ellipsoids supported).
+- Compute the Northing, Easting, and Vertical coordinates in a Local Geodetic Frame from Geodetic Curvilinear coordinates. 
+- Compute the difference in position between two points. 
+- Compute the Meridian Radius of Curvature. 
+- Compute the Prime Vertical Radius Of Curvature. 
+- Compute azimuth and elevation between ECEF points. 
+- and more... refer geodesy.h.
+
+\section time_sec Time Conversion
+- Convert between UTC and GPS time. 
+- Compute Julian date.
+- refer time_conversion.h
+
+\section gps_sec GPS 
+- Compute GPS satellite clock correction and clock drift correction.
+- Compute GPS satellite position and velocity.
+- Compute GPS satellite azimuth and elevation.
+- Decode raw ephemeris data (subrame binary data).
+- refer gps.h.
+
+\section nav_sec Navigation
+- Compute a closed form solution for GPS position using four pseudorange measurements.
+- Compute the partial derivatives of range with respect to X, Y, Z or latitude, longitude, height. 
+- refer navigation.h.
+
+
+\section iono_sec Ionosphere
+- Compute the GPS broadcast ionospheric correction.
+- refer ionosphere.h.
+
+\section tropo_sec Troposphere
+- Compute the tropospheric delay based on the Wide Area Agumentation System Minimum Operation Standard (WAAS MOPS)... 
+- refer troposphere.h.
+
+\section data_decoding_sec Data Decoding
+- Decode YUMA format almanac files for GPS... refer yuma.h.
+- Decode SEM format almanac files for GPS... refer sem.h.
+- Decode NovAtel OEM4 GPS data files...	 refer novatel.h.
+
+\section cslip_sec Cycle Clip Detection
+- Test data for cycle slips
+						 
+\html <br><br><hr>
+
+\b "LICENSE INFORMATION" \n
+Copyright (c) 2007, refer to 'author' doxygen tags in the source code\n
+Point of Contact: Glenn D. MacGougan <glenn_macgougan at users.sourceforge.net> \n
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided the following conditions are met: \n
+
+- Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer. \n
+- Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution. \n
+- The name(s) of the contributor(s) may not be used to endorse or promote 
+  products derived from this software without specific prior written 
+  permission. \n
+
+THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
+SUCH DAMAGE.
+*/
