@@ -1,0 +1,152 @@
+\documentclass[letterpaper,11pt]{article}
+
+\setlength{\parindent}{0.0cm}
+\setlength{\parskip}{0.2cm}
+
+%opening
+\title{Diagonalization of the Measurement Variance-Covariance Matrix}
+\author{Glenn D. MacGougan}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+In Kalman filtering, it is very useful to be able to process measurements sequentially (i.e. one at a time). This method eliminates the need for matrix inversion operations since sequential processing uses scalar measurement updates $^{[1]}$. The method requires that measurements are uncorrelated. When this is not the case, diagonalizeation of the measurement variance-covariance matrix and a transformation that is a linear combination of the original measurements into a new measurement set is performed.
+\end{abstract}
+
+\section{Methods}
+
+\subsection{Best References}
+
+The book by Brown and Hwang $^{[1]}$ provides excellent reference information for these method (refer to pages 250-252 for the method description, problem 6.2 on page 283 introduces measurement variance-covariance diagonalization, and pages 367-370 discuss U-D factorization).
+
+The book by Grewel and Andrews $^{[2]}$ discusses decorrelated measurement noise (pages 221-225). Table 6.6 of this book provides a good summarized procedure for measurement decorrelation. 
+
+\subsection{Diagonalization Example}
+Problem 6.2 $^{[1]}$:
+
+\begin{quote} 
+``Consider the measurment to be a 2-tuple $[z_1, z_2]^T$, and assume that the measurment errors are correlated such that the \textbf{R} matrix is of the form
+
+\begin{equation}
+\textbf{R} = \left[ 
+\begin{array}{cc}
+r_{11} & r_{12} \\
+r_{21} & r_{22} 
+\end{array}
+\right] 
+\end{equation}
+
+(a) Form a new measurment pair, $z_1'$ and $z_2'$, as a linear comination of the orginal pair such that the errors in the new pair are uncorrelated. (Hint: First, let $z_1'= z_1$ and then assume $z_2' = c_1 z_1 + c_2 z_2$ and choose the constants $c_1$ and $c_2$ such that the new measurement errors are uncorrelated.)''$^{[1pp. 283]}$
+\end{quote}
+
+Answer:
+
+(a) Alternatively let $z_2' = z_2$ and assume $z_1' = c_1 z_1 + c_2 z_2$:
+
+\begin{equation}
+z'= \left[ 
+\begin{array}{c}
+c_1 z_1 + c_2 z_2  \\
+z_2 
+\end{array}
+\right]
+\end{equation}
+
+Using variance-covariance propagation law:
+
+\begin{equation}
+\begin{array}{c}
+y=f(z) \\
+C_y = \frac{\delta f}{\delta z} C_z \frac{\delta f}{\delta z}^T
+\end{array}
+\end{equation}
+
+Thus $\frac{\delta f}{\delta z}$ is:
+
+\begin{equation}
+\frac{\delta f}{\delta z} = \left[ 
+\begin{array}{cc}
+c_1 & c_2 \\
+0 & 1 \\
+\end{array}
+\right]
+\end{equation}
+
+Thus $R'= \frac{\delta f}{\delta z} R \frac{\delta f}{\delta z}^T$ is:
+
+\begin{equation}
+\begin{array}{c}
+R' = 
+\left[ 
+\begin{array}{cc}
+c_1 & c_2 \\
+0 & 1 \\
+\end{array}
+\right]
+\left[ 
+\begin{array}{cc}
+r_{11} & r_{12} \\
+r_{21} & r_{22}
+\end{array}
+\right]
+\left[ 
+\begin{array}{cc}
+c_1 & 0\\
+c_2 & 1
+\end{array}
+\right] \\
+= 
+\left[ 
+\begin{array}{cc}
+c_1 r_{11} + c_2 r_{12} & c_1 r_{12} + c_2 r_{22} \\
+r_{21} & r_{22}
+\end{array}
+\right]
+\left[
+\begin{array}{cc}
+c_1 & 0\\
+c_2 & 1
+\end{array}
+\right]
+\end{array}
+\end{equation}
+
+Results in: 
+\begin{equation}
+R' = 
+\left[ 
+\begin{array}{cc}
+c_1^2 r_{11} + 2 c_1 c_2 r_{12} + c_2^2 r_{22}  & c_1 r_{11} + c_2 r_{22} \\
+c_1 r_{11} + c_2 r_{22}                         & r_{22}
+\end{array}
+\right]
+\end{equation}
+
+Choose $c_1 = 1$ and thus $c2 = -r_{11} / r_{22}$ to make the 'new' measurements uncorrelated. This result in:
+
+\begin{equation}
+R' = 
+\left[ 
+\begin{array}{cc}
+r_{11} - 2 \frac{r_{11}}{r_{22}}r_{12} + \frac{r_{11}^2}{r_{22}} & 0\\
+0       &  r_{22}
+\end{array}
+\right]
+\end{equation}
+
+\subsection{Measurement Decorrelation Procedure}
+
+\begin{quote}
+''The vector-valued measurement $z = H x + v$, with correlated components of the measurement error $E[v V^T] = R$, is transformed to the measurement $z' = H' x + v'$ with uncorrelated components of the measurment error, $v' (E[v' v'^T] = D$, a diagonal matrix), by overwriting $H$ with $H' = U^{-1} H$ and $z with z' = U^{-1}z$, after decomposing $R$ to $U D U^T$, overwriting the diagonal of $R$ with $D$.``$^{[2. pp. 224]}$
+\end{quote}
+
+
+\section{References}
+\begin{enumerate}
+\item Brown, R. G., P. Y. C  Hwang (1997). Introduction to Random Signals and Applied Kalman Filtering. Third Edition. John Wiley and Sons Inc.  pp. 250-252, 283, 367-370. 
+\item Grewal, M. S., A. P. Andrews (2001). Kalman Filtering Theory and Practice Using Matlab. Second Edition. John Wiley and Sons Inc.pp. 221-225.
+\end{enumerate}
+
+\end{document}
