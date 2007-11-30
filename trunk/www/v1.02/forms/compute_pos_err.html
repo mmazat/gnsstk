@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+  <META name="generator" content="HTML Tidy for Linux/x86 (vers 31 October 2006), see www.w3.org">
+  <SCRIPT language="JavaScript" type="text/javascript">
+function lat_dms(latitude)
+  {    
+    var lat = latitude;
+    var sign = "N";
+    if( lat < 0 )
+    {
+      lat = -lat;
+      sign = "S";
+    }
+    var d = Math.floor(lat);
+    var m = Math.floor((lat-d)*60.0);
+    var s = (lat-d-m/60.0)*3600.0;
+    var dmsv;
+    if( d < 10 )
+    {
+      if( m < 10 )
+      {
+        dmsv = sign + " 0" + d.toString() + "\xB0 0" + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+      else
+      {
+        dmsv = sign + " 0" + d.toString() + "\xB0 " + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+    }
+    else
+    {
+      if( m < 10 )
+      {
+        dmsv = sign + " " + d.toString() + "\xB0 0" + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+      else
+      {
+        dmsv = sign + " " + d.toString() + "\xB0 " + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+    }
+    return dmsv;
+    document.nev.ref_lat_dms.value = dmsv;
+  }
+  function get_ref_lat_dms()
+  {
+    var latitude = document.nev.ref_lat.value;
+    document.nev.ref_lat_dms.value = lat_dms(latitude);
+  }
+  function lon_dms(longitude)
+  { 
+    var lon = longitude;
+    var sign = "E";
+    if( lon < 0 )
+    {
+      lon = -lon;
+      sign = "W";
+    }
+    var d = Math.floor(lon);
+    var m = Math.floor((lon-d)*60.0);
+    var s = (lon-d-m/60.0)*3600.0;
+    var dmsv;
+    if( d < 10 )
+    {
+      if( m < 10 )
+      {
+        dmsv = sign + " 0" + d.toString() + "\xB0 0" + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+      else
+      {
+        dmsv = sign + " 0" + d.toString() + "\xB0 " + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+    }
+    else
+    {
+      if( m < 10 )
+      {
+        dmsv = sign + " " + d.toString() + "\xB0 0" + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+      else
+      {
+        dmsv = sign + " " + d.toString() + "\xB0 " + m.toString() + "' " + s.toFixed(6).toString() +"\"";
+      }
+    }
+    return dmsv;
+  }
+  function get_ref_lon_dms()
+  {
+    var longitude = document.nev.ref_lon.value;
+    document.nev.ref_lon_dms.value = lon_dms(longitude);
+  }
+  </SCRIPT>
+
+  <TITLE>Position Error</TITLE>
+</HEAD>
+
+<BODY>
+  <H1>Compute Position Error</H1>
+  <br>
+  
+  by: Glenn D. MacGougan.
+  <br>
+
+  <FORM name="nev" action="https://okeefesrv.geomatics.ucalgary.ca/cgi-bin/compute_pos_err.pl" method="post" enctype="multipart/form-data" id="nev">
+    Submit a text file (whitespace or comma delimited) with the following information present (geodetic coordinates, WGS84 assumed):<BR>
+    <EM>epoch(s) &nbsp;&nbsp; latitude(decimal degrees) &nbsp;&nbsp; longitude(decimal degrees) &nbsp;&nbsp; height(m)</EM><BR>
+    <BR>
+    <B>Position Data File:</B> <INPUT type="file" name="posfile" size="60"><BR>
+    <BR>
+    e.g. In this 'file', the time field is 1 (0 based index), the latitude field is 3, the longitude field is 4, and the height field is 5<BR>
+    <SPAN style="font-family: Courier New;">1024 &nbsp; 0.0 2222 51.500001 -114.212346 1002.5<BR>
+    1024 &nbsp; 1.0 1111 51.500002 -114.213471 1001.8<BR>
+    1024 &nbsp; 3.0 1001 51.500004 -114.213473 1001.8<BR>
+    1024 &nbsp; 4.0 1011 51.500008 -114.213472 1001.8<BR>
+    ...<BR>
+    1024 100.0 8888 51.500009 -114.212348 1000.1<BR></SPAN> etc<BR>
+    <BR>
+    <B>Position Data File Field Index Information</B>
+
+    <TABLE width="400" border="1" cellpadding="5" align="left" summary="The zero based feild indices of the position data file.">
+      <TBODY>
+        <TR>
+          <TD>time field (0-N-1)</TD>
+
+          <TD><INPUT type="text" name="timefield" value="0"></TD>
+        </TR>
+
+        <TR>
+          <TD>latitude field (0-N-1)</TD>
+
+          <TD><INPUT type="text" name="latfield" value="1"></TD>
+        </TR>
+
+        <TR>
+          <TD>longitude field (0-N-1)</TD>
+
+          <TD><INPUT type="text" name="lonfield" value="2"></TD>
+        </TR>
+
+        <TR>
+          <TD>height field (0-N-1)</TD>
+
+          <TD><INPUT type="text" name="hgtfield" value="3"></TD>
+        </TR>
+      </TBODY>
+    </TABLE><BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    Compute the position error and plot the errors to +/- <INPUT type="text" name="ylimit" value="50" size="6"> metres with respect to the reference point.<BR>
+    <BR>
+    <B>Reference Coordinates</B><BR>
+
+    <TABLE width="800" border="1" cellpadding="5" align="left" summary="The reference point coordinates.">
+      <TBODY>
+        <TR>
+          <TD><EM>Reference latitude (&deg;)</EM></TD>
+
+          <TD><INPUT type="text" name="ref_lat" onkeypress="get_ref_lat_dms();" onkeyup="get_ref_lat_dms();" value="0"></TD>
+
+          <TD><INPUT type="text" name="ref_lat_dms" value="N 00 00 00.000000"></TD>
+        </TR>
+
+        <TR>
+          <TD><EM>Reference longitude (&deg;)</EM></TD>
+
+          <TD><INPUT type="text" name="ref_lon" onkeypress="get_ref_lon_dms();" onkeyup="get_ref_lon_dms();" value="0"></TD>
+
+          <TD><INPUT type="text" name="ref_lon_dms" value="E 0 00 00.000000"></TD>
+        </TR>
+
+        <TR>
+          <TD><EM>Reference height (m)</EM></TD>
+
+          <TD><INPUT type="text" name="ref_hgt" value="0"></TD>
+
+          <TD>&nbsp;</TD>
+        </TR>
+      </TBODY>
+    </TABLE><BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <INPUT type="submit" value="Compute Result"><BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+  </FORM>
+</BODY>
+</HTML>

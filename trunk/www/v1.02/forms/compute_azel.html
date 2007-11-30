@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+  <META name="generator" content="HTML Tidy for Linux/x86 (vers 31 October 2006), see www.w3.org">
+
+  <TITLE>Azimuth - Elevation</TITLE>
+  <SCRIPT language="Javascript" src="https://okeefesrv.geomatics.ucalgary.ca/azel.js" type="text/javascript">
+<!--
+  //-->
+  </SCRIPT>
+</HEAD>
+
+<BODY>
+  <H1>Compute Azimuth and Elevation</H1><BR>
+  <HR>
+  by: Glenn D. MacGougan, Uses the project /apps/geodesy. The executable is /bin/geodesy.exe or /bin/geodesy.bin.
+
+  <H2>Between from point 1 to point 2 (Earth Centered Earth Fixed, ECEF, WGS84)</H2><BR>
+
+  <FORM name="azel" action="https://okeefesrv.geomatics.ucalgary.ca/cgi-bin/compute_azel.pl" method="post" id="azel">
+    <H3>Point 1</H3>
+
+    <TABLE border="1" cellpadding="5" align="left" summary="point1">
+      <TBODY>
+        <TR>
+          <TD>latitude (decimal degrees)</TD>
+
+          <TD>longitude (decimal degrees)</TD>
+
+          <TD>height (m)</TD>
+        </TR>
+
+        <TR>
+          <TD><INPUT type="text" name="lat1" onkeypress="get_lat1_dms();" onkeyup="get_lat1_dms();"></TD>
+
+          <TD><INPUT type="text" name="lon1" onkeypress="get_lon1_dms();" onkeyup="get_lon1_dms();"></TD>
+
+          <TD><INPUT type="text" name="hgt1"></TD>
+        </TR>
+
+        <TR>
+          <TD>latitude (dms)</TD>
+
+          <TD>longitude (dms)</TD>
+
+          <TD></TD>
+        </TR>
+
+        <TR>
+          <TD><INPUT type="text" name="lat1dms" readonly></TD>
+
+          <TD><INPUT type="text" name="lon1dms" readonly></TD>
+
+          <TD></TD>
+        </TR>
+
+        <TR>
+          <TD>&nbsp;</TD>
+
+          <TD><INPUT type="button" name="ComputeXYZ1" value="ComputeXYZ" onclick="llh2xyz_point1()"></TD>
+
+          <TD>&nbsp;</TD>
+        </TR>
+
+        <TR>
+          <TD>X (m)</TD>
+
+          <TD>Y (m)</TD>
+
+          <TD>Z (m)</TD>
+        </TR>
+
+        <TR>
+          <TD><INPUT type="text" name="x1"></TD>
+
+          <TD><INPUT type="text" name="y1"></TD>
+
+          <TD><INPUT type="text" name="z1"></TD>
+        </TR>
+      </TBODY>
+    </TABLE><BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+
+    <H3>Point 2</H3>
+
+    <TABLE border="1" cellpadding="5" align="left" summary="point2">
+      <TBODY>
+        <TR>
+          <TD>latitude (decimal degrees)</TD>
+
+          <TD>longitude (decimal degrees)</TD>
+
+          <TD>height (m)</TD>
+        </TR>
+
+        <TR>
+          <TD><INPUT type="text" name="lat2" onkeypress="get_lat2_dms();" onkeyup="get_lat2_dms();"></TD>
+
+          <TD><INPUT type="text" name="lon2" onkeypress="get_lon2_dms();" onkeyup="get_lon2_dms();"></TD>
+
+          <TD><INPUT type="text" name="hgt2"></TD>
+        </TR>
+
+        <TR>
+          <TD>latitude (dms)</TD>
+
+          <TD>longitude (dms)</TD>
+
+          <TD></TD>
+        </TR>
+
+        <TR>
+          <TD><INPUT type="text" name="lat2dms" readonly></TD>
+
+          <TD><INPUT type="text" name="lon2dms" readonly></TD>
+
+          <TD></TD>
+        </TR>
+
+        <TR>
+          <TD>&nbsp;</TD>
+
+          <TD><INPUT type="button" name="ComputeXYZ2" value="ComputeXYZ" onclick="llh2xyz_point2()"></TD>
+
+          <TD>&nbsp;</TD>
+        </TR>
+
+        <TR>
+          <TD>X (m)</TD>
+
+          <TD>Y (m)</TD>
+
+          <TD>Z (m)</TD>
+        </TR>
+
+        <TR>
+          <TD><INPUT type="text" name="x2"></TD>
+
+          <TD><INPUT type="text" name="y2"></TD>
+
+          <TD><INPUT type="text" name="z2"></TD>
+        </TR>
+      </TBODY>
+    </TABLE><BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <BR>
+    <INPUT type="submit" name="Submit" value="Compute Results" onmouseover="llh2xyz_point1();llh2xyz_point2()"><BR>
+    <BR>
+    <HR>
+    <BR>
+    <BR>
+  </FORM>
+</BODY>
+</HTML>

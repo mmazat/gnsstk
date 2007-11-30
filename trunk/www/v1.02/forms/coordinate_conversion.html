@@ -1,0 +1,260 @@
+<html>
+<head>
+<title>Coordinate Conversions</title>
+</head>
+<body>
+<script language="JavaScript">
+  function set_ellipse()
+  {
+  var myellipse = document.coordconv.ellipse_select.value;
+
+  if( myellipse == "World Geodetic System 1984" )
+  {
+  document.coordconv.ellipse_code.value = 0;
+  document.coordconv.ellipse_a.value = 6378137.0;
+  document.coordconv.ellipse_f_inv.value = 298.257223563;
+  document.coordconv.ellipse_b.value = 6356752.31424518;
+  document.coordconv.ellipse_e2.value = 0.00669437999014132;
+  }
+  else if( myellipse == "Airy 1830" )
+  {
+  document.coordconv.ellipse_code.value = 1;
+  document.coordconv.ellipse_a.value = 6377563.396;
+  document.coordconv.ellipse_f_inv.value = 299.3249647;
+  document.coordconv.ellipse_b.value = 6356256.9092444;
+  document.coordconv.ellipse_e2.value = 0.00667053999776051;
+  }
+  else if( myellipse == "Modified Airy" )
+  {
+  document.coordconv.ellipse_code.value = 2;
+  document.coordconv.ellipse_a.value = 6377340.189;
+  document.coordconv.ellipse_f_inv.value = 299.3249647;
+  document.coordconv.ellipse_b.value = 6356034.44794565;
+  document.coordconv.ellipse_e2.value = 0.0066705399977606;
+  }
+  else if( myellipse == "Australian National" )
+  {
+  document.coordconv.ellipse_code.value = 3;
+  document.coordconv.ellipse_a.value = 6378160.0;
+  document.coordconv.ellipse_f_inv.value = 298.25;
+  document.coordconv.ellipse_b.value = 6356774.7191953063;
+  document.coordconv.ellipse_e2.value = 0.0066945418545876;
+  }
+  else if( myellipse == "Bessel 1841" )
+  {
+  document.coordconv.ellipse_code.value = 4;
+  document.coordconv.ellipse_a.value = 6377397.155;
+  document.coordconv.ellipse_f_inv.value = 299.1528128;
+  document.coordconv.ellipse_b.value = 6356078.9628181886;
+  document.coordconv.ellipse_e2.value = 0.0066945418545876;
+  }
+  else if( myellipse == "Clarke 1866" )
+  {
+  document.coordconv.ellipse_code.value = 5;
+  document.coordconv.ellipse_a.value = 6378206.4;
+  document.coordconv.ellipse_f_inv.value = 294.9786982;
+  document.coordconv.ellipse_b.value = 6356583.7999989809;
+  document.coordconv.ellipse_e2.value = 0.00676865799760959;
+  }
+  else if( myellipse == "Clarke 1880" )
+  {
+  document.coordconv.ellipse_code.value = 6;
+  document.coordconv.ellipse_a.value = 6378249.145;
+  document.coordconv.ellipse_f_inv.value = 293.465;
+  document.coordconv.ellipse_b.value = 6356514.8695497755;
+  document.coordconv.ellipse_e2.value = 0.00680351128284912;
+  }
+  else if( myellipse == "Everest(India 1830)" )
+  {
+  document.coordconv.ellipse_code.value = 7;
+  document.coordconv.ellipse_a.value = 6377276.345;
+  document.coordconv.ellipse_f_inv.value = 300.8017;
+  document.coordconv.ellipse_b.value = 6356075.4131402392;
+  document.coordconv.ellipse_e2.value = 0.00663784663019987;
+  }
+  else if( myellipse == "Everest(Brunei and East Malaysia)" )
+  {
+  document.coordconv.ellipse_code.value = 8;
+  document.coordconv.ellipse_a.value = 6377298.556;
+  document.coordconv.ellipse_f_inv.value = 300.8017;
+  document.coordconv.ellipse_b.value = 6356097.5503008962;
+  document.coordconv.ellipse_e2.value = 0.00663784663019965;
+  }
+  else if( myellipse == "Everest(West Malaysia and Singapore)" )
+  {
+  document.coordconv.ellipse_code.value = 9;
+  document.coordconv.ellipse_a.value = 6377304.063;
+  document.coordconv.ellipse_f_inv.value = 300.8017;
+  document.coordconv.ellipse_b.value = 6356103.0389931547;
+  document.coordconv.ellipse_e2.value = 0.00663784663019970;
+  }
+  else if( myellipse == "Geodetic Reference System 1980" )
+  {
+  document.coordconv.ellipse_code.value = 10;
+  document.coordconv.ellipse_a.value = 6378137.0;
+  document.coordconv.ellipse_f_inv.value = 298.257222101;
+  document.coordconv.ellipse_b.value = 6356752.3141403561;
+  document.coordconv.ellipse_e2.value = 0.00669438002290069;
+  }
+  else if( myellipse == "Helmert 1906" )
+  {
+  document.coordconv.ellipse_code.value = 11;
+  document.coordconv.ellipse_a.value = 6378200.0;
+  document.coordconv.ellipse_f_inv.value = 298.30;
+  document.coordconv.ellipse_b.value = 6356818.1696278909;
+  document.coordconv.ellipse_e2.value = 0.00669342162296610;
+  }
+  else if( myellipse == "Hough 1960" )
+  {
+  document.coordconv.ellipse_code.value = 12;
+  document.coordconv.ellipse_a.value = 6378270.0;
+  document.coordconv.ellipse_f_inv.value = 297.00;
+  document.coordconv.ellipse_b.value = 6356794.3434343431;
+  document.coordconv.ellipse_e2.value = 0.00672267002233347;
+  }
+  else if( myellipse == "International 1924" )
+  {
+  document.coordconv.ellipse_code.value = 13;
+  document.coordconv.ellipse_a.value = 6378388.0;
+  document.coordconv.ellipse_f_inv.value = 297.00;
+  document.coordconv.ellipse_b.value = 6356911.9461279465;
+  document.coordconv.ellipse_e2.value = 0.00672267002233323;
+  }
+  else if( myellipse == "South American 1969" )
+  {
+  document.coordconv.ellipse_code.value = 14;
+  document.coordconv.ellipse_a.value = 6378160.0;
+  document.coordconv.ellipse_f_inv.value = 298.25;
+  document.coordconv.ellipse_b.value = 6356774.7191953063;
+  document.coordconv.ellipse_e2.value = 0.00669454185458760;
+  }
+  else if( myellipse == "World Geodetic System 1972" )
+  {
+  document.coordconv.ellipse_code.value = 15;
+  document.coordconv.ellipse_a.value = 6378135.0;
+  document.coordconv.ellipse_f_inv.value = 298.26;
+  document.coordconv.ellipse_b.value = 6356750.5200160937;
+  document.coordconv.ellipse_e2.value = 0.00669431777826668;
+  }
+  document.coordconv_data.ellipse_code.value = document.coordconv.ellipse_code.value;  
+  return true;
+  }
+</script>
+<h1>Compute Geodetic Coordinate Conversions</h1>
+
+<br>
+by: Glenn D. MacGougan, Uses the project /apps/geodesy. The executable is /bin/geodesy.exe or /bin/geodesy.bin.
+<br><br>
+Select Reference Ellipse<br>
+<form name="coordconv">
+  <select id="ellipse_id" name="ellipse_select"
+ onchange="set_ellipse();">
+  <option selected="yes">World Geodetic System 1984</option>
+  <option>Airy 1830</option>
+  <option>Modified Airy</option>
+  <option>Australian National</option>
+  <option>Bessel 1841</option>
+  <option>Clarke 1866</option>
+  <option>Clarke 1880</option>
+  <option>Everest(India 1830)</option>
+  <option>Everest(Brunei and East Malaysia)</option>
+  <option>Everest(West Malaysia and Singapore)</option>
+  <option>Geodetic Reference System 1980</option>
+  <option>Helmert 1906</option>
+  <option>Hough 1960</option>
+  <option>International 1924</option>
+  <option>South American 1969</option>
+  <option>World Geodetic System 1972</option>
+  </select>
+  <br>
+Ellipse Parameters <input value="" name="ellipse_code" type="hidden">
+  <table style="width: 800px; height: 134px;" border="1" cellpadding="5" cellspacing="2">
+    <tbody>
+      <tr>
+        <td style="vertical-align: center;"><em>a</em> <br>
+        </td>
+        <td>semi-major axis of the reference ellipse [m] </td>
+        <td style="vertical-align: center;"><input value="6378137.000" name="ellipse_a"></td>
+      </tr>
+      <tr>
+        <td valign="top"><em>b</em> <br>
+        </td>
+        <td>semi-minor axis of the reference ellipse (b = a - a*f_inv)
+[m] </td>
+        <td style="vertical-align: center;"><input value="6356752.314245180" name="ellipse_b"></td>
+      </tr>
+      <tr>
+        <td valign="top"><em>f_inv</em> <br>
+        </td>
+        <td>inverse of the flattening of the reference ellipse []<br>
+        </td>
+        <td style="vertical-align: center;"><input value="298.25722356300" name="ellipse_f_inv"></td>
+      </tr>
+      <tr>
+        <td style="vertical-align: center;">e^2<br>
+        </td>
+        <td style="vertical-align: center;">eccentricity of the reference
+ellipse (e^2 = (a*a-b*b)/(a*a)) []<br>
+        </td>
+        <td style="vertical-align: center;"><input
+ value="0.006694379990141" name="ellipse_e2"></td>
+      </tr>
+    </tbody>
+  </table>
+</form>
+<form name="coordconv_data" ACTION="https://okeefesrv.geomatics.ucalgary.ca/cgi-bin/coordinate_conversion.pl" METHOD="POST">
+  <input value="" name="ellipse_code" type="hidden"> <span style="font-style: italic;"></span>
+Earth Centered Earth Fixed Coordinates<br>
+<table style="width: 480px; height: 90px;" border="1" cellpadding="5" cellspacing="2">
+    <tbody>
+      <tr>
+        <td style="vertical-align: center;"><em>X</em>&nbsp&nbsp&nbsp;</td>
+        <td>user X position [m] </td>
+        <td style="vertical-align: center;"><input value="0.0" name="userX"></td>
+      </tr>
+      <tr>
+        <td valign="top"><em>Y</em>&nbsp&nbsp&nbsp;</td>
+        <td>user Y position [m] </td>
+        <td style="vertical-align: center;"><input value="0.0" name="userY"></td>
+      </tr>
+      <tr>
+        <td valign="top"><em>Z</em>&nbsp&nbsp&nbsp;</td>
+        <td>user Z position [m] </td>
+        <td style="vertical-align: center;"><input value="0.0" name="userZ"></td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+  <input value="Convert XYZ to LLH" name="xyz2llh" type="submit"><br>
+  <br>
+  <input value="Convert LLH to XYZ" name="llh2xyz" type="submit"><br>
+  <br>
+Geodetic Curvilinear Coordinates<br>
+<table style="width: 800px; height: 90px;" border="1" cellpadding="5">
+    <tbody>
+      <tr>
+        <td style="vertical-align: center;"><em>latitude</em></td>
+        <td>geodetic latitude [degrees] </td>
+        <td style="vertical-align: center;"><input value="0.0" name="latitude"></td>
+        <td style="vertical-align: center;"><em>latitude (dms)</em></td>
+        <td style="vertical-align: center;">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp </td>
+      <tr>
+        <td valign="top"><em>longitude</em></td>
+        <td>geodetic longitude [degrees]</td>
+        <td style="vertical-align: center;"><input value="0.0" name="longitude"></td>
+        <td style="vertical-align: center;"><em>longitude (dms)</em></td>
+        <td style="vertical-align: center;">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <br></td>
+      </tr>
+      <tr>
+        <td valign="top"><em>height</em></td>
+        <td>geodetic height [m]</td>
+        <td style="vertical-align: center;"><input value="0.0" name="height"></td>
+        <td>&nbsp</td>
+        <td>&nbsp</td>
+      </tr>
+    </tbody>
+  </table>
+  <span style="font-style: italic;"></span></form>
+</body>
+</html>
+
