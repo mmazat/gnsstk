@@ -1,0 +1,52 @@
+
+Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
+     2007-11-29,      23:20:35
+
+
+     CUnit - A unit testing framework for C - Version 2.1-0
+     http://cunit.sourceforge.net/
+
+
+Suite: GEODESY
+  Test: GEODESY_GetReferenceEllipseParameters() ...passed
+  Test: test_GEODESY_ConvertCoordinates() ...passed
+  Test: GEODESY_ComputeNorthingEastingVertical() ...passed
+  Test: GEODESY_ComputePositionDifference() ...passed
+  Test: GEODESY_ComputeMeridianRadiusOfCurvature() ...passed
+  Test: GEODESY_ComputePrimeVerticalRadiusOfCurvature() ...passed
+  Test: GEODESY_ComputeMeridianArcBetweenTwoLatitudes() ...passed
+  Test: GEODESY_ComputeParallelArcBetweenTwoLongitudes() ...passed
+  Test: GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame() ...passed
+  Test: GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame() ...passed
+  Test: GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame() ...passed
+Suite: TIMECONV
+  Test: TIMECONV_GetJulianDateFromGPSTime() ...passed
+  Test: TIMECONV_GetJulianDateFromUTCTime() ...passed
+  Test: TIMECONV_GetGPSTimeFromJulianDate() ...passed
+  Test: TIMECONV_GetUTCTimeFromJulianDate() ...passed
+  Test: TIMECONV_GetGPSTimeFromUTCTime() ...passed
+  Test: TIMECONV_GetUTCTimeFromGPSTime() ...passed
+  Test: TIMECONV_DetermineUTCOffset() ...passed
+  Test: TIMECONV_GetNumberOfDaysInMonth() ...passed
+  Test: TIMECONV_IsALeapYear() ...passed
+  Test: TIMECONV_GetDayOfYear() ...passed
+Suite: NOVATELOEM4
+  Test: NOVATELOEM4_FindNextMessageInFile() ...passed
+  Test: NOVATELOEM4_DecodeRANGEB() ...passed
+  Test: NOVATELOEM4_DecodeRANGECMPB() ...passed
+  Test: NOVATELOEM4_DecodeRAWEPHEMB() ...passed
+Suite: YUMA
+  Test: YUMA_ReadAlmanacDataFromFile() ...passed
+  Test: YUMA_WriteAlmanacDataToFile() ...passed
+  Test: YUMA_WriteSingleAlmanacElementToBuffer() ...passed
+Suite: IONOSPHERE
+  Test: IONOSPHERE_GetL1KlobucharCorrection() ...passed
+
+Run Summary:    Type  Total    Ran Passed Failed Inactive
+              suites      5      5    n/a      0        0
+               tests     29     29     29      0        0
+             asserts 335931 335931 335931      0      n/a
+
+Elapsed time =    0.250 seconds
+
+Tests completed with return value 0.
