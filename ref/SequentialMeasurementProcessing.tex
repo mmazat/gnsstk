@@ -1,0 +1,103 @@
+\documentclass[letterpaper,11pt]{article}
+
+\setlength{\parindent}{0.0cm}
+\setlength{\parskip}{0.2cm}
+
+%opening
+\title{Sequential Measurement Processing}
+\author{Glenn D. MacGougan}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+In Kalman filtering, it is very useful to be able to process measurements sequentially (i.e. one at a time). This method eliminates the need for matrix inversion operations since sequential processing uses scalar measurement updates $^{[1]}$. The method requires that measurements are uncorrelated. When this is not the case, diagonalizeation of the measurement variance-covariance matrix and a transformation that is a linear combination of the original measurements into a new measurement set is performed. This whitepaper outlines the steps for a sequential measurement processing technique .
+\end{abstract}
+
+\section{Best References}
+
+The book by Brown and Hwang $^{[1]}$ discusses sequential measurement processing on pages 250-252.
+
+The book by Grewel and Andrews $^{[2]}$ discusses sequential measurement processing on page 226 in the section entitled ``Kalman Implementation with Decorrelation.''
+
+\pagebreak
+
+\section{The Proposed Method}
+
+The standard Kalman filter steps are:
+
+\begin{enumerate}
+  \item Prediction: \\
+         $ \hat{x}_{k+1}^- = \phi_k \hat{x}_{k} $ \\
+         $ P_{k+1}^- = \phi_k P_k \phi_k^T + Q_k $
+  \item Computation of Kalman Gain: \\
+         $ K_k = P_k^- H_k^T ( H_k P_k^- H_k^T + R_k ) ^{-1} $
+  \item Update: \\
+         $ \hat{x}_k^+ = \hat{x}_k^- + K_k(z_k - H_k \hat{x}_k^- ) $\\
+         $ P_k = (I-K_k H_k) P_k^- $
+\end{enumerate}
+
+The standard Extended Kalman filter steps are:
+
+\begin{enumerate}
+  \item Prediction: \\
+         $ \hat{x}_{k+1}^- = \phi_k \hat{x}_{k} $ \\
+         $ P_{k+1}^- = \phi_k P_k \phi_k^T + Q_k $
+  \item Compute Innovations: \\
+         $ w = l-\hat{l} $, (measurements - computed (i.e. predicted) measurements). \\
+         $ \hat{l} = H_k \hat{x}_{k+1}^- $
+  \item Computation of Kalman Gain: \\
+         $ K_k = P_k^- H_k^T ( H_k P_k^- H_k^T + R_k ) ^{-1} $
+  \item Update: \\
+         $ \widehat{dx}_k = K_k(w_k) $\\
+         $ \hat{x}_k^+ = \hat{x}_k^- + \widehat{dx}_k $ \\
+         $ P_k = (I-K_k H_k) P_k^- $
+\end{enumerate}
+
+There is an alternative Kalman filter implementation that propagates $P_k^{-1}$ instead of $P_k$. Since the state variance-covariance information is required for output purposes at each epoch in many cases for GNSS processing, this will not be used.
+
+\pagebreak
+
+This method will use the standard Extended Kalman implementation. The steps are as follows:
+
+\begin{enumerate}
+  \item Perform Prediction: \\
+         $ \hat{x}_{k+1}^- = \phi_k \hat{x}_{k} $ \\
+         $ P_{k+1}^- = \phi_k P_k \phi_k^T + Q_k $
+  \item Compute Innovations: \\
+         $ w = l-\hat{l} $, (measurements - computed (i.e. predicted) measurements). \\
+         $ \hat{l} = H_k \hat{x}_{k+1}^- $
+  \item Perform suitable innovation testing to remove outliers.
+  \item For each measurement, i, the following steps are performed.
+  \begin{enumerate}
+    \item Compute the $i^th$ innovation, $w_i$ using the most recent state estimate.
+    \item Compute the Kalman gain for the $i^{th}$ measurement:
+    \begin{enumerate}
+      \item Compute $h_i$, [1xu] the row of the design matrix corresponding to the observation.
+      \item Compute $pht = P_k h_i^T$, [ux1].
+      \item Compute $C = (h_i P_k h_i^T + \sigma_i^2)^{-1} = (h_i pht + \sigma_i^2)^{-1}$, [1x1]  Hence, the uxu inversion is avoided as only a scalar is inverted. $C$ is the variance of the innovation.
+      \item Compute $k_i = P_k h_i^T ( h_i P_k h_i^T + \sigma_i^2)^{-1} = pht C$, [ux1].
+    \end{enumerate}
+    \item Then the state variance-covariance matrix is updated:
+    \begin{enumerate}
+      \item Compute $D = k_i h_i P_k$.
+      \item Compute $P_k = P_k - D$ (equivalently $P_k = (I-k_i h_i)P_k$.
+    \end{enumerate}
+    \item Then the states are updated:
+    \begin{enumerate}
+      \item $ \widehat{dx}_k = k_i(w_i) $
+      \item $ \hat{x}_k^+ = \hat{x}_k^- + \widehat{dx}_k $
+    \end{enumerate}
+  \end{enumerate}
+\end{enumerate}
+
+
+
+\section{References}
+\begin{enumerate}
+\item Brown, R. G., P. Y. C  Hwang (1997). Introduction to Random Signals and Applied Kalman Filtering. Third Edition. John Wiley and Sons Inc.  pp. 250-252.
+\item Grewal, M. S., A. P. Andrews (2001). Kalman Filtering Theory and Practice Using Matlab. Second Edition. John Wiley and Sons Inc.pp. 226.
+\end{enumerate}
+
+\end{document}
