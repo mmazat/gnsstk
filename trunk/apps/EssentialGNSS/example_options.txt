@@ -1,0 +1,62 @@
+; EssentialGNSS
+; Post Processing Options File
+
+OutputFilePath,                                               = results.txt
+
+; General Processing Options
+StartGPSWeek,         (GPS week (0-1024+)                     = 1162
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 215500.0
+EndGPSWeek,           (GPS week (0-1024+)                     = 1162
+EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 219600.0
+
+ElevationMask,        (decimal degrees)                       = 15.0
+CNoMask,              (decimal dB-Hz)                         = 18.0
+LockTimeMask,         (decimal seconds)                       = 3.0
+
+; Select a processing method:
+; LSQ: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
+; EDK: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
+; RTK: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift and float ambiguities are currently estimated.
+ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
+
+;Process only single difference measurements between reference and rover receivers.
+ProcessOnlyDGPS,      (enable(1),disable(0))                  = 1  ;If no reference data is available at all, this defaults to disabled
+
+; Broadcast Ionospheric Correction Information
+Iono_KlobucharIsValid,          (yes/no)                      = no    ; Are the following parameters valid for use?
+Iono_KlobucharReferenceWeek,    (GPS week (0-1024+)           = 0
+Iono_KlobucharReferenceTime,    (0.0-604800.0 s)              = 0    
+Iono_KlobucharAlphaParameters,  (alpha0 alpha1 alpha2 alpha3) = 
+Iono_KlobucharBetaParameters,   (beta0  beta1  beta2  beta3)  = 
+
+    
+; +--------------------------------------+  
+; | Reference Station Processing Options |
+; +--------------------------------------+  
+Reference_DataPath, (full path or relative path, empty if not available) = ../base/Base.GPS  ;NovAtel OEM4 data, RANGEB, RAWEPHEMB
+
+Reference_Latitude,              (decimal degrees or dd mm ss.ss)        = 51 00 00.00000
+Reference_Longitude,             (decimal degrees or dd mm ss.ss)        = -114 00 00.0000
+Reference_Height,                (m)                                     = 1000.0
+
+Reference_EnableTropoCorrection, (enable(1)/disable(0))                  = 0
+Reference_EnableIonoCorrection,  (enable(1)/disable(0))                  = 0
+Reference_ExcludeSatellites,     (array of PRN's to exclude)             = 
+
+
+; +----------------------------------+  
+; | Rover Station Processing Options |
+; +----------------------------------+  
+Rover_DataPath,  (full path or relative path)                            = ../rover/Rover.GPS  ;NovAtel OEM4 data, RANGEB, RAWEPHEMB
+
+Rover_Latitude,              (decimal degrees or dd mm ss.ss)            = 51 05 30.00000
+Rover_Longitude,             (decimal degrees or dd mm ss.ss)            = -114 00 00.00000
+Rover_Height,                (m)                                         = 1000.0 
+Rover_UncertaintyLatitude,   (1 sigma [m])                               = 100.0
+Rover_UncertaintyLongitude,  (1 sigma [m])                               = 100.0
+Rover_UncertaintyHeight,     (1 sigma [m])                               = 100.0
+
+Rover_EnableTropoCorrection, (enable(1)/disable(0))                      = 0
+Rover_EnableIonoCorrection,  (enable(1)/disable(0))                      = 0
+Rover_ExcludeSatellites,     (array of PRN's to exclude)                 = 
+																				   
