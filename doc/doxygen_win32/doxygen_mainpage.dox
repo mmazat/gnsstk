@@ -23,9 +23,10 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 - Facilitate growth of the code. 
 - Allow users to get started easily and quickly. 
 - This library intends to provide simple but robust and efficient functions for solving GNSS problems.
-- Facilitate this library becoming part of other open source applications.
+- Facilitate this library becoming part of commercial and other open source applications.
+- Facilitate university research.
 
-\subsection pg_sec Programming Goals
+\section pg_sec Programming Goals
 
 - Program from the ground up using 'c' for simple applications and 'c++' for more complicated applications. The following figure illustrates this principle.
 - Minimize dependancies - allows lots of simple applications from a small part of the core code base.
@@ -55,8 +56,13 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 - Data containers utilize a simple C++ style with minimal encapsulation.
 - Uses the \html <a href="http://www.zenautics.com/matrixdoc/index.html">Zenautics Matrix/Vector class library</a>.
 
+\section unit_sec Unit Testing
+- Utilizes \html <a href="http://cunit.sourceforge.net/">CUnit</a>.
+- Unit tests for all the core algorithms.
+- Simple to understand, get started, and add tests.
+
 \section geodesy_sec Geodesy 
-- Compute coordinate conversion between Geodetic Curvilinear and Earth Centered Earth Fixed (ECEF)coordinates (16 ellipsoids supported).
+- Compute coordinate conversion between Geodetic Curvilinear and Earth Centered Earth Fixed (ECEF)coordinates, \html <a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk/ref/geodesy_datums.png">16 ellipsoids supported</a>.
 - Compute the Northing, Easting, and Vertical coordinates in a Local Geodetic Frame from Geodetic Curvilinear coordinates. 
 - Compute the difference in position between two points. 
 - Compute the Meridian Radius of Curvature. 
@@ -77,17 +83,16 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 - refer gps.h.
 
 \section nav_sec Navigation
-- Compute a closed form solution for GPS position using four pseudorange measurements.
+- Compute a \html <a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk/ref/ClosedFormGPS.pdf"> closed form solution</a> for GPS position using four pseudorange measurements.
 - Compute the partial derivatives of range with respect to X, Y, Z or latitude, longitude, height. 
 - refer navigation.h.
-
 
 \section iono_sec Ionosphere
 - Compute the GPS broadcast ionospheric correction.
 - refer ionosphere.h.
 
 \section tropo_sec Troposphere
-- Compute the tropospheric delay based on the Wide Area Agumentation System Minimum Operation Standard (WAAS MOPS)... 
+- Compute the tropospheric delay using the Wide Area Agumentation System Minimum Operation Standard (WAAS MOPS) model, \html <a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk/ref/TroposphericMathModels.pdf">more info</a>. 
 - refer troposphere.h.
 
 \section data_decoding_sec Data Decoding
@@ -97,10 +102,42 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 
 \section cslip_sec Cycle Clip Detection
 - Test data for cycle slips
-						 
-\html <br><br><hr>
 
-\b "LICENSE INFORMATION" \n
+\section matrix_sec Matrix and Vector Math
+- Uses the \html <a href="http://www.zenautics.com/matrixdoc/index.html">Zenautics Matrix/Vector class library</a>.
+- refer cmatrix.h. (c)
+- refer Matrix.h. (c++)
+
+\htmlonly 
+
+<br><br><hr>
+
+<h1> Subversion </h1>
+
+Subversion is used to host the project. For windows users the following steps apply (other users can divine the steps): <br>
+<ol> 
+<li> Download and install a subversion client. <a href="http://tortoisesvn.net/downloads">TortoiseSVN for Windows</a> is recommended. Otherwise <a href="http://subversion.tigris.org/project_packages.html"> click here </a>.
+<li> Make a folder, call it gnsstk. 
+<li> Right click on the folder and select "SVN Checkout". 
+<li> The URL of the repository is <a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk">https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk</a>. <small> Leave the checkout window options as default. Check out the HEAD revision. </small>
+<li> Anonymous download is allowed. 
+<li> To get write access to the repository, you have to become a developer. You'll need a sourceforge account first, <a href="http://sourceforge.net/account/newuser_emailverify.php">click here</a>. Then email the project administrator, glenn_macgougan at users.sourceforge.net.
+</ol>
+
+<br><hr>
+
+<h1> View All The Project Files </h1>
+
+<center> 
+<big><a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk">click here</a></big>
+</center>
+						 
+<br><br><hr>
+
+<h1> LICENSE INFORMATION </h1>
+
+\endhtmlonly
+
 Copyright (c) 2007, refer to 'author' doxygen tags in the source code\n
 Point of Contact: Glenn D. MacGougan <glenn_macgougan at users.sourceforge.net> \n
 
@@ -127,4 +164,23 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
 SUCH DAMAGE.
+
+\page page1 Online Utilities
+
+- Compute Azimuth and Elevation - \html <a href="http://gnsstk.sourceforge.net/forms/compute_azel.html">click here</a>
+- Compute Local Geodetic Coordinates from two Geodetic Coordinates - \html <a href="http://gnsstk.sourceforge.net/forms/compute_nev.html">click here</a>
+- Compute Coordinate Conversions - \html <a href="http://gnsstk.sourceforge.net/forms/coordinate_conversion.html">click here</a>
+- Compute Position Error - \html <a href="http://gnsstk.sourceforge.net/forms/compute_pos_err.html">click here</a>
+
+\page page2 Links
+
+- Klobuchar parameters computed post mission by CODE - Center for Orbit Determination in Europe. \html <a href="http://www.aiub-download.unibe.ch/CODE/">download here</a>\n 
+e.g. Download CGIM3280.07N from ftp://ftp.unibe.ch/aiub/CODE/2007/  for 2007-11-29 to get alpha0, alpha1, alpha2, alpha3, beta0, beta1, beta2, beta3.
+
+- \html <a href="http://www.zenautics.com/matrixdoc/index.html">Zenautics Matrix Project</a>
+
+
+
+
+
 */
