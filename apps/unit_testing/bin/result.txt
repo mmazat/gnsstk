@@ -1,6 +1,6 @@
 
 Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
-     2007-11-29,      23:20:35
+     2007-12-03,      22:53:49
 
 
      CUnit - A unit testing framework for C - Version 2.1-0
@@ -41,12 +41,15 @@ Suite: YUMA
   Test: YUMA_WriteSingleAlmanacElementToBuffer() ...passed
 Suite: IONOSPHERE
   Test: IONOSPHERE_GetL1KlobucharCorrection() ...passed
+Suite: RINEX
+  Test: RINEX_GetHeader() ...passed
+  Test: RINEX_DecodeHeader_ObservationFile() ...passed
 
 Run Summary:    Type  Total    Ran Passed Failed Inactive
-              suites      5      5    n/a      0        0
-               tests     29     29     29      0        0
-             asserts 335931 335931 335931      0      n/a
+              suites      6      6    n/a      0        0
+               tests     31     31     31      0        0
+             asserts 335962 335962 335962      0      n/a
 
-Elapsed time =    0.250 seconds
+Elapsed time =    6.641 seconds
 
 Tests completed with return value 0.

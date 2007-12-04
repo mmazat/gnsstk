@@ -44,6 +44,7 @@ SUCH DAMAGE.
 #include "test_novatel.h"
 #include "test_yuma.h"
 #include "test_ionosphere.h"
+#include "test_rinex.h"
 
 
 /** \brief The function where all suites and tests are added. */
@@ -239,6 +240,17 @@ int AddTests()
   if( CU_add_test(pSuite, "IONOSPHERE_GetL1KlobucharCorrection()", test_IONOSPHERE_GetL1KlobucharCorrection) == NULL )
     return CU_get_error();
 
+  /* add a suite to the registry */
+  pSuite = CU_add_suite("RINEX", init_suite_RINEX, clean_suite_RINEX);
+  if (NULL == pSuite)   
+    return CU_get_error();
+
+  /* add the tests to the suite */
+  if( CU_add_test(pSuite, "RINEX_GetHeader()", test_RINEX_GetHeader) == NULL )
+    return CU_get_error();
+  if( CU_add_test(pSuite, "RINEX_DecodeHeader_ObservationFile()", test_RINEX_DecodeHeader_ObservationFile) == NULL )
+    return CU_get_error();
+  
   return CUE_SUCCESS;
 }
 

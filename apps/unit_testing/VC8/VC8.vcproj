@@ -207,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\rinex.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\sem.h"
 				>
 			</File>
@@ -220,6 +224,10 @@
 			</File>
 			<File
 				RelativePath="..\src\test_novatel.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\test_rinex.h"
 				>
 			</File>
 			<File
@@ -275,6 +283,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\rinex.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\src\sem.c"
 				>
 			</File>
@@ -288,6 +308,10 @@
 			</File>
 			<File
 				RelativePath="..\src\test_novatel.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\test_rinex.c"
 				>
 			</File>
 			<File
