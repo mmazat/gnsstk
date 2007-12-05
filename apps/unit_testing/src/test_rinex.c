@@ -143,25 +143,36 @@ void test_RINEX_DecodeHeader_ObservationFile(void)
     NOVATELOEM4_structBinaryHeader header;       // A pointer to a NovAtel OEM4 header information struct (output).
     NOVATELOEM4_structObservation  obsArray[24]; // A pointer to a user provided array of struct_NOVATELOEM4_RANGE (output).
 
+    RINEX_structDecodedHeader RINEX_header;
+
     fid = fopen( "aira0010.07o", "r" );
-    CU_ASSERT_FATAL( fid == NULL );
+    CU_ASSERT_FATAL( fid != NULL );
 
     while( !feof(fid) )
     {
-      fgets( linbuf
+      if( fgets( linebuf, 8192, fid ) == NULL )
+        break;
+      if( strstr( linebuf, "END OF HEADER" ) != NULL )
+        break;
+    }
 
-    
+    if( feof(fid) || ferror(fid) != 0 )
+      return;
+   
     RINEX_GetNextObservationSet(
       fid,
-      &header,
+      &RINEX_header,
       &wasEndOfFileReached,
       &wasObservationFound,
       &filePosition,
       &header,  
-      &obsArray,
+      obsArray,
       24,
       &nrObs
       );
+
+    fclose(fid);
   }
+
 }
 

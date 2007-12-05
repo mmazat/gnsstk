@@ -104,6 +104,18 @@ typedef enum
 
 } RINEX_enumFileType;
 
+/// An enumeration for the letter denoting the GPS satellite system. Used when determining which satellite observations are present.
+typedef enum
+{
+  RINEX_SATELLITE_SYSTEM_GPS   = 'G', //!< 'G' denotes a GPS satellite.
+  RINEX_SATELLITE_SYSTEM_GLO   = 'R', //!< 'R' denotes a GLONASS satellite.
+  RINEX_SATELLITE_SYSTEM_GEO   = 'S', //!< 'S' Geostationary satellite (SBAS).
+  RINEX_SATELLITE_SYSTEM_NSS   = 'T', //!< 'T' NNSS Transit.
+  RINEX_SATELLITE_SYSTEM_MIXED = 'M', //!< 'M': Mixed.
+  RINEX_SATELLITE_SYSTEM_UNKNOWN
+
+} RINEX_enumSatelliteSystemType;
+
 typedef enum
 {
   RINEX_OBS_TYPE_L1,

@@ -70,7 +70,7 @@ static BOOL RINEX_erase(
   ); 
 
 //!< A static function to decode the "# / TYPES OF OBSERV" part of the RINEX OBS header.
-BOOL RINEX_GetObservationTypes(
+static BOOL RINEX_GetObservationTypes(
   const char* header_buffer,
   const unsigned header_buffer_size,
   RINEX_structDecodedHeader* header
@@ -78,11 +78,13 @@ BOOL RINEX_GetObservationTypes(
 
 //!< A static function to decode the time, epoch flag, and array of satellite ids present.
 // static
-BOOL RINEX_GetObservationEpoch(
-  char* line_buffer,                //!< (input/output) The line buffer containing the RINEX time, epoch flag, number of satellites in current epoch, and array of satellite ids. Potentially followed by the receiver clock offset (seconds, optional) 
-  const unsigned line_buffer_size,  //!< (input) The size of the line buffer [bytes].
-  RINEX_TIME *epoch,                //!< (output) The RINEX epoch.
-  RINEX_enumEpochFlag *epoch_flag   //!< (output) The epoch flag.
+static BOOL RINEX_GetObservationEpoch(
+  FILE* fid,                             //!< (input) An open (not NULL) file pointer to the RINEX data.  
+  char* line_buffer,                     //!< (input/output) The line buffer containing the RINEX time, epoch flag, number of satellites in current epoch, and array of satellite ids. Potentially followed by the receiver clock offset (seconds, optional) 
+  const unsigned max_length_line_buffer, //!< (input) The maximum size possible for the line buffer. In case an additional line must be read into the line_buffer.
+  const unsigned line_buffer_size,       //!< (input) The current size of the line buffer [bytes].
+  RINEX_TIME *epoch,                     //!< (output) The RINEX epoch.
+  RINEX_enumEpochFlag *epoch_flag        //!< (output) The epoch flag.
   );
 
 
@@ -368,15 +370,26 @@ BOOL RINEX_GetObservationTypes(
 
 // static
 BOOL RINEX_GetObservationEpoch(
-  char* line_buffer,                //!< (input/output) The line buffer containing the RINEX time, epoch flag, number of satellites in current epoch, and array of satellite ids. Potentially followed by the receiver clock offset (seconds, optional) 
-  const unsigned line_buffer_size,  //!< (input) The size of the line buffer [bytes].
-  RINEX_TIME *epoch,                //!< (output) The RINEX epoch.
-  RINEX_enumEpochFlag *epoch_flag   //!< (output) The epoch flag.
+  FILE* fid,                             //!< (input) An open (not NULL) file pointer to the RINEX data.  
+  char* line_buffer,                     //!< (input/output) The line buffer containing the RINEX time, epoch flag, number of satellites in current epoch, and array of satellite ids. Potentially followed by the receiver clock offset (seconds, optional) 
+  const unsigned max_length_line_buffer, //!< (input) The maximum size possible for the line buffer. In case an additional line must be read into the line_buffer.
+  const unsigned line_buffer_size,       //!< (input) The current size of the line buffer [bytes].
+  RINEX_TIME *epoch,                     //!< (output) The RINEX epoch.
+  RINEX_enumEpochFlag *epoch_flag        //!< (output) The epoch flag.
   )
 {
   char *pch = NULL;
   unsigned count = 0;
   int itmp = 0;
+  int i = 0;
+  int j = 0;
+  size_t length = 0;
+  char numstr[64];
+  RINEX_enumSatelliteSystemType next_sat_type = RINEX_SATELLITE_SYSTEM_UNKNOWN;
+  unsigned nr_obs=0;
+  unsigned id[64];
+  
+  numstr[0] = '\0';
 
   if( line_buffer == NULL )
     return FALSE;
@@ -387,6 +400,10 @@ BOOL RINEX_GetObservationEpoch(
   if( line_buffer_size == 0 )
     return FALSE;
 
+  length = strlen(line_buffer);
+  if( length == 0 )
+    return FALSE;
+  
   // Tokenize the input line buffer.
   pch = strtok( line_buffer, " \t\r\n\f" );
   while( pch != NULL && count < 7 )
@@ -446,8 +463,140 @@ BOOL RINEX_GetObservationEpoch(
     count++;
   }
 
-  return TRUE;
+  if( count != 7 )
+    return FALSE;
 
+  count = 0;
+  for( i = (int)(pch - line_buffer); i < (int)length; i++ )
+  {
+    // Satellite can be denoted by the following letters (RINEX_v_ 2.1)
+    // 'G': GPS
+    // 'R': GLONASS
+    // 'S': Geostationary signal payload
+    // 'T': NNSS Transit
+    // 'M': Mixed  
+    //
+    // e.g. string here is 5G 8G12G13R 8S20 means 5 satellite observations, 
+    // with GPS PRN's 8, 12, 14, GLONASS id 7, and SBAS id 20 (by the way: making up the id's here).
+    if( isspace(line_buffer[i]) || line_buffer[i] == '\0' )
+    {
+      continue;
+    }  
+    if( line_buffer[i] == '-' || line_buffer[i] == '+' || line_buffer[i] == '.' || line_buffer[i] == 'E' || line_buffer[i] == 'e' )
+    {
+      // Any float numbers should not be present on this line.
+      return FALSE;
+    }
+
+    if( isdigit( line_buffer[i] ) )
+    {
+      numstr[j] = line_buffer[i];
+      j++;
+    }
+    else
+    {
+      numstr[j] = '\0';
+      j = 0;
+      // A number always precedes a non-number here. Decode the number.
+      if( sscanf( numstr, "%d", &itmp ) != 1 )
+        return FALSE;
+      if( count == 0 )
+      {
+        // This is the number of observations        
+        nr_obs = itmp;
+      }
+      else
+      {
+        // This is a satellite id of type (current value of) next_sat_type.
+        id[count-1] = itmp;
+      }
+      count++;
+
+      next_sat_type = (RINEX_enumSatelliteSystemType)line_buffer[i];
+    }
+  }
+  if( count == 0 )
+    return FALSE;
+
+  // The last satellite id must still be interpreted.
+  numstr[j] = '\0';
+  j = 0;
+  if( sscanf( numstr, "%d", &itmp ) != 1 )
+    return FALSE;
+  id[count-1] = itmp;
+  count++;
+
+  if( count == nr_obs+1 )
+  {
+    return TRUE;
+  }
+  else
+  {
+    if( nr_obs <= 12 )
+    {
+      return FALSE;
+    }
+    else
+    {
+      // Get the next line from the file.
+      if( fgets(line_buffer, max_length_line_buffer, fid) == NULL )
+        return FALSE;
+
+      length = strlen(line_buffer);
+      if( length == 0 )
+        return FALSE;
+
+      if( RINEX_trim_left_right( line_buffer, max_length_line_buffer, &length ) == FALSE )
+        return FALSE;
+
+      for( i = 0; i < (int)length; i++ )
+      {
+        if( isspace(line_buffer[i]) )
+        {
+          continue;
+        }  
+        if( line_buffer[i] == '-' || line_buffer[i] == '+' || line_buffer[i] == '.' || line_buffer[i] == 'E' || line_buffer[i] == 'e' )
+        {
+          // Any float numbers should not be present on this line.
+          return FALSE;
+        }
+
+        if( !isdigit( line_buffer[i] ) ) // In this case the satellite system type letter is first.
+        {
+          if( j != 0 )
+          {
+            numstr[j] = '\0';
+            j = 0;
+            if( sscanf( numstr, "%d", &itmp ) != 1 )
+              return FALSE;
+            id[count-1] = itmp;
+            count++;
+          }          
+          next_sat_type = (RINEX_enumSatelliteSystemType)line_buffer[i];
+        }
+        else
+        {
+          numstr[j] = line_buffer[i];
+          j++;
+        }
+      }
+    }
+  }
+  
+  // The last satellite id must still be interpreted.
+  numstr[j] = '\0';
+  j = 0;
+  if( sscanf( numstr, "%d", &itmp ) != 1 )
+    return FALSE;
+  id[count-1] = itmp;
+  count++;
+  
+  if( count != nr_obs+1 )
+  {
+    return FALSE;
+  }
+  
+  return TRUE;
 }
 
 
@@ -751,7 +900,9 @@ BOOL RINEX_GetNextObservationSet(
   }while( len == 0 );
 
   result = RINEX_GetObservationEpoch(
+    fid,
     linebuf,
+    RINEX_LINEBUF_SIZE,
     len,
     &epoch,
     &epoch_flag
