@@ -250,7 +250,9 @@ int AddTests()
     return CU_get_error();
   if( CU_add_test(pSuite, "RINEX_DecodeHeader_ObservationFile()", test_RINEX_DecodeHeader_ObservationFile) == NULL )
     return CU_get_error();
-  
+  if( CU_add_test(pSuite, "RINEX_GetNextObservationSet()", test_RINEX_GetNextObservationSet) == NULL )
+    return CU_get_error();
+
   return CUE_SUCCESS;
 }
 
