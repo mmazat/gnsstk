@@ -235,7 +235,7 @@ BOOL YUMA_WriteSingleAlmanacElementToBuffer(
     sprintf( buffer, "" );
     return FALSE;
   }
-  scount += sprintf( buffer+scount, "******** Week  %03d almanac for PRN-%02d ********\n", alm.week, alm.prn );
+  scount += sprintf( buffer+scount, "******** Week %03d almanac for PRN-%02d ********\n", alm.week, alm.prn );
   scount += sprintf( buffer+scount, "ID:                         %02d\n",  alm.prn );
   scount += sprintf( buffer+scount, "Health:                     %03d\n",  alm.health );
   scount += sprintf( buffer+scount, "Eccentricity:               %.10g\n", alm.ecc );

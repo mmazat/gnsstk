@@ -538,7 +538,7 @@ BOOL NOVATELOEM4_DecodeRANGECMPB(
     {
       // The checkneg variable was added to avoid compiler warnings with g++ (v4.1.2).
       unsigned long int checkneg = 0xFFFFFFF0;
-      checkneg *= (1<<31);
+      checkneg *= (unsigned long int)(1<<31);
       checkneg *= 2; // this is 0xFFFF FFF0 0000 0000
       rangecmp_psr |= checkneg;
     }
