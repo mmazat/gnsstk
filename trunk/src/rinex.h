@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 #include "basictypes.h"
-#include "novatel.h"
+#include "gnss_types.h"
 
 
 /**
@@ -116,19 +116,20 @@ typedef enum
 
 } RINEX_enumSatelliteSystemType;
 
+/// An enumeration for the various types of obsevations allowed by RINEX_v_2.1.
 typedef enum
 {
-  RINEX_OBS_TYPE_L1,
-  RINEX_OBS_TYPE_L2,
-  RINEX_OBS_TYPE_C1,
-  RINEX_OBS_TYPE_P1,
-  RINEX_OBS_TYPE_P2,
-  RINEX_OBS_TYPE_D1,
-  RINEX_OBS_TYPE_D2,
-  RINEX_OBS_TYPE_T1,
-  RINEX_OBS_TYPE_T2,
-  RINEX_OBS_TYPE_S1,
-  RINEX_OBS_TYPE_S2,
+  RINEX_OBS_TYPE_L1,       //!< L1 phase (ADR) measurement [cycles].
+  RINEX_OBS_TYPE_L2,       //!< L2 phase (ADR) measurement [cycles].
+  RINEX_OBS_TYPE_C1,       //!< Pseudorange using C/A-Code on L1 [m].
+  RINEX_OBS_TYPE_P1,       //!< Pseudorange using P-Code on L1 [m].
+  RINEX_OBS_TYPE_P2,       //!< Pseudorange using P-Code on L2 [m].
+  RINEX_OBS_TYPE_D1,       //!< Doppler frequency on L1 [Hz].
+  RINEX_OBS_TYPE_D2,       //!< Doppler frequency on L2 [Hz].
+  RINEX_OBS_TYPE_T1,       //!< Transit Integrated Doppler on 150 (T1) [cycles].
+  RINEX_OBS_TYPE_T2,       //!< Transit Integrated Doppler on 400 MHz (T2) [cycles].
+  RINEX_OBS_TYPE_S1,       //!< Raw signal strengths or SNR values as given by the receiver for the L1 phase observations [receiver-dependent].
+  RINEX_OBS_TYPE_S2,       //!< Raw signal strengths or SNR values as given by the receiver for the L2 phase observations [receiver-dependent].
   RINEX_OBS_TYPE_UNKNOWN
 
 } RINEX_enumObservationType;
@@ -183,7 +184,7 @@ typedef struct
 {
   double              version;          //!< RINEX version.
   RINEX_enumFileType  type;             //!< RINEX file type.
-  char                marker_name[128]; //!< The site marker name.
+  char                marker_name[64];  //!< The site marker name.
   double              x;                //!< Geocentric approximate marker position (Units: Meters, System: ITRS recommended) Optional for moving platforms.
   double              y;                //!< Geocentric approximate marker position (Units: Meters, System: ITRS recommended) Optional for moving platforms.
   double              z;                //!< Geocentric approximate marker position (Units: Meters, System: ITRS recommended) Optional for moving platforms.
@@ -252,14 +253,16 @@ BOOL RINEX_GetNextObservationSet(
   BOOL *wasEndOfFileReached,               //!< Has the end of the file been reached (output).
   BOOL *wasObservationFound,               //!< Was a valid observation found (output).
   unsigned *filePosition,                  //!< The file position for the start of the message found (output).  
-  NOVATELOEM4_structBinaryHeader* header,  //!< A pointer to a NovAtel OEM4 header information struct (output).
-  NOVATELOEM4_structObservation* obsArray, //!< A pointer to a user provided array of struct_NOVATELOEM4_RANGE (output).
+  GNSS_structMeasurement* obsArray,        //!< A pointer to a user provided array of GNSS_structMeasurement (input/output).
   const unsigned char maxNrObs,            //!< The maximum number of elements in the array provided (input).
   unsigned *nrObs                          //!< The number of valid elements set in the array (output).
   );
 
 
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif // _RINEX_H_
