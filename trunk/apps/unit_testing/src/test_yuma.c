@@ -1226,11 +1226,11 @@ Health:                     000\n\
 Eccentricity:               0.007102489471\n\
 Time of Applicability(s):   589824.0000\n\
 Orbital Inclination(rad):   0.9908943176\n\
-Rate of Right Ascen(r/s):  -7.632479537e-009\n\
+Rate of Right Ascen(r/s):   -7.632479537e-009\n\
 SQRT(A)  (m 1/2):           5153.553711\n\
-Right Ascen at Week(rad):  -1.04144752\n\
-Argument of Perigee(rad):  -1.798838139\n\
-Mean Anom(rad):            -2.883712769\n\
+Right Ascen at Week(rad):   -1.04144752\n\
+Argument of Perigee(rad):   -1.798838139\n\
+Mean Anom(rad):             -2.883712769\n\
 Af0(s):                     0.0001697540283\n\
 Af1(s/s):                   3.637978807e-012\n\
 week:                       431\n\n";
@@ -1252,6 +1252,16 @@ week:                       431\n\n";
     1024 
     );
   CU_ASSERT_FATAL( result );
+
+  /*
+  printf( buffer );
+  printf( test_buffer );
+  {
+    int ii = strlen( buffer);
+    int jj = strlen( test_buffer );
+    int gg= 0;
+  }
+  */
 
   CU_ASSERT( strcmp( buffer, test_buffer ) == 0 );  
 }

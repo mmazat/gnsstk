@@ -46,6 +46,7 @@ extern "C" {
 
 #include "basictypes.h"
 #include "gnss_types.h"
+#include "gps.h"
 
 
 /**
@@ -199,7 +200,8 @@ typedef struct
 
   char wavelength_factors[1024]; //!< A string containing any satellite specific wavelength factors.
 
-  RINEX_TIME time_of_first_obs;
+  double interval;               //!< The interval between observatons. -1 if not present.
+  RINEX_TIME time_of_first_obs;  //!< The time of the first observation record.
 
 } RINEX_structDecodedHeader;
 
@@ -246,7 +248,16 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   );
 
 
+/**
+\brief  Decode the next set of observations from the RINEX Observation file.
+Deal with any header information changes that arise from special records.
 
+\author Glenn D. MacGougan
+\date   2007-12-06
+\since  2007-12-03
+
+\return  TRUE(1) if successful, FALSE(0) otherwise.
+*/
 BOOL RINEX_GetNextObservationSet(
   FILE* fid,                               //!< (input) An open (not NULL) file pointer to the RINEX data.
   RINEX_structDecodedHeader* RINEX_header, //!< (input/output) The decoded RINEX header information. The wavelength markers can change as data is decoded.
@@ -257,6 +268,26 @@ BOOL RINEX_GetNextObservationSet(
   const unsigned char maxNrObs,            //!< The maximum number of elements in the array provided (input).
   unsigned *nrObs                          //!< The number of valid elements set in the array (output).
   );
+
+
+
+/**
+\brief  Completely decode a RINEX GPS Navigation file into an array of GPS ephemeris structs.
+
+\author Glenn D. MacGougan
+\date   2007-12-06
+\since  2007-12-06
+
+\return  TRUE(1) if successful, FALSE(0) otherwise.
+*/
+BOOL RINEX_DecodeGPSNavigationFile(
+  const char *filepath,                          //!< (input) The file path to the GPS Navigation message file.
+  GNSS_structKlobuchar *iono_model,              //!< (input/output) A pointer to the ionospheric parameters struct.
+  GPS_structEphemeris *ephemeris_array,          //!< (input/output) A pointer to the GPS ephemeris array.
+  const unsigned int max_length_ephemeris_array, //!< (input) The maximum size of the GPS ephemeris array.
+  unsigned int *length_ephemeris_array           //!< (input/output) The length of the GPS ephemeris array after decoding. The number of valid items.
+  );
+                                    
 
 
 

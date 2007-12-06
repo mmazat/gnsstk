@@ -1,6 +1,6 @@
 
 Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
-     2007-12-06,      04:17:03
+     2007-12-06,      23:05:04
 
 
      CUnit - A unit testing framework for C - Version 2.1-0
@@ -38,13 +38,19 @@ Suite: NOVATELOEM4
 Suite: YUMA
   Test: YUMA_ReadAlmanacDataFromFile() ...passed
   Test: YUMA_WriteAlmanacDataToFile() ...passed
-  Test: YUMA_WriteSingleAlmanacElementToBuffer() ...FAILED
-    1. ..\src\test_yuma.c:1256  - strcmp( buffer, test_buffer ) == 0
+  Test: YUMA_WriteSingleAlmanacElementToBuffer() ...passed
 Suite: IONOSPHERE
   Test: IONOSPHERE_GetL1KlobucharCorrection() ...passed
 Suite: RINEX
   Test: RINEX_GetHeader() ...passed
-  Test: RINEX_DecodeHeader_ObservationFile() ...FAILED
-    1. ..\src\test_rinex.c:169  - header.obs_types[2] == RINEX_OBS_TYPE_P2
-    2. ..\src\test_rinex.c:170  - header.obs_types[3] == RINEX_OBS_TYPE_S2
-  Test: RINEX_GetNextObservationSet() ...
+  Test: RINEX_DecodeHeader_ObservationFile() ...passed
+  Test: RINEX_GetNextObservationSet() ...passed
+
+Run Summary:    Type  Total    Ran Passed Failed Inactive
+              suites      6      6    n/a      0        0
+               tests     32     32     32      0        0
+             asserts 336813 336813 336813      0      n/a
+
+Elapsed time =    3.766 seconds
+
+Tests completed with return value 0.
