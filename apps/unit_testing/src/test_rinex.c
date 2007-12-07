@@ -1180,7 +1180,27 @@ void test_RINEX_GetNextObservationSet(void)
     i++;    
 
     fclose(fid);
-  }
-    
+  }   
 }
+
+
+void test_RINEX_DecodeGPSNavigationFile(void)
+{
+  BOOL result;
+  GNSS_structKlobuchar iono_model;
+  GPS_structEphemeris ephemeris_array[512];
+  unsigned length_ephemeris_array = 0;
+
+  result = RINEX_DecodeGPSNavigationFile(
+    "aira0010.07n",
+    &iono_model,
+    ephemeris_array,
+    512,
+    &length_ephemeris_array
+    );
+
+  CU_ASSERT_FATAL( result );
+
+}
+
 

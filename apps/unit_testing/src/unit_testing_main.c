@@ -252,6 +252,8 @@ int AddTests()
     return CU_get_error();
   if( CU_add_test(pSuite, "RINEX_GetNextObservationSet()", test_RINEX_GetNextObservationSet) == NULL )
     return CU_get_error();
+  if( CU_add_test(pSuite, "RINEX_DecodeGPSNavigationFile()", test_RINEX_DecodeGPSNavigationFile) == NULL )
+    return CU_get_error();
 
   return CUE_SUCCESS;
 }

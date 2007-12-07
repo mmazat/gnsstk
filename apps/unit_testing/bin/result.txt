@@ -1,6 +1,6 @@
 
 Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
-     2007-12-06,      23:05:04
+     2007-12-07,      04:45:51
 
 
      CUnit - A unit testing framework for C - Version 2.1-0
@@ -45,12 +45,4 @@ Suite: RINEX
   Test: RINEX_GetHeader() ...passed
   Test: RINEX_DecodeHeader_ObservationFile() ...passed
   Test: RINEX_GetNextObservationSet() ...passed
-
-Run Summary:    Type  Total    Ran Passed Failed Inactive
-              suites      6      6    n/a      0        0
-               tests     32     32     32      0        0
-             asserts 336813 336813 336813      0      n/a
-
-Elapsed time =    3.766 seconds
-
-Tests completed with return value 0.
+  Test: RINEX_DecodeGPSNavigationFile() ...
