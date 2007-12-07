@@ -263,6 +263,7 @@ UTCOffset, UTC Date, Julian Date [days] \n
 11,   Jan 01 1996 00:00:00.0,    2450083.5000 \n
 12,   Jul 01 1997 00:00:00.0,    2450630.5000 \n
 13,   Jan 01 1999 00:00:00.0,    2451179.5000 \n
+14,   Jan 01 2006 00:00:00.0,    2453736.5000 \n
 */
 BOOL TIMECONV_DetermineUTCOffset(
   double julian_date,       //!< Number of days since noon Universal Time Jan 1, 4713 BCE (Julian calendar) [days]
