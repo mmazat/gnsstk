@@ -51,6 +51,12 @@ SUCH DAMAGE.
 #define RINEX_MAX_NR_OBS     (64) //!< The maximum array size for "struct_RINEX_obs RINEX_obs[RINEX_MAX_NR_OBS]".
 
 
+
+static const double RINEX_MIN_URA[16] = {0.00, 2.40, 3.40, 4.85, 6.85,  9.65, 13.65, 24.00, 48.00, 96.00, 192.00, 384.00,  768.00, 1536.00, 3072.00, 6144.00};
+static const double RINEX_MAX_URA[16] = {2.40, 3.40, 4.85, 6.85, 9.65, 13.65, 24.00, 48.00, 96.00, 192.0, 384.00, 768.00, 1536.00, 3072.00, 6144.00, 1.0e100};
+
+
+
 /// A container for a single RINEX data observation.
 typedef struct
 {
@@ -129,6 +135,19 @@ static BOOL RINEX_GetNextObserationSetForOneSatellite(
 
 /// \brief  A static function to replace float values exponents denoted with 'D' with 'E'.
 static BOOL RINEX_ReplaceDwithE( char *str, const unsigned length );
+
+
+/**
+\brief   A static function to convert URA in meters to the URA index.
+\author  Glenn D. MacGougan
+
+\n REFERENCES \n
+- GPS ICD 200C, p83. section 20.3.3.3.1.3
+*/
+static BOOL RINEX_ConvertURA_meters_to_URA_index( 
+  double ura_m,         //!< The user range accuracy [m].
+  unsigned char *ura    //!< The user range accuracy index.
+  );
 
 
 
@@ -1822,7 +1841,7 @@ BOOL RINEX_GetNextObservationSet(
   {
     return FALSE;
   }
-  TIMECONV_GetGPSTimeFromUTCTime(
+  TIMECONV_GetGPSTimeFromRinexTime(
     epoch.year,
     epoch.month,
     epoch.day,
@@ -2311,6 +2330,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
   unsigned i = 0;
   unsigned count = 0;
   double tow = 0;
+  int itmp = 0;
   double dtmp = 0.0;
   unsigned short week = 0;
   unsigned ephemeris_array_index = 0;
@@ -2504,7 +2524,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     {
       return FALSE;
     }
-    result = TIMECONV_GetGPSTimeFromUTCTime(
+    result = TIMECONV_GetGPSTimeFromRinexTime(
       epoch.year,
       epoch.month,
       epoch.day,
@@ -2733,8 +2753,9 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE;
     eph.code_on_L2 = (unsigned char)dtmp;
     i++;
-    if( sscanf( str[i], "%Lf", &eph.week ) != 1 )
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;    
+    eph.week = (unsigned short)dtmp;
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;
@@ -2774,7 +2795,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;    
     i++;
-    // eph.ura = GDM_TODO deal with accuracy in [m] converted to ura code.
+    result = RINEX_ConvertURA_meters_to_URA_index( dtmp, &eph.ura );
+    if( result == FALSE )
+      return FALSE;  
+
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;
     eph.health = (unsigned char)dtmp;
@@ -2820,9 +2844,12 @@ BOOL RINEX_DecodeGPSNavigationFile(
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;
-    eph.fit_interval_flag = (unsigned char)dtmp;
-    i++;
-
+    itmp = (int)dtmp;
+    if( itmp == 4 )
+      eph.fit_interval_flag = 0;
+    else
+      eph.fit_interval_flag = 1;
+    
     ephemeris_array[ephemeris_array_index] = eph;
     ephemeris_array_index++;    
   }
@@ -2849,3 +2876,29 @@ BOOL RINEX_ReplaceDwithE( char *str, const unsigned length )
   }
   return TRUE;
 }
+
+// static
+BOOL RINEX_ConvertURA_meters_to_URA_index( 
+  double ura_m,         //!< The user range accuracy [m].
+  unsigned char *ura    //!< The user range accuracy index.
+  )
+{
+  unsigned char i = 0;
+
+  if( ura == FALSE )
+    return FALSE;
+
+  *ura = 15; // by default.
+
+  for( i = 0; i < 16; i++ )
+  {
+    if( ura_m > RINEX_MIN_URA[i] && ura_m < RINEX_MAX_URA[i] )
+    {
+      *ura = i;
+      break;
+    }
+  }
+
+  return TRUE;
+}
+

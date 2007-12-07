@@ -205,6 +205,36 @@ BOOL TIMECONV_GetGPSTimeFromUTCTime(
 
 
 /**
+\brief    Computes GPS time from RINEX time. RINEX time looks like UTC
+          but it is GPS time in year, month, day, hours, minutes, seconds.
+
+\author   Glenn D. MacGougan (GDM)
+\date     2007-12-07
+\since    2007-12-07
+\return   TRUE(1) if successful, FALSE(0) otherwise.
+
+\remarks
+- There is no UTC offset to apply
+- The RINEX time system must be the GPS Time system to use this function.
+
+\b REFERENCES \n
+- Hofmann-Wellenhof, B., H. Lichtenegger, and J. Collins (1994). GPS Theory and 
+  Practice, Third, revised edition. Springer-Verlag, Wien New York. pp. 38-42 \n
+- RINEX version 2.11, (http://www.aiub-download.unibe.ch/rinex/rinex211.txt)
+*/
+BOOL TIMECONV_GetGPSTimeFromRinexTime(
+  unsigned short     utc_year,     //!< Universal Time Coordinated    [year]
+  unsigned char      utc_month,    //!< Universal Time Coordinated    [1-12 months] 
+  unsigned char      utc_day,      //!< Universal Time Coordinated    [1-31 days]
+  unsigned char      utc_hour,     //!< Universal Time Coordinated    [hours]
+  unsigned char      utc_minute,   //!< Universal Time Coordinated    [minutes]
+  float              utc_seconds,  //!< Universal Time Coordinated    [s]
+  unsigned short*    gps_week,     //!< GPS week (0-1024+)            [week]
+  double*            gps_tow       //!< GPS time of week (0-604800.0) [s]
+  );
+
+
+/**
 \brief    Computes UTC time from GPS time
 
 \author   Glenn D. MacGougan (GDM)
