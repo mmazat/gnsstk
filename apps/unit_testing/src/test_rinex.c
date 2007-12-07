@@ -40,6 +40,17 @@ SUCH DAMAGE.
 #include "constants.h"
 
 
+typedef struct 
+{
+  unsigned short year;
+  unsigned char month;
+  unsigned char day;
+  unsigned char hour;
+  unsigned char minute;
+  float seconds;
+} struct_utc;
+
+
 int init_suite_RINEX(void)
 {
   return 0;
@@ -202,17 +213,8 @@ void test_RINEX_GetNextObservationSet(void)
 
   GNSS_structMeasurement obsArray[24];
 
-  struct 
-  {
-    unsigned short year;
-    unsigned char month;
-    unsigned char day;
-    unsigned char hour;
-    unsigned char minute;
-    float seconds;
-  } utc;
-
-
+  struct_utc utc;
+  
   
 
   result = RINEX_GetHeader( 
@@ -662,6 +664,7 @@ void test_RINEX_GetNextObservationSet(void)
       &utc.minute,
       &utc.seconds
       );
+    utc.seconds += 13; // no utc offset in RINEX time.
     CU_ASSERT_FATAL( result );
     CU_ASSERT( utc.year == 2001 );
     CU_ASSERT( utc.month == 3 );
@@ -672,7 +675,7 @@ void test_RINEX_GetNextObservationSet(void)
 
     result = TIMECONV_GetUTCTimeFromGPSTime( 
       obsArray[5].week, 
-      obsArray[5].tow+20607605.848/LIGHTSPEED, 
+      obsArray[5].tow+20607605.848/LIGHTSPEED + 13,  // + 13 since there is no utc offset in RINEX time.
       &utc.year,
       &utc.month,
       &utc.day,
@@ -1089,7 +1092,7 @@ void test_RINEX_GetNextObservationSet(void)
 
     result = TIMECONV_GetUTCTimeFromGPSTime( 
       obsArray[i].week, 
-      obsArray[0].tow+obsArray[0].psr/LIGHTSPEED, 
+      obsArray[0].tow+obsArray[0].psr/LIGHTSPEED + 13, // +13 since there is no utc offset in RINEX time.
       &utc.year,
       &utc.month,
       &utc.day,
@@ -1190,6 +1193,9 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   GNSS_structKlobuchar iono_model;
   GPS_structEphemeris ephemeris_array[512];
   unsigned length_ephemeris_array = 0;
+  unsigned i = 0;
+
+  struct_utc utc;
 
   result = RINEX_DecodeGPSNavigationFile(
     "aira0010.07n",
@@ -1200,6 +1206,142 @@ void test_RINEX_DecodeGPSNavigationFile(void)
     );
 
   CU_ASSERT_FATAL( result );
+  CU_ASSERT_FATAL( length_ephemeris_array == 333 );
+
+
+  // examine the first record
+  /*
+  13 07  1  1  0  0  0.0 1.281178556383E-04 3.979039320257E-12 0.000000000000E+00
+    2.390000000000E+02-1.053750000000E+02 3.802301140610E-09 1.191964944844E+00
+   -5.604699254036E-06 2.938966266811E-03 2.777203917503E-06 5.153674734116E+03
+    8.640000000000E+04-9.499490261078E-08-1.452396007335E+00 1.117587089539E-08
+    9.933681219067E-01 3.428125000000E+02 1.254085410171E+00-7.978189664470E-09
+   -3.142988092009E-10 1.000000000000E+00 1.408000000000E+03 0.000000000000E+00
+    2.000000000000E+00 0.000000000000E+00-1.117587089539E-08 2.390000000000E+02
+    8.149800000000D+04 4.000000000000D+00
+  */
+
+  result = TIMECONV_GetUTCTimeFromGPSTime(
+    ephemeris_array[0].week,
+    ephemeris_array[0].toe+14, // no utc offset in RINEX time.
+    &utc.year,
+    &utc.month,
+    &utc.day,
+    &utc.hour,
+    &utc.minute,
+    &utc.seconds 
+    );
+  CU_ASSERT_FATAL( result );
+  CU_ASSERT( utc.year == 2007 );
+  CU_ASSERT( utc.month == 1 );
+  CU_ASSERT( utc.day == 1 );
+  CU_ASSERT( utc.hour == 0 );
+  CU_ASSERT( utc.minute == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( utc.seconds, 0.0, 1e-2 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].af0, 1.281178556383E-04, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].af1, 3.979039320257E-12, 1e-23 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].af2, 0.000000000000E+00, 1e-10 );
+
+  CU_ASSERT( ephemeris_array[0].iode == 239 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].crs, -1.053750000000E+02, 1e-07 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].delta_n, 3.802301140610E-09, 1e-20 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].m0, 1.191964944844E+00, 1e-12 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].cuc, -5.604699254036E-06, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].ecc, 2.938966266811E-03, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].cus, 2.777203917503E-06, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].sqrta, 5.153674734116E+03, 1e-09 );
+
+  CU_ASSERT( ephemeris_array[0].toe == 86400 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].cic, -9.499490261078E-08, 1e-19 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].omega0, -1.452396007335E+00, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].cis, 1.117587089539E-08, 1e-19 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].i0, 9.933681219067E-01, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].crc, 3.428125000000E+02, 1e-10 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].w, 1.254085410171E+00, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].omegadot, -7.978189664470E-09, 1e-20 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].idot, -3.142988092009E-10, 1e-21 );
+  CU_ASSERT( ephemeris_array[0].code_on_L2 == 1 );
+  CU_ASSERT( ephemeris_array[0].week == 1408 );
+  CU_ASSERT( ephemeris_array[0].L2_P_data_flag == 0 );
+
+  // CU_ASSERT( ephemeris_array[0].ura
+  CU_ASSERT( ephemeris_array[0].health == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].tgd, -1.117587089539E-08, 1e-19 );
+  CU_ASSERT( ephemeris_array[0].iodc == 239 );
+
+  CU_ASSERT( ephemeris_array[0].fit_interval_flag == 0 ); // four hours   
+
+  // Test the very last record
+  /*
+  27 07  1  2  0  0  0.0 8.633267134428E-05 2.046363078989E-12 0.000000000000E+00
+    1.630000000000E+02-1.581562500000E+02 3.835874284874E-09-3.001539225745E+00
+   -8.240342140198E-06 2.041919447947E-02 9.946525096893E-06 5.153800029755E+03
+    1.728000000000E+05 1.918524503708E-07-4.983656852855E-01-1.359730958939E-07
+    9.620745223570E-01 1.831562500000E+02-1.862446808648E+00-7.336019791637E-09
+    8.643217391802E-11 1.000000000000E+00 1.408000000000E+03 0.000000000000E+00
+    2.800000000000E+00 0.000000000000E+00-4.190951585770E-09 4.190000000000E+02
+    1.720680000000E+05 4.000000000000E+00
+  */
+
+  i = length_ephemeris_array-1;
+  result = TIMECONV_GetUTCTimeFromGPSTime(
+    ephemeris_array[i].week,
+    ephemeris_array[i].toe+14, // no utc offset in RINEX time.
+    &utc.year,
+    &utc.month,
+    &utc.day,
+    &utc.hour,
+    &utc.minute,
+    &utc.seconds 
+    );
+  CU_ASSERT_FATAL( result );
+  CU_ASSERT( utc.year == 2007 );
+  CU_ASSERT( utc.month == 1 );
+  CU_ASSERT( utc.day == 2 );
+  CU_ASSERT( utc.hour == 0 );
+  CU_ASSERT( utc.minute == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( utc.seconds, 0.0, 1e-2 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af0, 8.633267134428E-05, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af1, 2.046363078989E-12, 1e-23 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af2, 0.000000000000E+00, 1e-10 );
+
+   
+  CU_ASSERT( ephemeris_array[i].iode == 163 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].crs, -1.581562500000E+02, 1e-07 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].delta_n, 3.835874284874E-09, 1e-20 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].m0, -3.001539225745E+00, 1e-12 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cuc, -8.240342140198E-06, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].ecc, 2.041919447947E-02, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cus, 9.946525096893E-06, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].sqrta, 5.153800029755E+03, 1e-09 );
+
+  CU_ASSERT( ephemeris_array[i].toe == 172800 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cic, 1.918524503708E-07, 1e-19 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].omega0, -4.983656852855E-01, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cis, -1.359730958939E-07, 1e-19 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].i0, 9.620745223570E-01, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].crc, 1.831562500000E+02, 1e-10 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].w, -1.862446808648, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].omegadot, -7.336019791637E-09, 1e-20 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].idot, 8.643217391802E-11, 1e-21 );
+  CU_ASSERT( ephemeris_array[i].code_on_L2 == 1 );
+  CU_ASSERT( ephemeris_array[i].week == 1408 );
+  CU_ASSERT( ephemeris_array[i].L2_P_data_flag == 0 );
+
+  // CU_ASSERT( ephemeris_array[i].ura == 2.800000000000E+00 
+  CU_ASSERT( ephemeris_array[i].health == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].tgd, -4.190951585770E-09, 1e-19 );
+  CU_ASSERT( ephemeris_array[i].iodc == 419 );
+
+  CU_ASSERT( ephemeris_array[i].fit_interval_flag == 0 ); // four hours   
 
 }
 

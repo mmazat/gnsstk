@@ -401,6 +401,51 @@ BOOL TIMECONV_GetGPSTimeFromUTCTime(
 }
 
 
+
+BOOL TIMECONV_GetGPSTimeFromRinexTime(
+  unsigned short     utc_year,     //!< Universal Time Coordinated    [year]
+  unsigned char      utc_month,    //!< Universal Time Coordinated    [1-12 months] 
+  unsigned char      utc_day,      //!< Universal Time Coordinated    [1-31 days]
+  unsigned char      utc_hour,     //!< Universal Time Coordinated    [hours]
+  unsigned char      utc_minute,   //!< Universal Time Coordinated    [minutes]
+  float              utc_seconds,  //!< Universal Time Coordinated    [s]
+  unsigned short*    gps_week,     //!< GPS week (0-1024+)            [week]
+  double*            gps_tow       //!< GPS time of week (0-604800.0) [s]
+  )
+{
+  double julian_date=0.0;
+  unsigned char utc_offset=0;
+  BOOL result;
+
+  // Check the input.
+  result = TIMECONV_IsUTCTimeValid( utc_year, utc_month, utc_day, utc_hour, utc_minute, utc_seconds );
+  if( result == FALSE )
+    return FALSE;
+
+  result = TIMECONV_GetJulianDateFromUTCTime(
+    utc_year,
+    utc_month,
+    utc_day,
+    utc_hour,
+    utc_minute,
+    utc_seconds,
+    &julian_date );
+  if( result == FALSE )
+    return FALSE;
+
+  result = TIMECONV_GetGPSTimeFromJulianDate(
+    julian_date,
+    utc_offset,
+    gps_week,
+    gps_tow );
+  if( result == FALSE )
+    return FALSE;
+
+  return TRUE;
+}
+
+
+
 BOOL TIMECONV_GetUTCTimeFromGPSTime(
   unsigned short     gps_week,     //!< GPS week (0-1024+)            [week]
   double             gps_tow,      //!< GPS time of week (0-604800.0) [s]
