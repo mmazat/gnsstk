@@ -63,6 +63,9 @@ void test_RINEX_DecodeHeader_ObservationFile(void);
 /** \brief  Test RINEX_GetNextObservationSet(). */
 void test_RINEX_GetNextObservationSet(void);
 
+/** \brief  Test BOOL RINEX_DecodeGPSNavigationFile(void) */
+void test_RINEX_DecodeGPSNavigationFile(void);
+
 
 #ifdef __cplusplus
 }

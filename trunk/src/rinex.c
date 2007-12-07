@@ -40,6 +40,7 @@ SUCH DAMAGE.
 #include <string.h>
 #include <ctype.h>
 #include <memory.h>
+#include <math.h>
 #include "rinex.h"
 #include "time_conversion.h"
 #include "constants.h"
@@ -114,7 +115,7 @@ static BOOL RINEX_DealWithSpecialRecords(
   );
 
 /// \brief  Decode the next observation set for one satellite from the file.
-BOOL RINEX_GetNextObserationSetForOneSatellite(
+static BOOL RINEX_GetNextObserationSetForOneSatellite(
   FILE* fid,                                   //!< (input) An open (not NULL) file pointer to the RINEX data.
   RINEX_structDecodedHeader* RINEX_header,     //!< (input/output) The decoded RINEX header information. The wavelength markers can change as data is decoded.
   BOOL *wasEndOfFileReached,                   //!< (input/output) Has the end of the file been reached.
@@ -125,6 +126,10 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
   const RINEX_enumSatelliteSystemType sattype, //!< (input) The satellite type.
   const unsigned short id                      //!< (input) The satellite id.
   );
+
+/// \brief  A static function to replace float values exponents denoted with 'D' with 'E'.
+static BOOL RINEX_ReplaceDwithE( char *str, const unsigned length );
+
 
 
 /**
@@ -2299,6 +2304,22 @@ BOOL RINEX_DecodeGPSNavigationFile(
   RINEX_enumFileType file_type = RINEX_FILE_TYPE_UNKNOWN;
   char line_buffer[RINEX_LINEBUF_SIZE];
   unsigned nr_lines = 0;
+  BOOL result;
+  FILE* fid = NULL;
+  GPS_structEphemeris eph; // A single ephemeris record.
+  RINEX_TIME epoch;
+  unsigned i = 0;
+  unsigned count = 0;
+  double tow = 0;
+  double dtmp = 0.0;
+  unsigned short week = 0;
+  unsigned ephemeris_array_index = 0;
+
+  char str[10][20]; // A 2D array of strings of length 20;
+
+  memset( &eph, 0, sizeof(GPS_structEphemeris) );
+
+  epoch.time_system = RINEX_TIME_SYSTEM_GPS;
   
   if( filepath == NULL )
     return FALSE;
@@ -2341,6 +2362,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( nr_lines != 1 )
       return FALSE; // weird header
 
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
     if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
       &(iono_model->alpha0), 
       &(iono_model->alpha1),
@@ -2360,6 +2385,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( nr_lines != 1 )
       return FALSE; // weird header
 
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
     if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
       &(iono_model->beta0), 
       &(iono_model->beta1),
@@ -2372,12 +2401,451 @@ BOOL RINEX_DecodeGPSNavigationFile(
     // get the model time from the data.
   }
 
-  // GDM CONTINUE HERE
+  
 
 
+  fid = fopen( filepath, "r" );
+  if( fid == NULL )
+    return FALSE;
+
+  do
+  {
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        return TRUE;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+  }
+  while( strstr( line_buffer, "END OF HEADER" ) == NULL );
 
 
+  while( !feof(fid) && !ferror(fid) && ephemeris_array_index < max_length_ephemeris_array )
+  {
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%2c%*c%2c%*c%2c%*c%2c%*c%2c%*c%2c%5c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3],
+      str[4],
+      str[5],
+      str[6],
+      str[7],
+      str[8],
+      str[9]
+      );
+
+    if( count != 10 )
+      return FALSE; // bad record
+
+    i = 0;
+    if( sscanf( str[i], "%d", &eph.prn ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%d", &epoch.year ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%d", &epoch.month ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%d", &epoch.day ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%d", &epoch.hour ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%d", &epoch.minute ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%f", &epoch.seconds ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.af0 ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.af1 ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.af2 ) != 1 )
+      return FALSE;
+
+    if( epoch.year >= 80 && epoch.year < 2000 )
+    {
+      epoch.year += 1900;
+    }
+    else if( epoch.year > 0 && epoch.year < 79 )
+    {
+      epoch.year += 2000;
+    }
+    else
+    {
+      return FALSE;
+    }
+    result = TIMECONV_GetGPSTimeFromUTCTime(
+      epoch.year,
+      epoch.month,
+      epoch.day,
+      epoch.hour,
+      epoch.minute,
+      epoch.seconds,
+      &week,
+      &tow 
+      );
+    if( result == FALSE )
+      return FALSE;
+    eph.toc = (unsigned)tow;
 
 
+    // -------------------
+    // BROADCAST ORBIT - 1
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3]
+      );
+    if( count != 4 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;
+    eph.iode = (unsigned char)dtmp;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.crs ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.delta_n ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.m0 ) != 1 )
+      return FALSE;
+    i++;
+
+    // -------------------
+    // BROADCAST ORBIT - 2
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3]
+      );
+    if( count != 4 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &eph.cuc ) != 1 )
+      return FALSE;    
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.ecc ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.cus ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.sqrta ) != 1 )
+      return FALSE;
+    i++;
+
+
+    // -------------------
+    // BROADCAST ORBIT - 3
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3]
+      );
+    if( count != 4 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;    
+    eph.toe = (unsigned)dtmp;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.cic ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.omega0 ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.cis ) != 1 )
+      return FALSE;
+    i++;
+
+
+    // -------------------
+    // BROADCAST ORBIT - 4
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3]
+      );
+    if( count != 4 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &eph.i0 ) != 1 )
+      return FALSE;    
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.crc ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.w ) != 1 )
+      return FALSE;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.omegadot ) != 1 )
+      return FALSE;
+    i++;
+
+
+    // -------------------
+    // BROADCAST ORBIT - 5
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3]
+      );
+    if( count != 4 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &eph.idot ) != 1 )
+      return FALSE;    
+    i++;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;
+    eph.code_on_L2 = (unsigned char)dtmp;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.week ) != 1 )
+      return FALSE;    
+    i++;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;
+    eph.L2_P_data_flag = (unsigned char)dtmp;
+    i++;
+
+    // -------------------
+    // BROADCAST ORBIT - 6
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
+      str[0],
+      str[1],
+      str[2],
+      str[3]
+      );
+    if( count != 4 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;    
+    i++;
+    // eph.ura = GDM_TODO deal with accuracy in [m] converted to ura code.
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;
+    eph.health = (unsigned char)dtmp;
+    i++;
+    if( sscanf( str[i], "%Lf", &eph.tgd ) != 1 )
+      return FALSE;    
+    i++;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;
+    eph.iodc = (unsigned short)dtmp;
+    i++;
+
+    // -------------------
+    // BROADCAST ORBIT - 7
+
+    // Get the next line from the file.
+    if( fgets(line_buffer, RINEX_LINEBUF_SIZE, fid) == NULL )
+    {
+      if( feof(fid) )
+      {      
+        break;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    memset( str, 0, sizeof(char)*10*20 );  
+    count = sscanf( line_buffer, "%*3c%19c%19c",
+      str[0],
+      str[1]
+      );
+    if( count != 2 )
+      return FALSE;
+
+    i = 0;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 ) // the transmission time of messge, not used.
+      return FALSE;    
+    i++;
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+      return FALSE;
+    eph.fit_interval_flag = (unsigned char)dtmp;
+    i++;
+
+    ephemeris_array[ephemeris_array_index] = eph;
+    ephemeris_array_index++;    
+  }
+
+  *length_ephemeris_array = ephemeris_array_index;
+
+  return TRUE;
 }
 
+
+// static
+BOOL RINEX_ReplaceDwithE( char *str, const unsigned length )
+{
+  unsigned i = 0;
+  if( str == NULL )
+    return FALSE;
+  if( length == 0 )
+    return FALSE;
+
+  for( i = 0; i < length; i++ )
+  {
+    if( str[i] == 'D' || str[i] == 'd' )
+      str[i] = 'E';
+  }
+  return TRUE;
+}
