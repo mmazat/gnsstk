@@ -1208,6 +1208,19 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   CU_ASSERT_FATAL( result );
   CU_ASSERT_FATAL( length_ephemeris_array == 333 );
 
+  CU_ASSERT( iono_model.isValid == TRUE );
+  CU_ASSERT( iono_model.week == 1408 )
+  CU_ASSERT( iono_model.tow == 233472 ); 
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha0, 7.4506E-09, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha1, -1.4901E-08, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha2, -5.9605E-08, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha3, 1.1921E-07, 1e-13 );
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta0, 9.0112E+04, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta1, -6.5536E+04, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta2, -1.3107E+05, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta3, 4.5875E+05, 1e-13 );
 
   // examine the first record
   /*
@@ -1239,6 +1252,7 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   CU_ASSERT( utc.minute == 0 );
   CU_ASSERT_DOUBLE_EQUAL( utc.seconds, 0.0, 1e-2 );
 
+  CU_ASSERT( ephemeris_array[0].prn == 13 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].af0, 1.281178556383E-04, 1e-15 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].af1, 3.979039320257E-12, 1e-23 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].af2, 0.000000000000E+00, 1e-10 );
@@ -1268,7 +1282,7 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   CU_ASSERT( ephemeris_array[0].week == 1408 );
   CU_ASSERT( ephemeris_array[0].L2_P_data_flag == 0 );
 
-  // CU_ASSERT( ephemeris_array[0].ura
+  CU_ASSERT( ephemeris_array[i].ura == 0 );
   CU_ASSERT( ephemeris_array[0].health == 0 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[0].tgd, -1.117587089539E-08, 1e-19 );
   CU_ASSERT( ephemeris_array[0].iodc == 239 );
@@ -1306,6 +1320,7 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   CU_ASSERT( utc.minute == 0 );
   CU_ASSERT_DOUBLE_EQUAL( utc.seconds, 0.0, 1e-2 );
 
+  CU_ASSERT( ephemeris_array[i].prn == 27 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af0, 8.633267134428E-05, 1e-15 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af1, 2.046363078989E-12, 1e-23 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af2, 0.000000000000E+00, 1e-10 );
@@ -1336,13 +1351,178 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   CU_ASSERT( ephemeris_array[i].week == 1408 );
   CU_ASSERT( ephemeris_array[i].L2_P_data_flag == 0 );
 
-  // CU_ASSERT( ephemeris_array[i].ura == 2.800000000000E+00 
+  CU_ASSERT( ephemeris_array[i].ura == 1 );
   CU_ASSERT( ephemeris_array[i].health == 0 );
   CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].tgd, -4.190951585770E-09, 1e-19 );
   CU_ASSERT( ephemeris_array[i].iodc == 419 );
 
   CU_ASSERT( ephemeris_array[i].fit_interval_flag == 0 ); // four hours   
 
+
+
+  result = RINEX_DecodeGPSNavigationFile(
+    "AIUB2450.99n",
+    &iono_model,
+    ephemeris_array,
+    512,
+    &length_ephemeris_array
+    );
+
+  CU_ASSERT_FATAL( result );
+  CU_ASSERT_FATAL( length_ephemeris_array == 2 );
+
+  /*
+  .1676E-07   .2235E-07  -.1192E-06  -.1192E-06          ION ALPHA
+  .1208E+06   .1310E+06  -.1310E+06  -.1966E+06          ION BETA
+  */
+  CU_ASSERT( iono_model.isValid == TRUE );
+  CU_ASSERT( iono_model.week == 1025 )
+  CU_ASSERT( iono_model.tow == 552960 ); 
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha0, .1676E-07, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha1, .2235E-07, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha2, -.1192E-06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha3, -.1192E-06, 1e-13 );
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta0, .1208E+06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta1, .1310E+06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta2, -.1310E+06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta3, -.1966E+06, 1e-13 );
+
+  /*
+  6 99  9  2 17 51 44.0 -.839701388031E-03 -.165982783074E-10  .000000000000E+00
+     .910000000000E+02  .934062500000E+02  .116040547840E-08  .162092304801E+00
+     .484101474285E-05  .626740418375E-02  .652112066746E-05  .515365489006E+04
+     .409904000000E+06 -.242143869400E-07  .329237003460E+00 -.596046447754E-07d
+     .111541663136E+01  .326593750000E+03  .206958726335E+01 -.638312302555E-08d
+     .307155651409E-09  .000000000000E+00  .102500000000E+04  .000000000000E+00d
+     .000000000000E+00  .000000000000E+00  .000000000000E+00  .910000000000E+02
+     .406800000000E+06  .000000000000E+00
+     */
+
+  i = 0;
+  result = TIMECONV_GetUTCTimeFromGPSTime(
+    ephemeris_array[i].week,
+    ephemeris_array[i].toe+13, // no utc offset in RINEX time.
+    &utc.year,
+    &utc.month,
+    &utc.day,
+    &utc.hour,
+    &utc.minute,
+    &utc.seconds 
+    );
+  CU_ASSERT_FATAL( result );
+  CU_ASSERT( utc.year == 1999 );
+  CU_ASSERT( utc.month == 9 );
+  CU_ASSERT( utc.day == 2 );
+  CU_ASSERT( utc.hour == 17 );
+  CU_ASSERT( utc.minute == 51 );
+  CU_ASSERT_DOUBLE_EQUAL( utc.seconds, 44.0, 1e-2 );
+
+  CU_ASSERT( ephemeris_array[i].prn == 6 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af0, -.839701388031E-03, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af1, -.165982783074E-10, 1e-23 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af2, 0.000000000000E+00, 1e-10 );
+
+  CU_ASSERT( ephemeris_array[i].iode == 91 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].crs, .934062500000E+02, 1e-07 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].delta_n, .116040547840E-08, 1e-20 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].m0, .162092304801E+00, 1e-12 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cuc, .484101474285E-05, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].ecc, .626740418375E-02, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cus, .652112066746E-05, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].sqrta, .515365489006E+04, 1e-09 );
+     
+  CU_ASSERT( ephemeris_array[i].toe == 409904 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cic, -.242143869400E-07, 1e-19 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].omega0, .329237003460E+00, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cis, -.596046447754E-07, 1e-19 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].i0, .111541663136E+01, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].crc, .326593750000E+03, 1e-10 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].w, .206958726335E+01, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].omegadot, -.638312302555E-08, 1e-20 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].idot, .307155651409E-09, 1e-21 );
+  CU_ASSERT( ephemeris_array[i].code_on_L2 == 0 );
+  CU_ASSERT( ephemeris_array[i].week == 1025 );
+  CU_ASSERT( ephemeris_array[i].L2_P_data_flag == 0 );
+  
+  CU_ASSERT( ephemeris_array[i].ura == 0 );
+  CU_ASSERT( ephemeris_array[i].health == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].tgd, 0.0, 1e-12 );
+  CU_ASSERT( ephemeris_array[i].iodc == 91 );
+  
+  CU_ASSERT( ephemeris_array[i].fit_interval_flag == 0 ); // four hours   
+
+  /*
+  13 99  9  2 19  0  0.0  .490025617182E-03  .204636307899E-11  .000000000000E+00
+     .133000000000E+03 -.963125000000E+02  .146970407622E-08  .292961152146E+01
+    -.498816370964E-05  .200239347760E-02  .928156077862E-05  .515328476143E+04
+     .414000000000E+06 -.279396772385E-07  .243031939942E+01 -.558793544769E-07
+     .110192796930E+01  .271187500000E+03 -.232757915425E+01 -.619632953057E-08
+    -.785747015231E-11  .000000000000E+00  .102500000000E+04  .000000000000E+00
+     .000000000000E+00  .000000000000E+00  .000000000000E+00  .389000000000E+03
+     .410400000000E+06  .000000000000E+00
+     */
+
+  i = 1;
+  result = TIMECONV_GetUTCTimeFromGPSTime(
+    ephemeris_array[i].week,
+    ephemeris_array[i].toe+13.00001, // no utc offset in RINEX time.
+    &utc.year,
+    &utc.month,
+    &utc.day,
+    &utc.hour,
+    &utc.minute,
+    &utc.seconds 
+    );
+  CU_ASSERT_FATAL( result );
+  CU_ASSERT( utc.year == 1999 );
+  CU_ASSERT( utc.month == 9 );
+  CU_ASSERT( utc.day == 2 );
+  CU_ASSERT( utc.hour == 19 );
+  CU_ASSERT( utc.minute == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( utc.seconds, 0.0, 1e-2 );
+
+  
+  CU_ASSERT( ephemeris_array[i].prn == 13 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af0, .490025617182E-03, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af1, .204636307899E-11, 1e-23 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].af2, 0.000000000000E+00, 1e-10 );
+
+  CU_ASSERT( ephemeris_array[i].iode == 133 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].crs, -.963125000000E+02, 1e-07 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].delta_n, .146970407622E-08, 1e-20 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].m0, .292961152146E+01, 1e-12 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cuc, -.498816370964E-05, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].ecc, .200239347760E-02, 1e-15 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cus, .928156077862E-05, 1e-17 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].sqrta, .515328476143E+04, 1e-09 );
+     
+  CU_ASSERT( ephemeris_array[i].toe == 414000 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cic, -.279396772385E-07, 1e-19 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].omega0, .243031939942E+01, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].cis, -.558793544769E-07, 1e-19 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].i0, .110192796930E+01, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].crc, .271187500000E+03, 1e-10 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].w, -.232757915425E+01, 1e-12 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].omegadot, -.619632953057E-08, 1e-20 );
+
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].idot, -.785747015231E-11, 1e-21 );
+  CU_ASSERT( ephemeris_array[i].code_on_L2 == 0 );
+  CU_ASSERT( ephemeris_array[i].week == 1025 );
+  CU_ASSERT( ephemeris_array[i].L2_P_data_flag == 0 );
+  
+  CU_ASSERT( ephemeris_array[i].ura == 0 );
+  CU_ASSERT( ephemeris_array[i].health == 0 );
+  CU_ASSERT_DOUBLE_EQUAL( ephemeris_array[i].tgd, 0.0, 1e-12 );
+  CU_ASSERT( ephemeris_array[i].iodc == 389 );
+  
+  CU_ASSERT( ephemeris_array[i].fit_interval_flag == 0 ); // four hours   
 }
 
 

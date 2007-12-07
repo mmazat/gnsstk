@@ -350,6 +350,23 @@ BOOL TIMECONV_GetDayOfYear(
  const unsigned char  utc_day,     // Universal Time Coordinated           [1-31 days]
  unsigned short*      dayofyear    // number of days into the year (1-366) [days]
  );
+
+
+/**
+\brief    Determines the GPS time of the start of a day from the day of year and the year.
+
+\author   Glenn D. MacGougan (GDM)
+\date     2007-12-07
+\since    2007-12-07
+\return   TRUE(1) if successful, FALSE(0) otherwise.
+*/
+BOOL TIMECONV_GetGPSTimeFromYearAndDayOfYear(
+ const unsigned short year,      // The year [year]
+ const unsigned short dayofyear, // The number of days into the year (1-366) [days]
+ unsigned short*      gps_week,  //!< GPS week (0-1024+)            [week]
+ double*              gps_tow    //!< GPS time of week (0-604800.0) [s]
+ );
+
  
   
 #ifdef __cplusplus
