@@ -472,11 +472,12 @@ BOOL TIMECONV_DetermineUTCOffset(
   else if( julian_date < 2449534.5000 ) *utc_offset = 9;
   else if( julian_date < 2450083.5000 ) *utc_offset = 10;
   else if( julian_date < 2450630.5000 ) *utc_offset = 11;
-  else if( julian_date < 2451179.5000 ) *utc_offset = 12;
-  else                                  *utc_offset = 13;
+  else if( julian_date < 2451179.5000 ) *utc_offset = 12;  
+  else if( julian_date < 2453736.5000 ) *utc_offset = 13;  
+  else                                  *utc_offset = 14;
 
   return TRUE;
-}
+  
 
 
   
