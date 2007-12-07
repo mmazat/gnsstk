@@ -287,7 +287,44 @@ BOOL RINEX_DecodeGPSNavigationFile(
   const unsigned int max_length_ephemeris_array, //!< (input) The maximum size of the GPS ephemeris array.
   unsigned int *length_ephemeris_array           //!< (input/output) The length of the GPS ephemeris array after decoding. The number of valid items.
   );
-                                    
+           
+
+/**
+\brief  Decode a RINEX file name.
+
+\author Glenn D. MacGougan
+\date   2007-12-06
+\since  2007-12-06
+
+\code
+char *filepath = "c:\\data\\CGIM3280.07N";
+char station_name[5];
+unsigned short dayofyear = 0;
+unsigned char file_sequence_nr = 0;
+unsigned short year = 0;
+RINEX_enumFileType filetype = RINEX_FILE_TYPE_UNKNOWN;
+BOOL result = FALSE;
+
+result = RINEX_DecodeFileName( filepath, station_name, &dayofyear, &file_sequence_nr, &year, &filetype );
+// The results are
+// station_name == CGIM
+// dayofyear == 328
+// file_sequence_nr == 0
+// year == 2007
+// filetype == RINEX_FILE_TYPE_OBS
+\endcode
+
+\return  TRUE(1) if successful, FALSE(0) otherwise.
+*/
+BOOL RINEX_DecodeFileName(
+  const char *filepath,            //!< (input) A full filepath.
+  char *station_name,              //!< (output) A 5 character C string. char station_name[5]. In which to place the 4-character station name designator. This must be at least 5 characters.
+  unsigned short *dayofyear,       //!< (output) The day of year.
+  unsigned char *file_sequence_nr, //!< (output) file sequence number within day. 0: file contains all the existing data of the current day.
+  unsigned short *year,            //!< (output) The full year. e.g. 1999, 2001.
+  RINEX_enumFileType *filetype     //!< (output) The RINEX file type.
+  );
+
 
 
 

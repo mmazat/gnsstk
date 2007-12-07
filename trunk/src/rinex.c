@@ -452,7 +452,7 @@ BOOL RINEX_GetObservationTypes(
     return FALSE;
   
   // Determine the number of observation types.
-  if( sscanf( lines_buffer, "%d", &(header->nr_obs_types) ) != 1 )
+  if( sscanf( lines_buffer, "%u", &(header->nr_obs_types) ) != 1 )
     return FALSE;
   
   // Clean up the string a little.
@@ -588,7 +588,7 @@ BOOL RINEX_DealWithSpecialRecords(
     }
     else if( strstr(line_buffer, "ANTENNA: DELTA H/E/N") != NULL )
     {
-      if( sscanf( line_buffer, "%lf %lf %lf", 
+      if( sscanf( line_buffer, "%Lf %Lf %Lf", 
         &(RINEX_header->antenna_delta_h), 
         &(RINEX_header->antenna_ecc_e), 
         &(RINEX_header->antenna_ecc_n) ) != 3 )
@@ -598,7 +598,7 @@ BOOL RINEX_DealWithSpecialRecords(
     }
     else if( strstr(line_buffer, "APPROX POSITION XYZ") != NULL )
     {
-      if( sscanf( line_buffer, "%lf %lf %lf", 
+      if( sscanf( line_buffer, "%Lf %Lf %Lf", 
         &(RINEX_header->x), 
         &(RINEX_header->y), 
         &(RINEX_header->z) ) != 3 )
@@ -1164,7 +1164,7 @@ BOOL RINEX_GetHeader(
   scount += sprintf( buffer+scount, "%s", line_buffer );
 
   // Extract the RINEX version and type.
-  if( sscanf( line_buffer, "%lf %c", version, &type_char ) != 2 )
+  if( sscanf( line_buffer, "%Lf %c", version, &type_char ) != 2 )
     return FALSE;
   *file_type = (RINEX_enumFileType)type_char;
 
@@ -1211,6 +1211,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   char rinex_type_char = 0;
   char time_system_str[128];
   unsigned len = 0;
+  int itmp[5];  
   
   if( header_buffer == NULL )
     return FALSE;
@@ -1233,7 +1234,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     return FALSE;
   if( nr_lines != 1 )
     return FALSE;
-  if( sscanf( lines_buffer, "%lf %c", &(header->version), &rinex_type_char ) != 2 )
+  if( sscanf( lines_buffer, "%Lf %c", &(header->version), &rinex_type_char ) != 2 )
     return FALSE;
   header->type = (RINEX_enumFileType)rinex_type_char;
 
@@ -1277,7 +1278,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   {    
     if( nr_lines != 1 )
       return FALSE;
-    if( sscanf( lines_buffer, "%lf %lf %lf", &(header->x), &(header->y), &(header->z) ) != 3 )
+    if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->x), &(header->y), &(header->z) ) != 3 )
       return FALSE;
   }
 
@@ -1293,7 +1294,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     return FALSE;
   if( nr_lines != 1 )
     return FALSE;
-  if( sscanf( lines_buffer, "%lf %lf %lf", &(header->antenna_delta_h), &(header->antenna_ecc_e), &(header->antenna_ecc_n) ) != 3 )
+  if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->antenna_delta_h), &(header->antenna_ecc_e), &(header->antenna_ecc_n) ) != 3 )
     return FALSE;
 
   
@@ -1341,7 +1342,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     if( nr_lines != 1 )
       return FALSE; 
 
-    if( sscanf( lines_buffer, "%lf", &(header->interval) ) != 1 )
+    if( sscanf( lines_buffer, "%Lf", &(header->interval) ) != 1 )
       return FALSE;
 
     if( header->interval <= 0 )
@@ -1367,16 +1368,23 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     return FALSE; 
 
   if( sscanf( lines_buffer, "%d %d %d %d %d %f %s", 
-    &(header->time_of_first_obs.year),
-    &(header->time_of_first_obs.month),
-    &(header->time_of_first_obs.day),
-    &(header->time_of_first_obs.hour),
-    &(header->time_of_first_obs.minute),
+    &(itmp[0]),
+    &(itmp[1]),
+    &(itmp[2]),
+    &(itmp[3]),
+    &(itmp[4]),
     &(header->time_of_first_obs.seconds),
     time_system_str ) != 7 )
   {
     return FALSE;
-  }
+  }  
+  header->time_of_first_obs.year   = (unsigned short)itmp[0];
+  header->time_of_first_obs.month  = (unsigned char)itmp[1];
+  header->time_of_first_obs.day    = (unsigned char)itmp[2];
+  header->time_of_first_obs.hour   = (unsigned char)itmp[3];
+  header->time_of_first_obs.minute = (unsigned char)itmp[4];
+   
+    
   result = RINEX_trim_left_right( time_system_str, 128, &len );
   if( result == FALSE )
     return FALSE; 
@@ -1583,20 +1591,25 @@ BOOL RINEX_GetNextObservationSet(
 
       // Exract the epoch information from the tokenized line buffer.
       i = 0;
-      if( sscanf( token[i].str, "%d", &(epoch.year) ) != 1 ) 
+      if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
         return FALSE; 
+      epoch.year = (unsigned short)itmp;
       i++;
-      if( sscanf( token[i].str, "%d", &(epoch.month) ) != 1 ) 
+      if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
         return FALSE; 
+      epoch.month = (unsigned char)itmp;
       i++;
-      if( sscanf( token[i].str, "%d", &(epoch.day) ) != 1 ) 
+      if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
         return FALSE; 
+      epoch.day = (unsigned char)itmp;
       i++;
-      if( sscanf( token[i].str, "%d", &(epoch.hour) ) != 1 ) 
+      if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
         return FALSE; 
+      epoch.hour = (unsigned char)itmp;
       i++;
-      if( sscanf( token[i].str, "%d", &(epoch.minute) ) != 1 ) 
+      if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
         return FALSE; 
+      epoch.minute = (unsigned char)itmp;
       i++;
       if( sscanf( token[i].str, "%f", &(epoch.seconds) ) != 1 ) 
         return FALSE; 
@@ -1833,7 +1846,7 @@ BOOL RINEX_GetNextObservationSet(
   {
     epoch.year += 1900;
   }
-  else if( epoch.year > 0 && epoch.year < 79 )
+  else if( epoch.year >= 0 && epoch.year < 79 )
   {
     epoch.year += 2000;
   }
@@ -2334,7 +2347,18 @@ BOOL RINEX_DecodeGPSNavigationFile(
   double dtmp = 0.0;
   unsigned short week = 0;
   unsigned ephemeris_array_index = 0;
+  size_t length = 0;
 
+  char station_name[5];
+  unsigned short dayofyear = 0;
+  unsigned char file_sequence_nr = 0;
+  unsigned short year = 0;
+
+  double header_A0; // DELTA-UTC: A0,A1,T,W
+  double header_A1; // DELTA-UTC: A0,A1,T,W
+  int header_week;  // DELTA-UTC: A0,A1,T,W
+  int header_tow;   // DELTA-UTC: A0,A1,T,W
+  
   char str[10][20]; // A 2D array of strings of length 20;
 
   memset( &eph, 0, sizeof(GPS_structEphemeris) );
@@ -2351,6 +2375,8 @@ BOOL RINEX_DecodeGPSNavigationFile(
     return FALSE;
   if( max_length_ephemeris_array == 0 )
     return FALSE;
+
+  iono_model->isValid = FALSE;
 
   result = RINEX_GetHeader( 
     filepath,
@@ -2402,6 +2428,8 @@ BOOL RINEX_DecodeGPSNavigationFile(
       RINEX_LINEBUF_SIZE,
       &nr_lines
       );
+    if( result == FALSE )
+      return FALSE;
     if( nr_lines != 1 )
       return FALSE; // weird header
 
@@ -2417,12 +2445,60 @@ BOOL RINEX_DecodeGPSNavigationFile(
     {
       return FALSE; // bad header?
     }
-    iono_model->isValid = TRUE;
-    // get the model time from the data.
+
+    result = RINEX_get_header_lines(
+      RINEX_header,
+      RINEX_header_length,
+      "DELTA-UTC: A0,A1,T,W",
+      line_buffer,
+      RINEX_LINEBUF_SIZE,
+      &nr_lines
+      );
+    if( result == TRUE )
+    {
+      if( nr_lines != 1 )
+        return FALSE; // weird header
+
+      result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+      if( result == FALSE )
+        return FALSE;
+
+      if( sscanf( line_buffer, "%Lf %Lf %d %d",
+        &header_A0,
+        &header_A1,
+        &header_tow,
+        &header_week ) == 4 )
+      {
+        iono_model->week = (unsigned short) header_week;
+        iono_model->tow = header_tow;
+        iono_model->isValid = TRUE;
+      }
+    }
+
+    if( iono_model->isValid == FALSE )
+    {
+      // Decode the year and day of year from the file name.
+      result = RINEX_DecodeFileName( filepath, station_name, &dayofyear, &file_sequence_nr, &year, &file_type );
+      if( result == TRUE )
+      {
+        result = TIMECONV_GetGPSTimeFromYearAndDayOfYear(
+          year,
+          dayofyear,
+          &(iono_model->week),
+          &dtmp
+          );
+        if( result == FALSE )
+          return FALSE;
+        iono_model->tow = (unsigned)dtmp;
+        iono_model->isValid = TRUE;
+      }
+      else
+      {
+        // Get the Iono model time from the first ephemeris record in the file if there is one.
+        iono_model->isValid = FALSE;
+      }
+    }
   }
-
-  
-
 
   fid = fopen( filepath, "r" );
   if( fid == NULL )
@@ -2460,7 +2536,17 @@ BOOL RINEX_DecodeGPSNavigationFile(
         return FALSE;
       }
     }
-    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    // Check that this line is now empty.
+    length = strlen(line_buffer);
+    for( i = 0; i < length; i++ )
+    {
+      if( isalnum(line_buffer[i]) )
+        break;
+    }
+    if( i == length )
+      continue; // This string is empty.
+
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)length );
     if( result == FALSE )
       return FALSE;
 
@@ -2482,23 +2568,29 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE; // bad record
 
     i = 0;
-    if( sscanf( str[i], "%d", &eph.prn ) != 1 )
+    if( sscanf( str[i], "%d", &itmp ) != 1 )
       return FALSE;
+    eph.prn = (unsigned short)itmp;
     i++;
-    if( sscanf( str[i], "%d", &epoch.year ) != 1 )
+    if( sscanf( str[i], "%d", &itmp  ) != 1 )
       return FALSE;
+    epoch.year = (unsigned short)itmp;
     i++;
-    if( sscanf( str[i], "%d", &epoch.month ) != 1 )
+    if( sscanf( str[i], "%d", &itmp  ) != 1 )
       return FALSE;
+    epoch.month = (unsigned char)itmp;
     i++;
-    if( sscanf( str[i], "%d", &epoch.day ) != 1 )
+    if( sscanf( str[i], "%d", &itmp  ) != 1 )
       return FALSE;
+    epoch.day = (unsigned char)itmp;
     i++;
-    if( sscanf( str[i], "%d", &epoch.hour ) != 1 )
+    if( sscanf( str[i], "%d", &itmp  ) != 1 )
       return FALSE;
+    epoch.hour = (unsigned char)itmp;
     i++;
     if( sscanf( str[i], "%d", &epoch.minute ) != 1 )
       return FALSE;
+    epoch.minute = (unsigned char)itmp;
     i++;
     if( sscanf( str[i], "%f", &epoch.seconds ) != 1 )
       return FALSE;
@@ -2516,7 +2608,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     {
       epoch.year += 1900;
     }
-    else if( epoch.year > 0 && epoch.year < 79 )
+    else if( epoch.year >= 0 && epoch.year < 79 )
     {
       epoch.year += 2000;
     }
@@ -2795,7 +2887,8 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;    
     i++;
-    result = RINEX_ConvertURA_meters_to_URA_index( dtmp, &eph.ura );
+    // This ura is in meters and the GPS_ephemeris is a ura index. Convert it.
+    result = RINEX_ConvertURA_meters_to_URA_index( dtmp, &eph.ura ); 
     if( result == FALSE )
       return FALSE;  
 
@@ -2845,13 +2938,21 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;
     itmp = (int)dtmp;
-    if( itmp == 4 )
+    if( itmp <= 4 )
       eph.fit_interval_flag = 0;
     else
       eph.fit_interval_flag = 1;
     
     ephemeris_array[ephemeris_array_index] = eph;
     ephemeris_array_index++;    
+
+    if( ephemeris_array_index == 0 && iono_model->isValid == FALSE )
+    {
+      // Get the model time from the first ephemeris data for the iono model.
+      iono_model->week = eph.week;
+      iono_model->tow = eph.toe;
+      iono_model->isValid = TRUE;
+    }    
   }
 
   *length_ephemeris_array = ephemeris_array_index;
@@ -2892,7 +2993,7 @@ BOOL RINEX_ConvertURA_meters_to_URA_index(
 
   for( i = 0; i < 16; i++ )
   {
-    if( ura_m > RINEX_MIN_URA[i] && ura_m < RINEX_MAX_URA[i] )
+    if( ura_m >= RINEX_MIN_URA[i] && ura_m < RINEX_MAX_URA[i] )
     {
       *ura = i;
       break;
@@ -2901,4 +3002,117 @@ BOOL RINEX_ConvertURA_meters_to_URA_index(
 
   return TRUE;
 }
+
+
+BOOL RINEX_DecodeFileName(
+  const char *filepath,            //!< (input) A full filepath.
+  char *station_name,              //!< (output) A 5 character C string. char station_name[5]. In which to place the 4-character station name designator. This must be at least 5 characters.
+  unsigned short *dayofyear,       //!< (output) The day of year.
+  unsigned char *file_sequence_nr, //!< (output) file sequence number within day. 0: file contains all the existing data of the current day.
+  unsigned short *year,            //!< (output) The full year. e.g. 1999, 2001.
+  RINEX_enumFileType *filetype     //!< (output) The RINEX file type.
+  )
+{
+  char str[RINEX_LINEBUF_SIZE];
+  char filename[RINEX_LINEBUF_SIZE];
+  size_t length = 0;
+  char *pch = NULL;
+  char filetype_char = 0;
+  unsigned count = 0;
+  int itmp[3];
+
+  // Check input.
+  if( filepath == NULL )
+    return FALSE;
+  if( station_name == NULL )
+    return FALSE;
+  if( dayofyear == NULL )
+    return FALSE;
+  if( file_sequence_nr == NULL )
+    return FALSE;
+  if( year == NULL )
+    return FALSE;
+  if( filetype == NULL )
+    return FALSE;
+
+  station_name[0] = station_name[1] = station_name[2] = station_name[3] = station_name[4]  = '\0';
+
+  length = strlen( filepath );
+  if( length >= RINEX_LINEBUF_SIZE )
+    return FALSE;
+
+  // Copy the file path.
+  strcpy( str, filepath );
+
+  // Tokenize the string copy.
+  pch = strtok( str,"\\/" );
+  while (pch != NULL)
+  {
+    strcpy( filename, pch );
+    pch = strtok( NULL, "\\/" );
+  }
+
+  length = strlen( filename );
+  if( length != 12 )
+    return FALSE;
+
+  // Decode the filename.
+  count = sscanf( filename, "%4c%3d%1d%*c%2d%c", 
+    station_name,
+    &(itmp[0]),
+    &(itmp[1]),
+    &(itmp[2]),
+    &filetype_char
+    );
+  if( count != 5 )
+    return FALSE;
+
+  filetype_char = (char)toupper(filetype_char);
+
+  *dayofyear = (unsigned short)itmp[0];
+  *file_sequence_nr = (unsigned char)itmp[1];
+  *year = (unsigned short)itmp[2];
+  
+
+  if( *year >= 80 && *year < 2000 )
+  {
+    *year += 1900;
+  }
+  else if( *year >= 0 && *year < 79 )
+  {
+    *year += 2000;
+  }
+  else
+  {
+    return FALSE;
+  }
+
+  *filetype = (RINEX_enumFileType)filetype_char;
+
+  switch( *filetype )
+  {
+  case RINEX_FILE_TYPE_OBS:
+  case RINEX_FILE_TYPE_GPS_NAV:
+  case RINEX_FILE_TYPE_MET:
+  case RINEX_FILE_TYPE_GLO_NAV:
+  case RINEX_FILE_TYPE_GEO_NAV:
+  case RINEX_FILE_TYPE_GAL_NAV:
+  case RINEX_FILE_TYPE_MIXED_NAV:
+  case RINEX_FILE_TYPE_SBAS:
+  case RINEX_FILE_TYPE_CLK:
+  case RINEX_FILE_TYPE_SUMMARY:
+    {
+    return TRUE;
+    }
+  default:
+    {
+      return FALSE;
+    }
+  }
+}
+
+
+ 
+
+
 

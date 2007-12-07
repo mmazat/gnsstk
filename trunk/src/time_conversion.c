@@ -21,7 +21,7 @@ All rights reserved. \n
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided the following conditions are met: \n
 
-- Redistributions of source code must retain the above copyright
+- Redistributions of source code must retain te above copyright
   notice, this list of conditions and the following disclaimer. \n
 - Redistributions in binary form must reproduce the above copyright
   notice, this list of conditions and the following disclaimer in the
@@ -630,3 +630,42 @@ BOOL TIMECONV_GetDayOfYear(
 }
 
 
+BOOL TIMECONV_GetGPSTimeFromYearAndDayOfYear(
+ const unsigned short year,      // The year [year]
+ const unsigned short dayofyear, // The number of days into the year (1-366) [days]
+ unsigned short*      gps_week,  //!< GPS week (0-1024+)            [week]
+ double*              gps_tow    //!< GPS time of week (0-604800.0) [s]
+ )
+{
+  BOOL result;
+  double julian_date = 0;
+
+  if( gps_week == NULL )
+    return FALSE;
+  if( gps_tow == NULL )
+    return FALSE;
+  if( dayofyear > 366 )
+    return FALSE;
+
+  result = TIMECONV_GetJulianDateFromUTCTime(
+    year,
+    1,
+    1,
+    0,
+    0,
+    0,
+    &julian_date 
+    );
+  if( result == FALSE )
+    return FALSE;
+
+  julian_date += dayofyear - 1; // at the start of the day so -1.
+
+  result = TIMECONV_GetGPSTimeFromJulianDate(
+    julian_date,
+    0,
+    gps_week,
+    gps_tow );
+
+  return result;
+}
