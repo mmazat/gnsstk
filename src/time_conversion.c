@@ -477,7 +477,7 @@ BOOL TIMECONV_DetermineUTCOffset(
   else                                  *utc_offset = 14;
 
   return TRUE;
-  
+}  
 
 
   
