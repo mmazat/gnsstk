@@ -86,6 +86,9 @@ void test_TIMECONV_IsALeapYear(void);
 /** \brief  Test TIMECONV_GetDayOfYear(). */
 void test_TIMECONV_GetDayOfYear(void);
 
+/** \brief  Test TIMECONV_GetGPSTimeFromYearAndDayOfYear(). */
+void test_TIMECONV_GetGPSTimeFromYearAndDayOfYear(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -266,7 +266,9 @@ BOOL RINEX_GetNextObservationSet(
   unsigned *filePosition,                  //!< The file position for the start of the message found (output).  
   GNSS_structMeasurement* obsArray,        //!< A pointer to a user provided array of GNSS_structMeasurement (input/output).
   const unsigned char maxNrObs,            //!< The maximum number of elements in the array provided (input).
-  unsigned *nrObs                          //!< The number of valid elements set in the array (output).
+  unsigned *nrObs,                         //!< The number of valid elements set in the array (output).
+  unsigned short* rx_gps_week,             //!< The receiver GPS week (0-1024+) [weeks].
+  double* rx_gps_tow                       //!< The receiver GPS time of week (0-603799.99999) [s].
   );
 
 
@@ -325,6 +327,29 @@ BOOL RINEX_DecodeFileName(
   RINEX_enumFileType *filetype     //!< (output) The RINEX file type.
   );
 
+
+
+/**
+\brief  Decode the ionospheric parameters from a RINEX GPS Navigation file.
+
+\author Glenn D. MacGougan
+\date   2007-12-07
+\since  2007-12-07
+
+\code
+char *filepath = "c:\\data\\brdc3400.07n";
+GNSS_structKlobuchar iono;
+BOOL result;
+
+result = RINEX_GetKlobucharIonoParametersFromNavFile( filepath, &iono );
+\endcode
+
+\return  TRUE(1) if successful, FALSE(0) otherwise.
+*/
+BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
+  const char *filepath,             //!< (input) The file path to the GPS Navigation message file.
+  GNSS_structKlobuchar *iono_model  //!< (input/output) A pointer to the ionospheric parameters struct.
+  );
 
 
 

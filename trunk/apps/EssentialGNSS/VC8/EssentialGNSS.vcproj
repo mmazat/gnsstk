@@ -225,6 +225,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\rinex.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\sem.c"
 					>
 				</File>
@@ -260,10 +264,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src_cpp\GNSS_Types.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src_cpp\OptionFile.h"
 				>
 			</File>
@@ -287,6 +287,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\gnss_types.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\gps.h"
 					>
 				</File>
@@ -300,6 +304,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\novatel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\rinex.h"
 					>
 				</File>
 				<File

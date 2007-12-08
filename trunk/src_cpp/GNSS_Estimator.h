@@ -40,7 +40,7 @@ SUCH DAMAGE.
 
 #include <stdio.h>
 #include <list>
-#include "GNSS_Types.h"
+#include "gnss_types.h"
 #include "Matrix.h"
 
 using namespace Zenautics; // for Matrix

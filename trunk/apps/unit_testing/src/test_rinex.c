@@ -215,8 +215,6 @@ void test_RINEX_GetNextObservationSet(void)
 
   struct_utc utc;
   
-  
-
   result = RINEX_GetHeader( 
     "aira0010.07o",
     buffer,
@@ -1524,5 +1522,55 @@ void test_RINEX_DecodeGPSNavigationFile(void)
   
   CU_ASSERT( ephemeris_array[i].fit_interval_flag == 0 ); // four hours   
 }
+
+
+
+
+void test_RINEX_GetKlobucharIonoParametersFromNavFile(void)
+{
+  BOOL result;
+  GNSS_structKlobuchar iono_model;
+
+  result = RINEX_GetKlobucharIonoParametersFromNavFile( "aira0010.07n", &iono_model );
+
+  CU_ASSERT_FATAL( result );
+
+  CU_ASSERT( iono_model.isValid == TRUE );
+  CU_ASSERT( iono_model.week == 1408 )
+  CU_ASSERT( iono_model.tow == 233472 ); 
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha0, 7.4506E-09, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha1, -1.4901E-08, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha2, -5.9605E-08, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha3, 1.1921E-07, 1e-13 );
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta0, 9.0112E+04, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta1, -6.5536E+04, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta2, -1.3107E+05, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta3, 4.5875E+05, 1e-13 );
+
+  result = RINEX_GetKlobucharIonoParametersFromNavFile( "AIUB2450.99n", &iono_model );
+
+  CU_ASSERT_FATAL( result );
+
+  /*
+  .1676E-07   .2235E-07  -.1192E-06  -.1192E-06          ION ALPHA
+  .1208E+06   .1310E+06  -.1310E+06  -.1966E+06          ION BETA
+  */
+  CU_ASSERT( iono_model.isValid == TRUE );
+  CU_ASSERT( iono_model.week == 1025 )
+  CU_ASSERT( iono_model.tow == 552960 ); 
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha0, .1676E-07, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha1, .2235E-07, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha2, -.1192E-06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.alpha3, -.1192E-06, 1e-13 );
+
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta0, .1208E+06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta1, .1310E+06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta2, -.1310E+06, 1e-13 );
+  CU_ASSERT_DOUBLE_EQUAL( iono_model.beta3, -.1966E+06, 1e-13 );
+}
+
 
 
