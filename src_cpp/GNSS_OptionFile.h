@@ -40,7 +40,8 @@ SUCH DAMAGE.
 
 #include <string>
 #include "OptionFile.h"
-#include "GNSS_Types.h"
+#include "gnss_types.h"
+#include "GNSS_RxData.h"
 
 namespace GNSS
 {
@@ -73,15 +74,23 @@ namespace GNSS
 
     struct stStationInformation
     {
-      bool   isValid;          //!< Is this information valid.
+      bool   isValid; //!< Is this information valid.
+
+      std::string DataTypeStr;       //!< The data type string.
+      GNSS_enumRxDataType DataType;  //!< The data type as an enumeration.
+      
       double latitudeRads;     //!< Station Latitude [rad].
       double latitudeDegrees;  //!< Station Latitude [deg].
       double longitudeRads;    //!< Station Longitude [rad].
       double longitudeDegrees; //!< Station Longitude [degrees].
       double height;           //!< Station Height [m]
 
-      bool useTropo;           //!< A boolean to indicate if the tropospheric correction is enabled.
-      bool useIono;            //!< A boolean to indicate if the broadcast ionospheric correction is enabled.
+      double x; //!< Station ECEF WGS84 X coordinate [m].
+      double y; //!< Station ECEF WGS84 Y coordinate [m].
+      double z; //!< Station ECEF WGS84 Z coordinate [m].
+
+      bool useTropo; //!< A boolean to indicate if the tropospheric correction is enabled.
+      bool useIono;  //!< A boolean to indicate if the broadcast ionospheric correction is enabled.
 
       double uncertaintyLatitudeOneSigma;  //!< Initial position uncertainty [m].
       double uncertaintyLongitudeOneSigma; //!< Initial position uncertainty [m].
@@ -89,9 +98,9 @@ namespace GNSS
 
       int satsToExclude[64];    //!< An array of satellite id (PRN for GPS) to exclude from processing.
       unsigned nrSatsToExclude; //!< The number of satellite id's specified in satsToExclude.
-
+      
       std::string DataPath;     //!< The path to the datafile.
-
+      
       // default constructor
       stStationInformation()
       : isValid(false),
@@ -135,7 +144,10 @@ namespace GNSS
 
     /// A boolean to indicate if only single difference measurements
     /// between the reference and rover station will be used.
-    bool processDGPSOnly;
+    bool m_processDGPSOnly;
+
+    //!< The path to the navigation datafile (ephemeris), if applicable.
+    std::string m_RINEXNavDataPath;  
 
     /// The reference station information.
     stStationInformation m_Reference;

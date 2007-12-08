@@ -78,8 +78,8 @@ typedef struct
   unsigned char  fit_interval_flag;  //!< fit interval flag (four hour interval or longer) 0=4 fours, 1=greater         [0,1]
   unsigned char  ura;                //!< User Range Accuracy lookup code, 0 is excellent, 15 is use at own risk        [0-15], see p. 83 GPSICD200C  
   unsigned short age_of_data_offset; //!< age of data offset                                                            [s]
-  unsigned short reserved2;          //!< reserved bytes
-  unsigned       reserved3;          //!< reserved bytes
+  unsigned short tow_week;           //!< The week corresponding to tow (0-1024+). Can be one week larger than week.    [week]
+  unsigned       tow;                //!< The time of week derived formt the Z-count in the Hand Over Word (HOW)        [s]
   
   // clock parameters
   double         tgd;        //!< group delay                                                                   [s]

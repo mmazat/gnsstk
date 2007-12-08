@@ -43,6 +43,17 @@ extern "C" {
 #endif
 
 
+
+/// \brief    These are the supported receiver data types.
+enum GNSS_enumRxDataType
+{
+  GNSS_RXDATA_NOVATELOEM4 = 0, //!< NovAtel OEM4 data.
+  GNSS_RXDATA_RINEX21     = 1, //!< RINEX version 2.1
+  GNSS_RXDATA_RINEX211    = 2, //!< RINEX version 2.11
+  GNSS_RXDATA_UNKNOWN
+};
+  
+
 /// A 32 bit bit-field for GNSS measurement associated flags (all are boolean indicators).
 typedef struct 
 {

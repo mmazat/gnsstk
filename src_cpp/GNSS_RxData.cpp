@@ -49,6 +49,15 @@ using namespace Zenautics; // for Matrix
 
 #define GPS_NUMBER_VALID_PRNS (64)
 
+#ifndef SECONDS_IN_DAY
+#define SECONDS_IN_DAY (86400.0)
+#endif
+
+#ifndef SECONDS_IN_WEEK
+#define SECONDS_IN_WEEK (604800.0)
+#endif
+
+
 #ifndef WIN32
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
@@ -184,6 +193,61 @@ namespace GNSS
     return true;
   }
 
+  bool GPS_BroadcastEphemerisAndAlmanacArray::GetEphemerisTOW( 
+    const unsigned short prn, //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
+    bool &isAvailable,        //!< This boolean indicates if ephemeris data is available or not.
+    unsigned short &week,     //!< The correct week corresponding to the time of week based on the Z-count in the Hand Over Word.
+    unsigned &tow             //!< The time of week based on the Z-count in the Hand Over Word.
+    )
+  {
+    unsigned short index = 0;
+    unsigned short eph_week = 0;
+    int eph_toe = 0;
+    int eph_tow = 0;
+
+    if( m_arrayLength == 0 )
+    {
+      isAvailable = false;
+      return true;
+    }
+    
+    if( !GetIndexGivenPRN( prn, index ) )
+      return false;
+
+    // check the prn to see if any ephemeris information is available.
+    if( m_array[index].currentEph.prn == 0 )
+    {
+      isAvailable = false;
+      return true;
+    }
+
+    isAvailable = true;
+    if( isAvailable )
+    {
+      eph_toe  = (int)m_array[index].currentEph.toe;
+      eph_week = m_array[index].currentEph.week;
+      eph_tow  = (int)m_array[index].currentEph.tow;
+
+      // check for week rolloever condition, 
+      // if the tow of week is different by more than four days 
+      // compared to the time of ephemeris, then the tow is in the next week
+      if( (eph_tow - eph_toe) < (-4*86400) )
+      {
+        eph_week++;
+      }
+
+      week = eph_week;
+      tow  = eph_tow;
+    }
+    else
+    {
+      week = 0;
+      tow = 0;
+    }
+    return true;
+
+  }
+
   bool GPS_BroadcastEphemerisAndAlmanacArray::IsEphemerisAvailable( 
     const unsigned short prn, //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
     bool &isAvailable,        //!< This boolean indicates if ephemeris data is available or not.
@@ -302,13 +366,21 @@ namespace GNSS
     m_DisableIonoCorrection(false),
     m_fid(NULL),
     m_messageLength(0),
-    m_rxDataType(GNSS_RXDATA_UNKNOWN)
+    m_rxDataType(GNSS_RXDATA_UNKNOWN),
+    m_CheckRinexObservationHeader(false),
+    m_RINEX_use_eph(false),
+    m_RINEX_eph_index(0)
   { 
     m_message[0] = '\0';
     ZeroAllMeasurements();
     ZeroPVT();
 
     memset( &m_klobuchar, 0, sizeof(GNSS_structKlobuchar) );
+    memset( &m_RINEX_obs_header, 0, sizeof(RINEX_structDecodedHeader) );
+    
+    m_RINEX_eph.eph_array = NULL;
+    m_RINEX_eph.array_length = 0;
+    m_RINEX_eph.max_array_length = 0;
   }
 
 
@@ -317,6 +389,10 @@ namespace GNSS
     if( m_fid != NULL )
     {
       fclose( m_fid );
+    }
+    if( m_RINEX_eph.eph_array != NULL )
+    {
+      delete[] m_RINEX_eph.eph_array;
     }
   }
 
@@ -344,10 +420,16 @@ namespace GNSS
   }
 
 
-  bool GNSS_RxData::Initialize( const char* path, bool &isValidPath, const GNSS_enumRxDataType rxType )
+  bool GNSS_RxData::Initialize( 
+    const char* path,                  //!< The path to the Observation data file. 
+    bool &isValidPath,                 //!< A boolean to indicate if the path is valid.
+    const GNSS_enumRxDataType rxType,  //!< The receiver data type.
+    const char* RINEX_ephemeris_path   //!< The path to a RINEX ephemeris file, NULL if not available.
+    )
   {
+    bool isRinexValid = false;
     isValidPath = false;
-
+    
     if( path == NULL )
     {
       return false;
@@ -355,6 +437,27 @@ namespace GNSS
     if( rxType == GNSS_RXDATA_UNKNOWN )
     {
       return false;
+    }
+
+    m_rxDataType = rxType;
+    
+    if( rxType == GNSS_RXDATA_RINEX21 || rxType == GNSS_RXDATA_RINEX211 )
+    {
+      if( !CheckRINEXObservationHeader( path, isRinexValid ) )
+        return false;
+      if( !isRinexValid )
+        return false;
+    }
+
+    if( RINEX_ephemeris_path != NULL )
+    {
+      m_RINEX_eph.filepath = RINEX_ephemeris_path;
+      
+      if( !LoadRINEXNavigationData() )
+        return false;
+
+      // Indicate that the RINEX ephemeris data can be used.
+      m_RINEX_use_eph = true;
     }
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
@@ -365,15 +468,242 @@ namespace GNSS
 #endif
     if( m_fid == NULL )    
       return false;
+
+
+    if( rxType == GNSS_RXDATA_RINEX21 || rxType == GNSS_RXDATA_RINEX211 )
+    {
+      // advance over the header lines
+      while( !feof(m_fid) && ferror(m_fid)==0 )
+      {
+        if( fgets( (char*)m_message, GNSS_RXDATA_MSG_LENGTH, m_fid ) == NULL )
+          break;
+        if( strstr( (char*)m_message, "END OF HEADER" ) != NULL )
+          break;
+      }
+    }
+
+    if( feof(m_fid) || ferror(m_fid) != 0 )
+    {
+      if( m_fid != NULL )
+        fclose(m_fid);
+      return false;
+    }
     
     isValidPath = true;
-
-    m_rxDataType = rxType;
 
     return true;
   }
 
   bool GNSS_RxData::LoadNext( bool &endOfStream )
+  {
+    bool result = false;
+    switch( m_rxDataType )
+    {
+    case GNSS_RXDATA_NOVATELOEM4:
+      {
+        result = LoadNext_NOVATELOEM4( endOfStream );
+        break;
+      }
+    case GNSS_RXDATA_RINEX21:
+      {
+        result = LoadNext_RINEX21( endOfStream );
+        break;
+      }
+    case GNSS_RXDATA_RINEX211:
+      {
+        result = LoadNext_RINEX211( endOfStream );
+        break;
+      }
+    default:
+      {
+        return false;
+        break;
+      }
+    }
+
+    if( result )
+    {
+      if( m_RINEX_use_eph )
+      {
+        if( !UpdateTheEphemerisArrayWithUsingRINEX() )
+          return false;
+      }
+    }
+    return result;
+  }
+
+  bool GNSS_RxData::CheckRINEXObservationHeader( const char *filepath, bool &isValid )
+  {
+    BOOL result;
+    char RINEX_buffer[16384];
+    unsigned RINEX_buffer_size = 0;
+    double version = 0.0;
+    RINEX_enumFileType file_type = RINEX_FILE_TYPE_UNKNOWN;
+
+    isValid = false;
+
+    if( filepath == NULL )
+      return false;    
+    
+    result = RINEX_GetHeader( 
+      filepath,
+      RINEX_buffer,
+      16384,
+      &RINEX_buffer_size,
+      &version,
+      &file_type
+    );
+    if( result == FALSE )
+      return false;
+
+    result = RINEX_DecodeHeader_ObservationFile(
+      RINEX_buffer,
+      RINEX_buffer_size,
+      &m_RINEX_obs_header
+      );
+    if( result == FALSE )
+      return false;
+
+    if( file_type != RINEX_FILE_TYPE_OBS )
+    {
+      isValid = false;
+      return true;
+    }
+
+    if( m_rxDataType == GNSS_RXDATA_RINEX21 )
+    {
+      if( fabs( version - 2.1 ) < 1e-02 )
+        isValid = true;
+    }
+    else if( m_rxDataType == GNSS_RXDATA_RINEX211 )
+    {
+      if( fabs( version - 2.11 ) < 1e-03 )
+        isValid = true;
+    }
+    else
+    {
+      isValid = false;
+    }
+    return true;
+  }
+
+  bool GNSS_RxData::LoadNext_RINEX21( bool &endOfStream )
+  {
+    /*
+    BOOL result;
+    unsigned i = 0;
+
+    FILE* fid = NULL;
+    BOOL wasEndOfFileReached;  // Has the end of the file been reached (output).
+    BOOL wasObservationFound;  // Was a valid observation found (output).
+    unsigned filePosition=0;   // The file position for the start of the 
+    unsigned nrObs = 0;
+    
+    */
+    return true;
+  }
+
+  bool GNSS_RxData::LoadNext_RINEX211( bool &endOfStream )
+  {
+    BOOL result=0;
+    unsigned i = 0;
+    unsigned j = 0;
+    unsigned short rx_gps_week = 0;
+    double rx_gps_tow = 0.0;     
+
+    BOOL wasEndOfFileReached=0;  // Has the end of the file been reached (output).
+    BOOL wasObservationFound=0;  // Was a valid observation found (output).
+    unsigned filePosition=0;   // The file position for the start of the 
+    unsigned nrObs = 0;
+    bool isAvailable = false;
+    
+    endOfStream = false;
+
+    if( m_fid == NULL )
+      return false;
+
+    // Copy the current observations into the previous storage.
+    m_prev_nrValidObs = m_nrValidObs;
+    for( i = 0; i < m_nrValidObs; i++ )
+    {
+      m_prev_ObsArray[i] = m_ObsArray[i];
+      memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) ); // Initialize to zero.
+    }
+
+    // Get the next observation set.
+    result = RINEX_GetNextObservationSet(
+      m_fid,
+      &m_RINEX_obs_header,
+      &wasEndOfFileReached,
+      &wasObservationFound,
+      &filePosition,
+      m_ObsArray,
+      GNSS_RXDATA_NR_CHANNELS,
+      &nrObs,
+      &rx_gps_week,
+      &rx_gps_tow
+      );
+
+    m_nrGPSL1Obs = 0;
+    m_nrValidObs = 0;
+    if( nrObs > 0 )
+    {
+      // Set the receiver time of the observation set.
+      m_pvt.time.gps_week = rx_gps_week;
+      m_pvt.time.gps_tow  = rx_gps_tow;
+
+      for(i = 0; i < nrObs; i++ )
+      {
+        m_ObsArray[i].stdev_psr     = 1.4f;  // [m]
+        m_ObsArray[i].stdev_adr     = 0.05f; // these are in cycles!.
+        m_ObsArray[i].stdev_doppler = 0.5f;  // Hz
+
+        // Check if ephemeris information is available
+        if( !m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[i].id, isAvailable ) )
+          return false;
+        m_ObsArray[i].flags.isEphemerisValid      = isAvailable;
+
+        if( m_DisableTropoCorrection )
+          m_ObsArray[i].flags.useTropoCorrection          = 0;
+        else
+          m_ObsArray[i].flags.useTropoCorrection          = 1; // defaults to yes
+
+        if( m_DisableIonoCorrection )
+          m_ObsArray[i].flags.useBroadcastIonoCorrection  = 0;
+        else
+          m_ObsArray[i].flags.useBroadcastIonoCorrection  = 1; // default to yes
+
+        if( m_ObsArray[i].system == GNSS_GPS &&
+          m_ObsArray[i].freqType == GNSS_GPSL1 )
+        {
+          m_nrGPSL1Obs++;
+        }
+        m_nrValidObs++;
+      }
+    }
+
+
+    // Search for matching observations in the previous set of data to pass on static information
+    // like ambiguities.
+    for( i = 0; i < m_nrValidObs; i++ )
+    {
+      for( j = 0; j < m_prev_nrValidObs; j++ )
+      {
+        if( m_ObsArray[i].codeType == m_prev_ObsArray[j].codeType &&
+          m_ObsArray[i].freqType == m_prev_ObsArray[j].freqType &&
+          m_ObsArray[i].system == m_prev_ObsArray[j].system &&
+          m_ObsArray[i].id == m_prev_ObsArray[j].id ) // Note should also check that channels are the same if real time!
+        {
+          m_ObsArray[i].ambiguity = m_prev_ObsArray[j].ambiguity;
+          break;
+        }
+      }
+    }
+
+    return true;
+  }  
+
+  bool GNSS_RxData::LoadNext_NOVATELOEM4( bool &endOfStream )
   {
     BOOL result = FALSE;
     BOOL wasEndOfFileReached = FALSE;
@@ -1237,6 +1567,207 @@ namespace GNSS
     scount += sprintf( buffer+scount, "\n" );
 
     nrBytesInBuffer = scount;
+    return true;
+  }
+
+
+  bool GNSS_RxData::LoadRINEXNavigationData(void)
+  {
+    // First estimate the size of the ephemeris array needed based on the number of lines
+    // in the data file after the header.
+    unsigned line_count = 0;
+    unsigned estimated_nr_eph = 0;
+    BOOL result = 0;
+
+    FILE* fid = NULL;
+    fid = fopen( m_RINEX_eph.filepath.c_str(), "r" );
+    if( fid == NULL )
+      return false;
+
+    // Advance over the header.
+    while( !feof(fid) && ferror(fid)==0 )
+    {
+      if( fgets( (char*)m_message, GNSS_RXDATA_MSG_LENGTH, fid ) == NULL )
+        break;
+      if( strstr( (char*)m_message, "END OF HEADER" ) != NULL )
+        break;
+    }
+
+    // Count the number of lines in the remaining data.
+    while( !feof(fid) && ferror(fid)==0 )
+    {
+      if( fgets( (char*)m_message, GNSS_RXDATA_MSG_LENGTH, fid ) == NULL )
+        break;
+      line_count++;
+    }
+
+    fclose(fid);
+
+    // There are 8 lines per ephemeris record generally.
+    estimated_nr_eph = line_count/8;
+
+    estimated_nr_eph += 32; // for good measure.
+
+    // Allocate enough memory for the ephemeris array.
+    m_RINEX_eph.eph_array = NULL;
+    m_RINEX_eph.eph_array = new GPS_structEphemeris[estimated_nr_eph];
+    if( m_RINEX_eph.eph_array == NULL )
+      return FALSE;
+    
+    m_RINEX_eph.max_array_length = estimated_nr_eph;
+    
+    result = RINEX_DecodeGPSNavigationFile(
+      m_RINEX_eph.filepath.c_str(),
+      &m_RINEX_eph.iono_model,
+      m_RINEX_eph.eph_array,
+      m_RINEX_eph.max_array_length,
+      &m_RINEX_eph.array_length
+      );
+    if( result == FALSE )
+      return false;
+
+    return true;
+  }
+
+  bool GNSS_RxData::UpdateTheEphemerisArrayWithUsingRINEX()
+  {
+    int RINEX_eph_index = -1;
+    unsigned i = 0;
+    unsigned j = 0;
+    unsigned k = 0;
+    unsigned short eph_week = 0;
+    unsigned eph_tow = 0;
+    bool result = false;
+    double eph_time = 0;
+    double current_eph_time = 0;
+    const double rx_time = m_pvt.time.gps_week*SECONDS_IN_WEEK + m_pvt.time.gps_tow;
+    bool isEphUpToDate;
+    bool isAvailable;
+
+    // GDM CONTINUE HERE
+
+    /*
+    - Only update thte active satellites
+    - Update the ephemeris object as if the data is real time.
+    - i.e. Not the best ephemeris but the most up to date.
+    */
+    for( j = 0; j < m_nrValidObs; j++ )
+    {
+      RINEX_eph_index = -1; // Not available.
+      eph_time = 0;
+      current_eph_time = 0;
+      isEphUpToDate = false;
+      isAvailable = false;
+      if( m_ObsArray[j].flags.isActive )
+      {
+        if( m_ObsArray[j].system == GNSS_GPS )
+        {
+          // Check if new ephemeris information is available. 
+          // Process as if the data is real-time.
+    
+          result = m_EphAlmArray.GetEphemerisTOW(
+            m_ObsArray[j].id, 
+            isAvailable,
+            eph_week,
+            eph_tow
+            );
+          if( !result )
+            return false;
+
+          if( isAvailable )
+          {
+            current_eph_time = eph_week*SECONDS_IN_WEEK + eph_tow;
+          }
+
+          // Go through the entire ephemeris array. This algorihtms assumes
+          // the ephemeris records are increasing in time.
+          for( k = 0; k < m_RINEX_eph.array_length; k++ )
+          {
+            if( m_RINEX_eph.eph_array[k].prn == m_ObsArray[j].id )
+            {
+              eph_time = m_RINEX_eph.eph_array[k].tow_week*SECONDS_IN_WEEK + m_RINEX_eph.eph_array[k].tow;
+
+              if( !isAvailable )
+              {
+                if( rx_time > eph_time )
+                {
+                  RINEX_eph_index = k;
+                }
+                else
+                {
+                  result = m_EphAlmArray.AddEphemeris( 
+                    m_RINEX_eph.eph_array[RINEX_eph_index].prn, 
+                    m_RINEX_eph.eph_array[RINEX_eph_index]
+                  );
+                  if( !result )
+                    return false;
+                  isEphUpToDate = true;
+                  break;
+                }
+              }
+              else
+              {
+                if( rx_time > eph_time )
+                {
+                  if( current_eph_time < eph_time )
+                  {
+                    RINEX_eph_index = k;
+                  }
+                }
+                else
+                {
+                  if( RINEX_eph_index >= 0 )
+                  {
+                    result = m_EphAlmArray.AddEphemeris( 
+                      m_RINEX_eph.eph_array[RINEX_eph_index].prn, 
+                      m_RINEX_eph.eph_array[RINEX_eph_index]
+                    );
+                    if( !result )
+                      return false;
+                    isEphUpToDate = true;                    
+                  }
+                  break;
+                }
+              }
+            }
+          }
+
+          // Deal with end of file ephemeris records, no records are greater in time.
+          if( !isEphUpToDate )
+          {
+            if( RINEX_eph_index >= 0 )
+            {
+              result = m_EphAlmArray.AddEphemeris( 
+                m_RINEX_eph.eph_array[RINEX_eph_index].prn, 
+                m_RINEX_eph.eph_array[RINEX_eph_index]
+              );
+              if( !result )
+                return false;
+              isEphUpToDate = true;
+            }
+          }
+        }
+      }
+    }
+
+    // Update the observation flags to indicate that ephemeris is available.
+    for( j = 0; j < m_nrValidObs; j++ )
+    {
+      if( m_ObsArray[j].flags.isActive )
+      {
+        if( m_ObsArray[j].system == GNSS_GPS )
+        {
+          result = m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[j].id, isAvailable );
+          if( !result )
+            return false;
+
+          m_ObsArray[j].flags.isEphemerisValid = isAvailable;
+        }
+      }
+    }
+      
+    
+
     return true;
   }
 

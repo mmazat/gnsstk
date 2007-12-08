@@ -199,8 +199,9 @@ int AddTests()
     return CU_get_error();
   if( CU_add_test(pSuite, "TIMECONV_GetDayOfYear()", test_TIMECONV_GetDayOfYear) == NULL )
     return CU_get_error();
-
-
+  if( CU_add_test(pSuite, "TIMECONV_GetGPSTimeFromYearAndDayOfYear()", test_TIMECONV_GetGPSTimeFromYearAndDayOfYear) == NULL )
+    return CU_get_error();
+  
   /* add a suite to the registry */
   pSuite = CU_add_suite("NOVATELOEM4", init_suite_GEODESY, clean_suite_GEODESY);
   if (NULL == pSuite)   
@@ -254,7 +255,9 @@ int AddTests()
     return CU_get_error();
   if( CU_add_test(pSuite, "RINEX_DecodeGPSNavigationFile()", test_RINEX_DecodeGPSNavigationFile) == NULL )
     return CU_get_error();
-
+  if( CU_add_test(pSuite, "RINEX_GetKlobucharIonoParametersFromNavFile()", test_RINEX_GetKlobucharIonoParametersFromNavFile) == NULL )
+    return CU_get_error();
+  
   return CUE_SUCCESS;
 }
 

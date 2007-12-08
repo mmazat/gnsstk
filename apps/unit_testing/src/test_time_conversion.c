@@ -512,3 +512,34 @@ void test_TIMECONV_GetDayOfYear(void)
   CU_ASSERT_FATAL( result );
   CU_ASSERT( dayofyear == 365 );
 }
+
+
+void test_TIMECONV_GetGPSTimeFromYearAndDayOfYear(void)
+{
+  BOOL result = 0;
+
+  unsigned short year = 1999;
+  unsigned short dayofyear = 31;
+  unsigned short gps_week = 0;
+  double gps_tow = 0;
+ 
+  result = TIMECONV_GetGPSTimeFromYearAndDayOfYear(
+    year,
+    dayofyear,
+    &gps_week,
+    &gps_tow );
+
+  CU_ASSERT( gps_week == 995 ) ;
+  CU_ASSERT_DOUBLE_EQUAL( gps_tow, 0, 1e-03 ) ;
+
+  result = TIMECONV_GetGPSTimeFromYearAndDayOfYear(
+    2000,
+    60,
+    &gps_week,
+    &gps_tow );
+
+  CU_ASSERT( gps_week == 1051 ) ;
+  CU_ASSERT_DOUBLE_EQUAL( gps_tow, 172800, 1e-03 ) ;
+}
+
+

@@ -173,7 +173,14 @@ int main( int argc, char* argv[] )
     
     if( opt.m_Reference.isValid )
     {
-      result = rxDataBase.Initialize( opt.m_Reference.DataPath.c_str(), isValidPath, GNSS_RxData::GNSS_RXDATA_NOVATELOEM4 );
+      if( opt.m_RINEXNavDataPath.length() != 0 )
+      {
+        result = rxDataBase.Initialize( opt.m_Reference.DataPath.c_str(), isValidPath, opt.m_Reference.DataType, opt.m_RINEXNavDataPath.c_str() );
+      }
+      else
+      {
+        result = rxDataBase.Initialize( opt.m_Reference.DataPath.c_str(), isValidPath, opt.m_Reference.DataType, NULL );
+      }
       if( !result )
       {
         printf( "\nBad path to the reference station data.\n" );
@@ -218,7 +225,15 @@ int main( int argc, char* argv[] )
       return 1;
     }
 
-    result = rxDataRover.Initialize( opt.m_Rover.DataPath.c_str(), isValidPath, GNSS_RxData::GNSS_RXDATA_NOVATELOEM4 );
+    if( !opt.m_Reference.isValid && opt.m_RINEXNavDataPath.length() != 0 )
+    {
+      // Stand-Alone mode
+      result = rxDataRover.Initialize( opt.m_Rover.DataPath.c_str(), isValidPath, opt.m_Rover.DataType, opt.m_RINEXNavDataPath.c_str() );
+    }
+    else
+    {
+      result = rxDataRover.Initialize( opt.m_Rover.DataPath.c_str(), isValidPath, opt.m_Rover.DataType, NULL );
+    }
     if( !result )
       return 1;
     if( opt.m_klobuchar.isValid )

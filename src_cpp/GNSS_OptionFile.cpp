@@ -38,6 +38,8 @@ SUCH DAMAGE.
 #include <memory.h>
 #include "constants.h"
 #include "GNSS_OptionFile.h"
+#include "rinex.h"
+#include "geodesy.h"
 
 namespace GNSS
 {
@@ -62,6 +64,8 @@ namespace GNSS
     double d[4];
     unsigned n;
     bool result;
+    bool useECEF = false;
+    BOOL resultBOOL = FALSE;
 
     if( !ReadOptionFile( OptionFilePath ) )
       return false;
@@ -94,35 +98,10 @@ namespace GNSS
     if( !GetValue( "LockTimeMask", m_locktimeMask ) )
       return false;
 
-    if( !GetValue( "ProcessOnlyDGPS", processDGPSOnly ) )
+    if( !GetValue( "ProcessOnlyDGPS", m_processDGPSOnly ) )
       return false;
 
-    GetValue( "Iono_KlobucharIsValid", result );
-    if( result )
-      m_klobuchar.isValid = 1;
-    else
-      m_klobuchar.isValid = 0;
-
-    GetValue( "Iono_KlobucharReferenceWeek", m_klobuchar.week );
-    GetValue( "Iono_KlobucharReferenceTime", m_klobuchar.tow );
-
-    GetValueArray( "Iono_KlobucharAlphaParameters", d, 4, n );
-    if( n == 4 )
-    {
-      m_klobuchar.alpha0 = d[0];
-      m_klobuchar.alpha1 = d[1];
-      m_klobuchar.alpha2 = d[2];
-      m_klobuchar.alpha3 = d[3];
-    }
-    GetValueArray( "Iono_KlobucharBetaParameters", d, 4, n );
-    if( n == 4 )
-    {
-      m_klobuchar.beta0 = d[0];
-      m_klobuchar.beta1 = d[1];
-      m_klobuchar.beta2 = d[2];
-      m_klobuchar.beta3 = d[3];
-    }
-
+    GetValue( "RINEXNavigationDataPath", m_RINEXNavDataPath );      
 
     GetValue( "Reference_DataPath", m_Reference.DataPath );
 
@@ -130,40 +109,95 @@ namespace GNSS
     if( !m_Reference.DataPath.empty() )
     {
       if( DoesFileExist( m_Reference.DataPath ) )
-      {   
+      { 
         m_Reference.isValid = true;
-        GetValueArray( "Reference_Latitude", d, 4, n );
-        if( n == 1 )
+
+        if( !GetValue( "Reference_DataType", m_Reference.DataTypeStr ) )
+          return false;
+
+        if( m_Reference.DataTypeStr.compare("NOVATELOEM4") == 0 )
+          m_Reference.DataType = GNSS_RXDATA_NOVATELOEM4;
+        else if( m_Reference.DataTypeStr.compare("RINEX2.1") == 0 )
+          m_Reference.DataType = GNSS_RXDATA_RINEX21;
+        else if( m_Reference.DataTypeStr.compare("RINEX2.11") == 0 )
+          m_Reference.DataType = GNSS_RXDATA_RINEX211;
+        else
+          return false;
+
+
+        if( !GetValue( "Reference_UseECEF", useECEF ) )
+          return false;
+
+        if( useECEF )
         {
-          m_Reference.latitudeDegrees = d[0];
-        }
-        else if( n == 3 )
-        {
-          GetDMSValue( "Reference_Latitude", m_Reference.latitudeDegrees );
+          if( !GetValue( "Reference_ECEF_X", m_Reference.x ) )
+            return false;
+          if( !GetValue( "Reference_ECEF_Y", m_Reference.y ) )
+            return false;
+          if( !GetValue( "Reference_ECEF_Z", m_Reference.z ) )
+            return false;
+
+          resultBOOL = GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates(
+            GEODESY_REFERENCE_ELLIPSE_WGS84,
+            m_Reference.x,
+            m_Reference.y,
+            m_Reference.z,
+            &(m_Reference.latitudeRads),
+            &(m_Reference.longitudeRads),
+            &(m_Reference.height)
+            );
+          if( resultBOOL == FALSE )
+            return false;
+          m_Reference.latitudeDegrees  = m_Reference.latitudeRads  * RAD2DEG;
+          m_Reference.longitudeDegrees = m_Reference.longitudeRads * RAD2DEG;
         }
         else
         {
-          return false;
-        }
-        m_Reference.latitudeRads = m_Reference.latitudeDegrees*DEG2RAD;
+          GetValueArray( "Reference_Latitude", d, 4, n );
+          if( n == 1 )
+          {
+            m_Reference.latitudeDegrees = d[0];
+          }
+          else if( n == 3 )
+          {
+            GetDMSValue( "Reference_Latitude", m_Reference.latitudeDegrees );
+          }
+          else
+          {
+            return false;
+          }
+          m_Reference.latitudeRads = m_Reference.latitudeDegrees*DEG2RAD;
 
-        GetValueArray( "Reference_Longitude", d, 4, n );
-        if( n == 1 )
-        {
-          m_Reference.longitudeDegrees = d[0];
-        }
-        else if( n == 3 )
-        {
-          GetDMSValue( "Reference_Longitude", m_Reference.longitudeDegrees );
-        }
-        else
-        {
-          return false;
-        }
-        m_Reference.longitudeRads = m_Reference.longitudeDegrees*DEG2RAD;
+          GetValueArray( "Reference_Longitude", d, 4, n );
+          if( n == 1 )
+          {
+            m_Reference.longitudeDegrees = d[0];
+          }
+          else if( n == 3 )
+          {
+            GetDMSValue( "Reference_Longitude", m_Reference.longitudeDegrees );
+          }
+          else
+          {
+            return false;
+          }
+          m_Reference.longitudeRads = m_Reference.longitudeDegrees*DEG2RAD;
 
-        if( !GetValue( "Reference_Height", m_Reference.height ) )
-          return false;
+          if( !GetValue( "Reference_Height", m_Reference.height ) )
+            return false;
+
+          resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
+            GEODESY_REFERENCE_ELLIPSE_WGS84,
+            m_Reference.latitudeRads,
+            m_Reference.longitudeRads,
+            m_Reference.height,
+            &m_Reference.x,
+            &m_Reference.y,
+            &m_Reference.z 
+            );
+          if( resultBOOL == FALSE )
+            return false;
+        }
 
         // The reference is known to sub mm.
         m_Reference.uncertaintyLatitudeOneSigma = 1.0e-04;
@@ -181,6 +215,51 @@ namespace GNSS
     }
 
 
+
+    result = false;
+    GetValue( "Iono_KlobucharIsValid", result );
+    if( result )
+    {
+      m_klobuchar.isValid = 1;
+      GetValue( "Iono_KlobucharReferenceWeek", m_klobuchar.week );
+      GetValue( "Iono_KlobucharReferenceTime", m_klobuchar.tow );
+
+      GetValueArray( "Iono_KlobucharAlphaParameters", d, 4, n );
+      if( n == 4 )
+      {
+        m_klobuchar.alpha0 = d[0];
+        m_klobuchar.alpha1 = d[1];
+        m_klobuchar.alpha2 = d[2];
+        m_klobuchar.alpha3 = d[3];
+      }
+      GetValueArray( "Iono_KlobucharBetaParameters", d, 4, n );
+      if( n == 4 )
+      {
+        m_klobuchar.beta0 = d[0];
+        m_klobuchar.beta1 = d[1];
+        m_klobuchar.beta2 = d[2];
+        m_klobuchar.beta3 = d[3];
+      }
+    }
+    else
+    {
+      result = false;
+      GetValue( "Iono_ObtainFromRINEXNavFile", result );
+      if( result )
+      {
+        resultBOOL = RINEX_GetKlobucharIonoParametersFromNavFile(
+          m_RINEXNavDataPath.c_str(),
+          &m_klobuchar
+          );
+        if( resultBOOL == FALSE )
+          return false;       
+      }
+      else
+      {
+        m_klobuchar.isValid = 0;
+      }
+    }
+
     m_Rover.isValid = false;
     if( !GetValue( "Rover_DataPath", m_Rover.DataPath ) )
       return false;
@@ -190,38 +269,91 @@ namespace GNSS
     if( !DoesFileExist( m_Rover.DataPath ) )
       return false;
 
-    GetValueArray( "Rover_Latitude", d, 4, n );
-    if( n == 1 )
+    if( !GetValue( "Rover_DataType", m_Rover.DataTypeStr ) )
+      return false;
+
+    if( m_Rover.DataTypeStr.compare("NOVATELOEM4") == 0 )
+      m_Rover.DataType = GNSS_RXDATA_NOVATELOEM4;
+    else if( m_Rover.DataTypeStr.compare("RINEX2.1") == 0 )
+      m_Rover.DataType = GNSS_RXDATA_RINEX21;
+    else if( m_Rover.DataTypeStr.compare("RINEX2.11") == 0 )
+      m_Rover.DataType = GNSS_RXDATA_RINEX211;
+    else
+      return false;
+
+    if( !GetValue( "Rover_UseECEF", useECEF ) )
+      return false;
+
+    if( useECEF )
     {
-      m_Rover.latitudeDegrees = d[0];
-    }
-    else if( n == 3 )
-    {
-      GetDMSValue( "Rover_Latitude", m_Rover.latitudeDegrees );
+      if( !GetValue( "Rover_ECEF_X", m_Rover.x ) )
+        return false;
+      if( !GetValue( "Rover_ECEF_Y", m_Rover.y ) )
+        return false;
+      if( !GetValue( "Rover_ECEF_Z", m_Rover.z ) )
+        return false;
+
+      resultBOOL = GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates(
+        GEODESY_REFERENCE_ELLIPSE_WGS84,
+        m_Rover.x,
+        m_Rover.y,
+        m_Rover.z,
+        &(m_Rover.latitudeRads),
+        &(m_Rover.longitudeRads),
+        &(m_Rover.height)
+        );
+      if( resultBOOL == FALSE )
+        return false;
+      m_Rover.latitudeDegrees  = m_Rover.latitudeRads  * RAD2DEG;
+      m_Rover.longitudeDegrees = m_Rover.longitudeRads * RAD2DEG;
     }
     else
     {
-      return false;
-    }
-    m_Rover.latitudeRads = m_Rover.latitudeDegrees*DEG2RAD;
+      GetValueArray( "Rover_Latitude", d, 4, n );
+      if( n == 1 )
+      {
+        m_Rover.latitudeDegrees = d[0];
+      }
+      else if( n == 3 )
+      {
+        GetDMSValue( "Rover_Latitude", m_Rover.latitudeDegrees );
+      }
+      else
+      {
+        return false;
+      }
+      m_Rover.latitudeRads = m_Rover.latitudeDegrees*DEG2RAD;
 
-    GetValueArray( "Rover_Longitude", d, 4, n );
-    if( n == 1 )
-    {
-      m_Rover.longitudeDegrees = d[0];
-    }
-    else if( n == 3 )
-    {
-      GetDMSValue( "Rover_Longitude", m_Rover.longitudeDegrees );
-    }
-    else
-    {
-      return false;
-    }
-    m_Rover.longitudeRads = m_Rover.longitudeDegrees*DEG2RAD;
+      GetValueArray( "Rover_Longitude", d, 4, n );
+      if( n == 1 )
+      {
+        m_Rover.longitudeDegrees = d[0];
+      }
+      else if( n == 3 )
+      {
+        GetDMSValue( "Rover_Longitude", m_Rover.longitudeDegrees );
+      }
+      else
+      {
+        return false;
+      }
+      m_Rover.longitudeRads = m_Rover.longitudeDegrees*DEG2RAD;
 
-    if( !GetValue( "Rover_Height", m_Rover.height ) )
-      return false;
+      if( !GetValue( "Rover_Height", m_Rover.height ) )
+        return false;
+
+      resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
+        GEODESY_REFERENCE_ELLIPSE_WGS84,
+        m_Rover.latitudeRads,
+        m_Rover.longitudeRads,
+        m_Rover.height,
+        &m_Rover.x,
+        &m_Rover.y,
+        &m_Rover.z 
+        );
+      if( resultBOOL == FALSE )
+        return false;
+    }
 
     if( !GetValue( "Rover_UncertaintyLatitude", m_Rover.uncertaintyLatitudeOneSigma ) )
       return false;

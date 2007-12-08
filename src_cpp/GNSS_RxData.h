@@ -39,8 +39,10 @@ SUCH DAMAGE.
 #define _GNSS_RXDATA_H_
 
 #include <stdio.h>
-#include "GNSS_Types.h"
+#include <string>
+#include "gnss_types.h"
 #include "gps.h"
+#include "rinex.h"
 
 
 /// This is the fixed number of channels contained in the array 
@@ -132,6 +134,20 @@ namespace GNSS
       char iode = -1            //!< The issue of data for the ephemeris, -1 means get the most current.
       );
 
+    /**
+    \brief    Try to get the week, and time of week of the most current ephemeris 
+              for the prn specified if available.
+    \author   Glenn D. MacGougan
+    \date     2007-12-07
+    \return   true if successful, false if error.
+    */
+    bool GetEphemerisTOW( 
+      const unsigned short prn, //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
+      bool &isAvailable,        //!< This boolean indicates if ephemeris data is available or not.
+      unsigned short &week,     //!< The correct week corresponding to the time of week based on the Z-count in the Hand Over Word.
+      unsigned &tow             //!< The time of week based on the Z-count in the Hand Over Word.
+      );
+
   private:
     /// \brief   The copy constructor. Disabled!
     GPS_BroadcastEphemerisAndAlmanacArray( const GPS_BroadcastEphemerisAndAlmanacArray& rhs );
@@ -186,15 +202,6 @@ namespace GNSS
   /// 
   class GNSS_RxData
   { 
-  public: // types
-
-    /// \brief    These are the supported receiver data types.
-    enum GNSS_enumRxDataType
-    {
-      GNSS_RXDATA_NOVATELOEM4 = 0,
-      GNSS_RXDATA_UNKNOWN
-    };
-    
   public: 
 
     /// \brief    The default constructor (no data allocated yet).
@@ -288,9 +295,18 @@ namespace GNSS
 
 
 
-    /// \brief   Initialize the source of measurements 
-    /// \return  true if successful, false if error.
-    bool Initialize( const char* path, bool &isValidPath, const GNSS_enumRxDataType rxType );
+    /**
+    \brief   Initialize the receiver data object with data path information.
+    \author  Glenn D. MacGougan
+    \date    2007-12-07
+    \return  true if successful, false if error.    
+    */
+    bool Initialize( 
+      const char* path,                  //!< The path to the Observation data file. 
+      bool &isValidPath,                 //!< A boolean to indicate if the path is valid.
+      const GNSS_enumRxDataType rxType,  //!< The receiver data type.
+      const char* RINEX_ephemeris_path   //!< The path to a RINEX ephemeris file, NULL if not available.
+      );
 
 
     /// \brief   Load the next epoch of data.
@@ -299,6 +315,56 @@ namespace GNSS
     ///          was reached and no further data is available.
     bool LoadNext( bool &endOfStream );
 
+
+    /// \brief   Load the next epoch of data of GNSS_RXDATA_NOVATELOEM4 data.
+    /// \return  true if successful, false if error.
+    /// \param   endOfStream - indicates if the end of the input source 
+    ///          was reached and no further data is available.    
+    bool LoadNext_NOVATELOEM4( bool &endOfStream );
+
+
+    /// \brief   Load the next epoch of data of GNSS_RXDATA_RINEX21 data.
+    /// \return  true if successful, false if error.
+    /// \param   endOfStream - indicates if the end of the input source 
+    ///          was reached and no further data is available.    
+    bool LoadNext_RINEX21( bool &endOfStream );
+
+
+    /// \brief   Load the next epoch of data of GNSS_RXDATA_RINEX211 data.
+    /// \return  true if successful, false if error.
+    /// \param   endOfStream - indicates if the end of the input source 
+    ///          was reached and no further data is available.    
+    bool LoadNext_RINEX211( bool &endOfStream );
+
+
+    /**
+    \brief   Check the header on the RINEX Observation file to confirm it
+             has the correct version and the file type is Observation.
+    \author  Glenn D. MacGougan
+    \date    2007-12-07
+    \param   filepath - The C string path to the observation file.
+    \param   isValid - A boolean indicating if the file is valid for use.
+    \return  true if successful, false if error.
+    */
+    bool CheckRINEXObservationHeader( const char *filepath, bool &isValid );
+
+    /**
+    \brief   If a RINEX GPS Navigation file is associated with this receiver,
+             load all the ephemeris records into the member array.
+    \author  Glenn D. MacGougan
+    \date    2007-12-07
+    \return  true if successful, false if error.
+    */
+    bool LoadRINEXNavigationData(void);
+
+    /**
+    \brief   If a RINEX GPS Navigation file is associated with this receiver,
+             Load m_EphAlmArray appropriately based on the current receiver time.
+    \author  Glenn D. MacGougan
+    \date    2007-12-07
+    \return  true if successful, false if error.
+    */
+    bool UpdateTheEphemerisArrayWithUsingRINEX();
 
     /// \brief  Check for cycle slips using the phase rate prediction method.
     ///
@@ -393,6 +459,41 @@ namespace GNSS
 
     /// The receiver data type.
     GNSS_enumRxDataType m_rxDataType;
+
+
+  protected: // RINEX related parameters
+  
+    /// The RINEX Observation Header must be checked once.
+    bool m_CheckRinexObservationHeader;
+
+    /// Decoded RINEX Observation Header information.
+    RINEX_structDecodedHeader m_RINEX_obs_header;
+
+    /// A boolean to indicate RINEX ephemeris information is used.
+    bool m_RINEX_use_eph;
+
+    struct 
+    {
+      /// The file path to the RINEX ephemeris data.
+      std::string filepath;
+
+      /// All of the RINEX ephemeris data is loaded into a single array at start up.
+      GPS_structEphemeris *eph_array;
+
+      /// The length of the m_RINEX_eph_array.
+      unsigned max_array_length;
+
+      /// The length of the m_RINEX_eph_array.
+      unsigned array_length;
+
+      /// An associated ionospheric model.
+      GNSS_structKlobuchar iono_model;
+    } m_RINEX_eph;
+
+    /// An index into m_RINEX_eph.eph_array that is used to keep track of
+    /// operations.
+    unsigned m_RINEX_eph_index;
+
     
   };
 

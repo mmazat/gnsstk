@@ -1,6 +1,6 @@
 
 Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
-     2007-12-07,      21:09:54
+     2007-12-07,      22:27:24
 
 
      CUnit - A unit testing framework for C - Version 2.1-0
@@ -30,6 +30,7 @@ Suite: TIMECONV
   Test: TIMECONV_GetNumberOfDaysInMonth() ...passed
   Test: TIMECONV_IsALeapYear() ...passed
   Test: TIMECONV_GetDayOfYear() ...passed
+  Test: TIMECONV_GetGPSTimeFromYearAndDayOfYear() ...passed
 Suite: NOVATELOEM4
   Test: NOVATELOEM4_FindNextMessageInFile() ...passed
   Test: NOVATELOEM4_DecodeRANGEB() ...passed
@@ -46,12 +47,13 @@ Suite: RINEX
   Test: RINEX_DecodeHeader_ObservationFile() ...passed
   Test: RINEX_GetNextObservationSet() ...passed
   Test: RINEX_DecodeGPSNavigationFile() ...passed
+  Test: RINEX_GetKlobucharIonoParametersFromNavFile() ...passed
 
 Run Summary:    Type  Total    Ran Passed Failed Inactive
               suites      6      6    n/a      0        0
-               tests     33     33     33      0        0
-             asserts 336983 336983 336983      0      n/a
+               tests     35     35     35      0        0
+             asserts 337011 337011 337011      0      n/a
 
-Elapsed time =    5.656 seconds
+Elapsed time =    1.797 seconds
 
 Tests completed with return value 0.

@@ -1411,7 +1411,9 @@ BOOL RINEX_GetNextObservationSet(
   unsigned *filePosition,                  //!< The file position for the start of the message found (output).  
   GNSS_structMeasurement* obsArray,        //!< A pointer to a user provided array of GNSS_structMeasurement (input/output).
   const unsigned char maxNrObs,            //!< The maximum number of elements in the array provided (input).
-  unsigned *nrObs                          //!< The number of valid elements set in the array (output).
+  unsigned *nrObs,                         //!< The number of valid elements set in the array (output).
+  unsigned short* rx_gps_week,             //!< The receiver GPS week (0-1024+) [weeks].
+  double* rx_gps_tow                       //!< The receiver GPS time of week (0-603799.99999) [s].
   )
 {
   char line_buffer[RINEX_LINEBUF_SIZE]; // A character buffer to hold a line from the RINEX file.
@@ -1865,6 +1867,9 @@ BOOL RINEX_GetNextObservationSet(
     &tow 
     );
 
+  // Set the receiver time values.
+  *rx_gps_week = week;
+  *rx_gps_tow = tow;
   
 
   obsArray_index = 0;
@@ -1906,6 +1911,23 @@ BOOL RINEX_GetNextObservationSet(
 
     // The channel index is simply the order of the data in this case.
     obsArray[obsArray_index].channel = (unsigned short)obsArray_index;
+
+    // Set default validity flags.
+    obsArray[obsArray_index].flags.isEphemerisValid      = 0; // not yet known
+    obsArray[obsArray_index].flags.isAlmanacValid        = 0; // not yet known
+    obsArray[obsArray_index].flags.isAboveElevationMask  = 0; // not yet known
+    obsArray[obsArray_index].flags.isAboveCNoMask        = 0; // not yet known
+    obsArray[obsArray_index].flags.isAboveLockTimeMask   = 0; // not yet known
+    obsArray[obsArray_index].flags.isNotUserRejected     = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNotPsrRejected      = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNotAdrRejected      = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNotDopplerRejected  = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNoCycleSlipDetected = 1; // assume no slip
+    obsArray[obsArray_index].flags.isUsedInPosSolution   = 0; // not yet known
+    obsArray[obsArray_index].flags.isUsedInVelSolution   = 0; // not yet known
+    obsArray[obsArray_index].flags.useTropoCorrection          = 1; // default to yes
+    obsArray[obsArray_index].flags.useBroadcastIonoCorrection  = 1; // default to yes
+
 
 
     // The GNSS observation array is channel based. 
@@ -1956,6 +1978,7 @@ BOOL RINEX_GetNextObservationSet(
           obsArray[obsArray_index].flags.isAdrValid     = TRUE;
           obsArray[obsArray_index].flags.isAutoAssigned = TRUE; // Assumed.
           obsArray[obsArray_index].flags.isNoCycleSlipDetected = TRUE;
+
           isL1data_present = TRUE;
 
           // Loss of lock indicator really pertains to the phase only.
@@ -2129,6 +2152,22 @@ BOOL RINEX_GetNextObservationSet(
 
       // The channel index is simply the order of the data in this case.
       obsArray[obsArray_index].channel = (unsigned short)obsArray_index;
+
+      // Set default validity flags.
+      obsArray[obsArray_index].flags.isEphemerisValid      = 0; // not yet known
+      obsArray[obsArray_index].flags.isAlmanacValid        = 0; // not yet known
+      obsArray[obsArray_index].flags.isAboveElevationMask  = 0; // not yet known
+      obsArray[obsArray_index].flags.isAboveCNoMask        = 0; // not yet known
+      obsArray[obsArray_index].flags.isAboveLockTimeMask   = 0; // not yet known
+      obsArray[obsArray_index].flags.isNotUserRejected     = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNotPsrRejected      = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNotAdrRejected      = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNotDopplerRejected  = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNoCycleSlipDetected = 1; // assume no slip
+      obsArray[obsArray_index].flags.isUsedInPosSolution   = 0; // not yet known
+      obsArray[obsArray_index].flags.isUsedInVelSolution   = 0; // not yet known
+      obsArray[obsArray_index].flags.useTropoCorrection          = 1; // default to yes
+      obsArray[obsArray_index].flags.useBroadcastIonoCorrection  = 1; // default to yes
     }
 
     
@@ -2344,6 +2383,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
   unsigned count = 0;
   double tow = 0;
   int itmp = 0;
+  int itmp2 = 0;
   double dtmp = 0.0;
   unsigned short week = 0;
   unsigned ephemeris_array_index = 0;
@@ -2392,8 +2432,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
   if( file_type != RINEX_FILE_TYPE_GPS_NAV )
     return FALSE;
 
-  if( fabs( version - 2.1 ) > 1e-06 )
+  if( fabs( version - 2.1 ) < 1e-06 || 
+    fabs( version - 2.0 ) < 1e-06 ||
+    fabs( version - 2.11 ) < 1e-06 )
+  {
+    // this version is valid for decoding
+  }
+  else
+  {    
     return FALSE;
+  }
 
   result = RINEX_get_header_lines(
     RINEX_header,
@@ -2932,8 +2980,21 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE;
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 ) // the transmission time of messge, not used.
+    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;    
+    
+    eph.tow = (unsigned)dtmp;
+    itmp  = (int)eph.tow;
+    itmp2 = (int)eph.toe;
+    if( (itmp-itmp2) < -4*SECONDS_IN_DAY )
+    {
+      eph.tow_week = eph.week+1;
+    }
+    else
+    {
+      eph.tow_week = eph.week;
+    }
+
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
       return FALSE;
@@ -3110,6 +3171,162 @@ BOOL RINEX_DecodeFileName(
     }
   }
 }
+
+
+BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
+  const char *filepath,             //!< (input) The file path to the GPS Navigation message file.
+  GNSS_structKlobuchar *iono_model  //!< (input/output) A pointer to the ionospheric parameters struct.
+  )
+{
+  char RINEX_header[RINEX_HEADER_SIZE];
+  unsigned RINEX_header_length = 0;
+  double version = 0.0;
+  RINEX_enumFileType file_type = RINEX_FILE_TYPE_UNKNOWN;
+  char line_buffer[RINEX_LINEBUF_SIZE];
+  unsigned nr_lines = 0;
+  BOOL result;
+  double dtmp = 0.0;
+  
+  char station_name[5];
+  unsigned short dayofyear = 0;
+  unsigned char file_sequence_nr = 0;
+  unsigned short year = 0;
+
+  double header_A0; // DELTA-UTC: A0,A1,T,W
+  double header_A1; // DELTA-UTC: A0,A1,T,W
+  int header_week;  // DELTA-UTC: A0,A1,T,W
+  int header_tow;   // DELTA-UTC: A0,A1,T,W
+  
+  memset( iono_model, 0, sizeof(GNSS_structKlobuchar) );
+
+  if( filepath == NULL )
+    return FALSE;
+  if( iono_model == NULL )
+    return FALSE;
+
+
+  result = RINEX_GetHeader( 
+    filepath,
+    RINEX_header,
+    RINEX_HEADER_SIZE,
+    &RINEX_header_length,
+    &version,
+    &file_type
+    );
+  if( result == FALSE )
+    return FALSE;
+
+  if( file_type != RINEX_FILE_TYPE_GPS_NAV )
+    return FALSE;
+
+  result = RINEX_get_header_lines(
+    RINEX_header,
+    RINEX_header_length,
+    "ION ALPHA",
+    line_buffer,
+    RINEX_LINEBUF_SIZE,
+    &nr_lines
+    );
+  if( result == TRUE )
+  {
+    if( nr_lines != 1 )
+      return FALSE; // weird header
+
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
+      &(iono_model->alpha0), 
+      &(iono_model->alpha1),
+      &(iono_model->alpha2),
+      &(iono_model->alpha3) ) != 4 )
+    {
+      return FALSE; // bad header?
+    }
+    result = RINEX_get_header_lines(
+      RINEX_header,
+      RINEX_header_length,
+      "ION BETA",
+      line_buffer,
+      RINEX_LINEBUF_SIZE,
+      &nr_lines
+      );
+    if( result == FALSE )
+      return FALSE;
+    if( nr_lines != 1 )
+      return FALSE; // weird header
+
+    result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+    if( result == FALSE )
+      return FALSE;
+
+    if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
+      &(iono_model->beta0), 
+      &(iono_model->beta1),
+      &(iono_model->beta2),
+      &(iono_model->beta3) ) != 4 )
+    {
+      return FALSE; // bad header?
+    }
+
+    result = RINEX_get_header_lines(
+      RINEX_header,
+      RINEX_header_length,
+      "DELTA-UTC: A0,A1,T,W",
+      line_buffer,
+      RINEX_LINEBUF_SIZE,
+      &nr_lines
+      );
+    if( result == TRUE )
+    {
+      if( nr_lines != 1 )
+        return FALSE; // weird header
+
+      result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
+      if( result == FALSE )
+        return FALSE;
+
+      if( sscanf( line_buffer, "%Lf %Lf %d %d",
+        &header_A0,
+        &header_A1,
+        &header_tow,
+        &header_week ) == 4 )
+      {
+        iono_model->week = (unsigned short) header_week;
+        iono_model->tow = header_tow;
+        iono_model->isValid = TRUE;
+      }
+    }
+
+    if( iono_model->isValid == FALSE )
+    {
+      // Decode the year and day of year from the file name.
+      result = RINEX_DecodeFileName( filepath, station_name, &dayofyear, &file_sequence_nr, &year, &file_type );
+      if( result == TRUE )
+      {
+        result = TIMECONV_GetGPSTimeFromYearAndDayOfYear(
+          year,
+          dayofyear,
+          &(iono_model->week),
+          &dtmp
+          );
+        if( result == FALSE )
+          return FALSE;
+        iono_model->tow = (unsigned)dtmp;
+        iono_model->isValid = TRUE;
+      }
+      else
+      {
+        // Get the Iono model time from the first ephemeris record in the file if there is one.
+        iono_model->isValid = FALSE;
+      }
+    }
+  }
+
+  return TRUE;
+}
+
 
 
  
