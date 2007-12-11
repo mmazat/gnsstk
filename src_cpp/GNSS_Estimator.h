@@ -683,7 +683,7 @@ namespace GNSS
     {
       unsigned short      channel;     //!< The channel number associated with this measurement.
       unsigned short      id;          //!< The unique id for this channel (eg PRN for GPS).    
-      unsigned int        state_index; //!< The index of the corresponding row and column of the state variance-covariance matrix.
+      int                 state_index; //!< The index of the corresponding row and column of the state variance-covariance matrix. -1 means not estimated.
       GNSS_enumSystem     system;      //!< The satellite system associated with this channel.
       GNSS_enumFrequency  freqType;    //!< The frequency type for this channel.
 	  // GDM most recent ambiguity estimate

@@ -195,6 +195,12 @@ BOOL MTX_ConvertComplexToImag( MTX *M );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Real( const MTX *M, MTX *Re );
 
+/// \brief  Check if the matrix contains only real values. 
+/// Alter the matrix if it is stored as complex and only has real values.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_isReal( MTX *M, BOOL *isReal );
+
 /// \brief  Extract the real component of column col of matrix M.
 ///
 /// \return TRUE if successful, FALSE otherwise.
@@ -378,6 +384,7 @@ BOOL MTX_TransposeInplace( MTX *M );
 /// e.g. precision = 1,   1.45   -> 1.5\n
 /// e.g. precision = 2    1.456  -> 1.46\n
 /// e.g. precision = 3,   1.4566 -> 1.457\n
+/// precision has a maximum of 32. After which no rounding occurs.
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Round( MTX *M, const unsigned precision );                             
@@ -558,6 +565,25 @@ BOOL MTX_Divide_ScalarComplex( MTX *M, const double re, const double im );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Abs( MTX *M );
 
+/// \brief  Compute the arc-cosine of each element of the matrix inplace.
+///         Complex results are obtained if elements are greater than abs(1).
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_acos( MTX *M );
+
+/// \brief  Compute the phase angle in radians of the elements in the matrix.
+/// If all elements are real, the results are 0. If complex
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_angle( MTX *M );
+
+/// \brief  Compute the arc-sine of each element of the matrix inplace.
+///         Complex results are obtained if elements are greater than abs(1).
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_asin( MTX *M );
+
+
 /// \brief  Computes the value^2 of each element in the matrix.
 ///
 /// \return TRUE if successful, FALSE otherwise.
@@ -575,6 +601,11 @@ BOOL MTX_Sqrt( MTX *M );
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Exp( MTX *M );
+
+/// \brief  Create an indentity matrix with nrows and ncols.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_Eye( MTX *M, const unsigned nrows, const unsigned ncols );
 
 /// \brief  Computes the natural logarithm, ln(value) of each element in the matrix.
 ///
@@ -597,7 +628,7 @@ BOOL MTX_PowInplace( MTX *src, const double power_re, const double power_im );
 /// \brief  Computes the arctan, atan(value) of each element in the matrix
 ///
 /// \return TRUE if successful, FALSE otherwise.
-BOOL MTX_Arctan( MTX *M );
+BOOL MTX_atan( MTX *M );
 
 /// \brief  Add +1.0 to all elements, e.g. M++.
 ///
@@ -1216,6 +1247,12 @@ BOOL MTX_Interpolate(
   );
 
 
+/// \brief  Compute the inverse, 1.0/x, inplace for each element
+///         of the matrix.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_Inv( MTX *src );
+
 
 /// \brief  Compute the inplace inverse of the matrix.
 ///         Uses fast closed form solutions for:
@@ -1309,6 +1346,13 @@ BOOL MTX_LUFactorization( const MTX *src, BOOL *IsFullRank, MTX *P, MTX *L, MTX 
 BOOL MTX_IndexedValues( const MTX *src, const MTX *row_index, const MTX *col_index, MTX *dst );
 
 
+/// \brief  Set the elements of the matrix specified by the index vectors. 
+/// The index vectors must be nx1 real vectors.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_SetIndexedValues( MTX *dst, const MTX *row_index, const MTX *col_index, const MTX *src );
+
+
 /// \brief  Compute the Fast Fourier Transform of each columns in the src matrix and
 /// store it in the dst matrix.
 ///
@@ -1336,12 +1380,68 @@ BOOL MTX_IFFT_Inplace( MTX *src);
 /// \brief  Compute the sine of each element in the matrix. Assumes elements are radians.
 ///
 /// \return TRUE if successful, FALSE otherwise.
-BOOL MTX_Sin( MTX *src );
+BOOL MTX_sin( MTX *src );
+
+/// \brief  Compute the sin(pi*x)/(pi*) of each element in the matrix. 
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_sinc( MTX *src );
+
+/// \brief  Compute the hyperbolic sine of each element in the matrix. Assumes elements are radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_sinh( MTX *src );
+
+/// \brief  Compute the inverse hyperbolic sine of each element in the matrix. 
+/// Results in radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_asinh( MTX *src );
 
 /// \brief  Compute the cosine of each element in the matrix. Assumes elements are radians.
 ///
 /// \return TRUE if successful, FALSE otherwise.
-BOOL MTX_Cos( MTX *src );
+BOOL MTX_cos( MTX *src );
+
+/// \brief  Compute the hyperbolic cosine of each element in the matrix. Assumes elements are radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_cosh( MTX *src );
+
+/// \brief  Compute the inverse hyperbolic cosine of each element in the matrix. 
+/// Results in radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_acosh( MTX *src );
+
+/// \brief  Compute the tangent of each element in the matrix. Assumes elements are radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_tan( MTX *src );
+
+/// \brief  Compute the hyperbolic tangent of each element in the matrix. Assumes elements are radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_tanh( MTX *src );
+
+/// \brief  Compute the inverse hyperbolic tangent of each element in the matrix. 
+/// Results in radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_atanh( MTX *src );
+
+
+/// \brief  Compute the cotangent of each element in the matrix. Assumes elements are radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_cot( MTX *src );
+
+/// \brief  Compute the hyperbolic cotangent of each element in the matrix. Assumes elements are radians.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_coth( MTX *src );
+
+
 
 /// \brief  Create a column vector [start:increment:end) beginning at start
 /// with step size of increment until less than or equal to end. 
@@ -1372,7 +1472,7 @@ BOOL MTX_Colon( MTX *dst, const double start, const double increment, const doub
 *  cols[1] = 2;
 *  MTX_RemoveRowsAndColumns( &A, 2, (unsigned*)rows, 2 (unsigned*)cols );
 *  // A is now a 2x2 identity matrix.
-*  /endcode
+*  \endcode
 *
 *  \return TRUE if successful, FALSE otherwise.
 */
@@ -1382,6 +1482,28 @@ BOOL MTX_RemoveRowsAndColumns(
   const unsigned rows[], //!< The array of row indices to remove.
   const unsigned ncols,  //!< The number of columns to remove (the length of hte cols array).
   const unsigned cols[]
+  );
+
+/** \brief Produce a matrix that is composed of pseudo-random numbers. 
+ *  The seed state is based on the system clock or alternatively by the seed
+ *  parameter, a positive integer can set the seed state upon generation. 
+ *  Elements are chosen from a normal distribution with mean zero, variance of 
+ *  one and standard of deviation one.
+ *
+ * \code 
+ *  MTX A;
+ *  MTX_Init(&A);
+ *  MTX_randn( 1000, 1 ); // create a random vector of 1000 rows by 1 column.
+ *  \endcode
+ *
+ *  \return TRUE if successful, FALSE otherwise.
+*/
+BOOL MTX_randn( 
+  MTX* M, 
+  const unsigned nrows, 
+  const unsigned ncols, 
+  const BOOL useSeed, 
+  const unsigned seed 
   );
 
 

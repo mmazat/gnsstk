@@ -317,7 +317,7 @@ int main( int argc, char* argv[] )
           if( !result )
             return 1;
 
-          if( !wasPositionComputed || !wasVelocityComputed )
+          if( !wasPositionComputed )
             continue;
 
           if( wasPositionComputed && wasVelocityComputed )
@@ -449,6 +449,12 @@ int main( int argc, char* argv[] )
         if( time > end_time )
           break;
 
+        if( rxDataRover.m_pvt.time.gps_tow > 354278 )
+          int ggg = 99;
+
+        if( rxDataRover.m_pvt.time.gps_tow > 353172 )
+          int ggga = 99;
+
 
         if( isAtFirstEpoch )
         {
@@ -489,10 +495,10 @@ int main( int argc, char* argv[] )
           if( !result )
             return 1;
 
-          if( !wasPositionComputed || !wasVelocityComputed ) //KO Could change this to position only to seed filters
+          if( !wasPositionComputed ) //KO Could change this to position only to seed filters
             continue;
 
-          if( wasPositionComputed && wasVelocityComputed )
+          if( wasPositionComputed )
           {
             if( useEKF || useRTK )
             {            

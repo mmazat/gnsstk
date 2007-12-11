@@ -1549,12 +1549,18 @@ BOOL RINEX_GetNextObservationSet(
         strcpy( token[nr_tokens].str, pch );
         token[nr_tokens].isValid = TRUE;
       }
+      else
+      {
+        return FALSE;
+      }
 
       pch = strtok( NULL, " \t\r\n\f" );
       nr_tokens++;
     }
     if( nr_tokens >= 64 )
+    {
       return FALSE;
+    }
 
     // For events without significant epoch the epoch fields can be left blank.
     // Thus, there are a few cases: 
