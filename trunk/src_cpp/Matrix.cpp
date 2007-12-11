@@ -56,9 +56,18 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
+
+#ifndef DEG2RAD
+#define DEG2RAD   (0.017453292519943295769236907684886)  //!< PI/180.0
+#endif
+
+#ifndef RAD2DEG
+#define RAD2DEG   (57.295779513082320876798154814105)    //!< 180.0/PI
+#endif
+
+
 namespace Zenautics
 {
-
   /// A static double  value used for bad referencing. i.e. give me element 10 of 1x9 vector.
   static double staticglobal_BadDouble = 0.0;
 
@@ -481,6 +490,14 @@ namespace Zenautics
     return m_Matrix.nrows;
   }
 
+  unsigned Matrix::GetLength() const
+  {
+    if( m_Matrix.nrows > m_Matrix.ncols )
+      return m_Matrix.nrows;
+    else
+      return m_Matrix.ncols;
+  }
+
   double Matrix::real(const unsigned row, const unsigned col)
   {
     if( IndexCheck(row,col) )
@@ -591,25 +608,44 @@ namespace Zenautics
     }
   }
 
-
-  /// Is this a real matrix for accessing by (row,col) operator? e.g. double d = A(0,4).
-  bool Matrix::isReal() const
+  bool Matrix::isStoredAsComplex()
   {
     if( m_Matrix.isReal )
+      return false;
+    else
+      return true;
+  }
+
+  /// Is this a real matrix for accessing by (row,col) operator? e.g. double d = A(0,4).
+  bool Matrix::isReal()
+  {
+    BOOL isItReal = 0;
+    
+    // not checking return value
+    MTX_isReal(&m_Matrix,&isItReal);
+
+    if( isItReal )
       return true;
     else
-      return false;
+      return false;    
   }
 
   /// Is this a complex matrix for accessing by [row][col] operators? e.g. stComplex d = A[0][4].
-  bool Matrix::isComplex() const
+  bool Matrix::isComplex()
   {
-    if( m_Matrix.isReal )
-      return false;
-    else
-      return true;
+    return !isReal();
   }
 
+  bool Matrix::isVector()
+  {
+    if( m_Matrix.nrows == 1 )
+      return true;
+    if( m_Matrix.ncols == 1 )
+      return true;
+
+    // otherwise
+    return false;
+  }
 
   bool Matrix::ReadFromFile( const char *path )
   {
@@ -1034,6 +1070,107 @@ namespace Zenautics
       return false;
   }
 
+  bool Matrix::Inplace_acos()
+  {
+    if( MTX_acos( &m_Matrix ) )
+      return true;
+    else 
+      return false;
+  }
+
+  bool Matrix::Inplace_acosd()
+  {
+    if( MTX_acos( &m_Matrix ) )
+    {
+      if( MTX_Multiply_Scalar( &m_Matrix, RAD2DEG ) )
+        return true;
+      else
+        return false;
+    }
+    else 
+    {
+      return false;
+    }
+  }
+
+  bool Matrix::Inplace_acosh()
+  {
+    if( MTX_acosh( &m_Matrix ) )
+      return true;
+    else 
+      return false;
+  }
+
+  bool Matrix::Inplace_angle()
+  {
+    if( MTX_angle( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_asin()
+  {
+    if( MTX_asin( &m_Matrix ) )
+      return true;
+    else 
+      return false;
+  }
+
+  bool Matrix::Inplace_asind()
+  {
+    if( MTX_asin( &m_Matrix ) )
+    {
+      if( MTX_Multiply_Scalar( &m_Matrix, RAD2DEG ) )
+        return true;
+      else
+        return false;
+    }
+    else 
+    {
+      return false;
+    }
+  }
+
+  bool Matrix::Inplace_asinh()
+  {
+    if( MTX_asinh( &m_Matrix ) )
+      return true;
+    else 
+      return false;
+  }
+
+  bool Matrix::Inplace_atan()
+  {
+    if( MTX_atan( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_atand()
+  {
+    if( MTX_atan( &m_Matrix ) )
+    {
+      if( MTX_Multiply_Scalar( &m_Matrix, RAD2DEG ) )
+        return true;
+      else
+        return false;
+    }
+    else 
+    {
+      return false;
+    }
+  }
+
+  bool Matrix::Inplace_atanh()
+  {
+    if( MTX_atanh( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
   bool Matrix::Inplace_Sqr()
   {
     if( MTX_Sqr( &m_Matrix ) )
@@ -1261,14 +1398,6 @@ namespace Zenautics
       return false;
   }
 
-  bool Matrix::Inplace_cos()
-  {
-    if( MTX_Cos( &m_Matrix ) )
-      return true;
-    else
-      return false;
-  }
-
   bool Matrix::Inplace_conj()
   {
     if( MTX_Conjugate( &m_Matrix ) )
@@ -1277,6 +1406,38 @@ namespace Zenautics
       return false;
   }
 
+  bool Matrix::Inplace_cos()
+  {
+    if( MTX_cos( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_cosh()
+  {
+    if( MTX_cosh( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_cot()
+  {
+    if( MTX_cot( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_coth()
+  {
+    if( MTX_coth( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+  
   bool Matrix::Inplace_imag()
   {
     if( MTX_ConvertComplexToImag( &m_Matrix ) )
@@ -1284,6 +1445,53 @@ namespace Zenautics
     else
       return false;
   }
+
+  bool Matrix::Inplace_exp()
+  {
+    if( MTX_Exp( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_eye( const unsigned nrows, const unsigned ncols )
+  {
+    if( MTX_Eye( &m_Matrix, nrows, ncols ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_log2()
+  {
+    if( MTX_Ln( &m_Matrix ) )
+    {
+      if( MTX_Divide_Scalar( &m_Matrix, log(2.0) ) )
+        return true;
+      else
+        return false;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  bool Matrix::Inplace_log10()
+  {
+    if( MTX_Ln( &m_Matrix ) )
+    {
+      if( MTX_Divide_Scalar( &m_Matrix, log(10.0) ) )
+        return true;
+      else
+        return false;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
 
   bool Matrix::Inplace_ones( const unsigned nrows, const unsigned ncols )
   {
@@ -1312,7 +1520,23 @@ namespace Zenautics
 
   bool Matrix::Inplace_sin()
   {
-    if( MTX_Sin( &m_Matrix ) )
+    if( MTX_sin( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_sinc()
+  {
+    if( MTX_sinc( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_sinh()
+  {
+    if( MTX_sinh( &m_Matrix ) )
       return true;
     else
       return false;
@@ -1321,6 +1545,22 @@ namespace Zenautics
   bool Matrix::Inplace_sqrt()
   {
     if( MTX_Sqrt( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_tan()
+  {
+    if( MTX_tan( &m_Matrix ) )
+      return true;
+    else
+      return false;
+  }
+
+  bool Matrix::Inplace_tanh()
+  {
+    if( MTX_tanh( &m_Matrix ) )
       return true;
     else
       return false;
@@ -1826,6 +2066,59 @@ namespace Zenautics
       }
     }    
   }
+
+
+  bool Matrix::SetIndexedValues( Matrix& RowIndex, Matrix& ColIndex, Matrix& SourceData )
+  {
+    Matrix _rowIndex; // a copy if needed
+    Matrix _colIndex; // a copy if needed
+    if( !RowIndex.m_Matrix.isReal )
+    {
+      if( !MTX_Real( &RowIndex.m_Matrix, &_rowIndex.m_Matrix ) )
+        return false;
+    }
+    if( !ColIndex.m_Matrix.isReal )
+    {
+      if( !MTX_Real( &ColIndex.m_Matrix, &_colIndex.m_Matrix ) )
+        return false;
+    }
+
+    if( !_rowIndex.isEmpty() )
+    {
+      if( !_colIndex.isEmpty() )
+      {
+        if( MTX_SetIndexedValues( &m_Matrix, &_rowIndex.m_Matrix, &_colIndex.m_Matrix, &SourceData.m_Matrix ) )
+          return true;
+        else
+          return false;
+      }
+      else
+      {
+        if( MTX_SetIndexedValues( &m_Matrix, &_rowIndex.m_Matrix, &ColIndex.m_Matrix, &SourceData.m_Matrix ) )
+          return true;
+        else
+          return false;
+      }
+    }
+    else
+    {
+      if( !_colIndex.isEmpty() )
+      {
+        if( MTX_SetIndexedValues( &m_Matrix, &RowIndex.m_Matrix, &_colIndex.m_Matrix, &SourceData.m_Matrix ) )
+          return true;
+        else
+          return false;
+      }
+      else
+      {
+        if( MTX_SetIndexedValues( &m_Matrix, &RowIndex.m_Matrix, &ColIndex.m_Matrix, &SourceData.m_Matrix ) )
+          return true;
+        else
+          return false;
+      }
+    }    
+  }
+
 
   std::string Matrix::GetMatrixComment()
   {
@@ -2349,13 +2642,13 @@ namespace Zenautics
 
   void Matrix::Element::operator/= (const double scalar)
   {
-    if( scalar == 0.0 )
-    {
-      MTX_Free( &m_mtx );
-      Matrix::StaticMatrixError("Element/=","Divide by zero!");
-    }
-    else
-    {
+    //if( scalar == 0.0 )
+    //{
+    //  MTX_Free( &m_mtx );
+    //  Matrix::StaticMatrixError("Element/=","Divide by zero!");
+    //}
+    //else
+    //{
       if( m_mtx.isReal )
       {
         m_mtx.data[m_col][m_row] /= scalar;
@@ -2365,7 +2658,7 @@ namespace Zenautics
         m_mtx.cplx[m_col][m_row].re /= scalar;
         m_mtx.cplx[m_col][m_row].im /= scalar;
       }
-    }
+    //}
   }
 
   void Matrix::Element::operator/= (const std::complex<double>& v)
@@ -2374,17 +2667,17 @@ namespace Zenautics
     {
       if( v.imag() == 0.0 )
       {
-        if( v.real() == 0.0 )
-        {
-          MTX_Free( &m_mtx );
-          Matrix::StaticMatrixError( "Element/=", "Divide by zero." );
-          return;
-        }
-        else
-        {
+      //  if( v.real() == 0.0 )
+      //  {
+      //    MTX_Free( &m_mtx );
+      //    Matrix::StaticMatrixError( "Element/=", "Divide by zero." );
+      //    return;
+      //  }
+      //  else
+      //  {
           m_mtx.data[m_col][m_row] /= v.real();
           return;
-        }
+      //  }
       }
       else
       {
@@ -2399,12 +2692,12 @@ namespace Zenautics
     }
 
     double d = v.real()*v.real() + v.imag()*v.imag(); 
-    if( d == 0.0 )
-    { 
-      MTX_Free( &m_mtx );
-      Matrix::StaticMatrixError( "Element/=", "Divide by zero." );
-    }
-    else
+    //if( d == 0.0 )
+    //{ 
+    //  MTX_Free( &m_mtx );
+    //  Matrix::StaticMatrixError( "Element/=", "Divide by zero." );
+    //}
+    //else
     {
       double r = m_mtx.cplx[m_col][m_row].re;
       double i = m_mtx.cplx[m_col][m_row].im;
@@ -3389,11 +3682,11 @@ namespace Zenautics
   
   bool Matrix::RealOnlyAccess::operator/= (double scalar)
   {
-    if( scalar == 0.0 )
-    {
-      StaticMatrixError( "Divide by zero not allowed (real vector element division). Matrix X(10); X[0]/0.0!" );
-      return false; // should not reach this code.
-    }
+    //if( scalar == 0.0 )
+    //{
+    //  StaticMatrixError( "Divide by zero not allowed (real vector element division). Matrix X(10); X[0]/0.0!" );
+    //  return false; // should not reach this code.
+    //}
       
     // This is indexing the matrix as a vector.
     const unsigned index = m_row;

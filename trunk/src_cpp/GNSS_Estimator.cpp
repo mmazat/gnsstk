@@ -4055,12 +4055,14 @@ namespace GNSS
       return false;
     }
 
-	bool hasAmbiguityChangeOccurred = false;
+    bool hasAmbiguityChangeOccurred = false;
     result = DetermineAmbiguitiesChanges(
       rxData,
       rxBaseData,
       P,
       hasAmbiguityChangeOccurred );
+    if( !result )
+      return false;
 
     result = DetermineSingleDifferenceADR_Misclosures_GPSL1(
       rxData,
@@ -4411,9 +4413,11 @@ namespace GNSS
     )
   {
     unsigned i = 0;
+    unsigned j = 0;
     // First look for ambiguities that are no longer active.
     bool isAmbiguityActive = false;      
     std::list<stAmbiguityInfo>::iterator iter;
+    std::list<stAmbiguityInfo>::iterator check_iter;
     std::list<stAmbiguityInfo>::iterator remove_iter;
     std::list<unsigned int> remove_list;
     std::list<unsigned int>::const_iterator list_iter;
@@ -4431,11 +4435,12 @@ namespace GNSS
       // if the ambiguity is still present and if it is to be estimated.      
       for( i = 0; i < rxData->m_nrValidObs; i++ )
       {
-        if( iter->channel == rxData->m_ObsArray[i].channel &&
+        if( // iter->channel == rxData->m_ObsArray[i].channel && // GDM - NO CHANNEL MATCHING FOR RINEX DATA!
           iter->id        == rxData->m_ObsArray[i].id &&
           iter->system    == rxData->m_ObsArray[i].system && 
           iter->freqType  == rxData->m_ObsArray[i].freqType &&
-          rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          rxData->m_ObsArray[i].flags.isAdrUsedInSolution &&
+          rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
         {
           // This ambiguity is already actively estimated.
           isAmbiguityActive = true;
@@ -4489,31 +4494,34 @@ namespace GNSS
       delete [] rows;      
     }
 
-    // The indices of the ambiguities in the list are now incorrect due to the removals and must be corrected.
-    // Update the ambiguities list first, then the state indices contained in rxData->m_ObsArray
-    for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
-    {
-      for( list_iter = remove_list.begin(); list_iter != remove_list.end(); ++list_iter )
+      // The indices of the ambiguities in the list are now incorrect due to the removals and must be corrected.
+      // Update the ambiguities list first, then the state indices contained in rxData->m_ObsArray
+      for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
       {
-        if( iter->state_index > *list_iter )
+        for( list_iter = remove_list.begin(); list_iter != remove_list.end(); ++list_iter )
         {
-          iter->state_index -= 1;
+          if( iter->state_index > (int)(*list_iter) )
+          {
+            iter->state_index -= 1;
+          }
         }
+        // Update the observation array with the new info.
+        for( i = 0; i < rxData->m_nrValidObs; i++ )
+        {
+          if( // iter->channel == rxData->m_ObsArray[i].channel  && // GDM - NO CHANNEL MATCHING FOR RINEX DATA!
+            iter->id        == rxData->m_ObsArray[i].id       &&
+            iter->system    == rxData->m_ObsArray[i].system   && 
+            iter->freqType  == rxData->m_ObsArray[i].freqType &&
+            rxData->m_ObsArray[i].flags.isAdrUsedInSolution   &&
+            rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
+          {
+            rxData->m_ObsArray[i].index_ambiguity_state = iter->state_index;
+            break;
+          }
+        }      
       }
-      // Update the observation array with the new info.
-      for( i = 0; i < rxData->m_nrValidObs; i++ )
-      {
-        if( iter->channel == rxData->m_ObsArray[i].channel  &&
-          iter->id        == rxData->m_ObsArray[i].id       &&
-          iter->system    == rxData->m_ObsArray[i].system   && 
-          iter->freqType  == rxData->m_ObsArray[i].freqType &&
-          rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-        {
-          rxData->m_ObsArray[i].index_ambiguity_state = iter->state_index;
-          break;
-        }
-      }      
-    }
+      remove_list.clear();
+    
 
 
     // Add new ambiguities if any.
@@ -4529,10 +4537,11 @@ namespace GNSS
             // Look for this ambiguity in the ambiguities list.
             for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
             {
-              if( iter->channel == rxData->m_ObsArray[i].channel &&
+              if( // iter->channel == rxData->m_ObsArray[i].channel && // GDM - NO CHANNEL MATCHING FOR RINEX DATA!
                 iter->id        == rxData->m_ObsArray[i].id      &&
                 iter->system    == rxData->m_ObsArray[i].system  && 
-                iter->freqType  == rxData->m_ObsArray[i].freqType )
+                iter->freqType  == rxData->m_ObsArray[i].freqType &&
+                rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
               {
                 // This ambiguity is already actively estimated.
                 isAmbiguityActive = true;
@@ -4558,30 +4567,24 @@ namespace GNSS
               m_ActiveAmbiguitiesList.push_back( amb_info );
 
               // Add a new row and columgn to the state variance-covariance matrix.
-              P.Redim( P.nrows()+1, P.ncols()+1 );
+              if( !P.Redim( P.nrows()+1, P.ncols()+1 ) )
+                return false;
 
               // Set the initial variance of the ambiguity state [m].
               P[amb_info.state_index][amb_info.state_index] = 25; // KO Arbitrary value, to improve
 
               // Initialize the ambiguity state [m].
-              if( rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
-              {
-                // Compute the single difference adr measurement [m].
-                double sd_adr_measured = rxData->m_ObsArray[i].adr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].adr;
-                sd_adr_measured *= GPS_WAVELENGTHL1;
-                
-                // Compute the single difference psr measurement.
-                double sd_psr_measured = rxData->m_ObsArray[i].psr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].psr;
+              // Compute the single difference adr measurement [m].
+              double sd_adr_measured = rxData->m_ObsArray[i].adr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].adr;
+              sd_adr_measured *= GPS_WAVELENGTHL1;
 
-                // Initialize the ambiguity to the difference between the single difference adr
-                // and the single difference pseudorange.
-                rxData->m_ObsArray[i].ambiguity =  sd_adr_measured - sd_psr_measured; // in meters!  //KO possibly replace psr with position derived range plus clock offset
-              }
-              else
-              {
-                // There must be available differential data.
-                return false;
-              }
+              // Compute the single difference psr measurement.
+              double sd_psr_measured = rxData->m_ObsArray[i].psr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].psr;
+
+              // Initialize the ambiguity to the difference between the single difference adr
+              // and the single difference pseudorange.
+              rxData->m_ObsArray[i].ambiguity =  sd_adr_measured - sd_psr_measured; // in meters!  //KO possibly replace psr with position derived range plus clock offset
+
             }
           }
           else
@@ -4592,6 +4595,25 @@ namespace GNSS
         }
       }
     }
+
+    // Check for errors.
+    i = 0;
+    j = 0;
+    for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
+    {
+      j=0;
+      for( check_iter = m_ActiveAmbiguitiesList.begin(); check_iter != m_ActiveAmbiguitiesList.end(); ++check_iter )
+      {
+        if( i != j )
+        {
+          if( check_iter->state_index == iter->state_index )
+            return false;
+        }
+        j++;
+      }
+      i++;      
+    }
+    
 
     return true;
   }

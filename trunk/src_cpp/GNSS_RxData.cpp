@@ -644,6 +644,12 @@ namespace GNSS
       &rx_gps_tow
       );
 
+    if( wasEndOfFileReached )
+    {
+      endOfStream = true;
+      return true;
+    }
+
     m_nrGPSL1Obs = 0;
     m_nrValidObs = 0;
     if( nrObs > 0 )

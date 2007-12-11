@@ -184,6 +184,166 @@ namespace GNSS
   };
 
 
+#ifdef ASDFASDF
+
+  /**
+  \class   GPS_AmbiguitiesArray
+  \brief   An array class for storing GPS amibiguity information.
+  Each satellite is uniquely identified in GPS by it's PRN. This
+  PRN is used to map to an index internal to the GPS_AmbiguitiesArray.
+  L1 and L2 are supported for now.
+
+  GPS         are  1-32    \n
+  Pseudolites are  33-37   \n
+  SBAS        are  120-138 \n
+  WAAS, EGNOS, MSAS        \n
+
+  WAAS: \n
+  AOR-W       122 \n
+  Anik        138 \n
+  POR         134 \n
+  PanAm       135 \n
+
+  EGNOS: \n
+  AOR-E       120 \n
+  Artemis     124 \n
+  IOR-W       126 \n
+  IOR-E       131 \n
+
+  MSAS: \n
+  MTSAT-1     129 \n
+  MTSAT-2     137 \n
+
+  The index mapping is as follows:                      \n
+  PRN 1-37    maps to indidex 0-36                      \n
+  PRN 38-40   maps to indices 37-39 (reserved mappings) \n
+  PRN 120-138 maps to indicex 40-58                     \n
+
+  \author  Glenn D. MacGougan (GDM)
+  \date    2007-10-29
+  \since   2006-11-15
+  */
+  class GPS_AmbiguitiesArray
+  {
+  public:
+
+    /// \brief    The default constructor (no data allocated yet).
+    GPS_AmbiguitiesArray();
+
+    /// \brief    The destructor.
+    virtual ~GPS_AmbiguitiesArray();
+
+    /**
+    \brief    Add a GPS ambiguity.
+    \author   Glenn D. MacGougan
+    \remarks  - There cannot be more than one channel associated with a PRN.
+    \return   true if successful, false if error.
+    */
+    bool AddAmbiguity( 
+      const unsigned short channel,       //!< The receiver channel. Useful for real receiver data. Not useful for RINEX data. 
+      const unsigned short prn,           //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
+      const GNSS_enumFrequency freqType,  //!< The frequency type for this channel.
+      const double ambiguity,             //!< The float ambiguity value [m].
+      const short state_index             //!< The associated index of the rows and columns of, P, the variance-covariance matrix of the estimated parameters. -1 means no estimated.
+      );
+
+    /// \brief    Check if this PRN/frequency's ambiguity is actively estimated. i.e. It has a valid state index.
+    /// \return   true if successful, false if error.    
+    bool IsAmbiguityActive( 
+      const unsigned short prn, //!< The GPS PRN. (1-32 GPS, 120-138 SBAS).
+      const GNSS_enumFrequency freqType,  //!< The frequency type for this channel.
+      bool &isActive            //!< This boolean indicates if the ambiguity is being actively estimated.
+      );
+
+    /**
+    \brief    Update the GPS ambiguity array for a single ambiguity.
+    \author   Glenn D. MacGougan
+    \remarks  - There cannot be more than one channel associated with a PRN.
+    \return   true if successful, false if error.
+    */
+    bool UpdateAmbiguity( 
+      const unsigned short channel,       //!< The receiver channel. Useful for real receiver data. Not useful for RINEX data. 
+      const unsigned short prn,           //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
+      const GNSS_enumFrequency freqType,  //!< The frequency type for this channel.
+      const double ambiguity,             //!< The float ambiguity value [m].
+      const unsigned short state_index    //!< The associated index of the rows and columns of, P, the variance-covariance matrix of the estimated parameters. -1 means no estimated.
+      );
+
+    /**
+    \brief    Get the state index associated with this PRN/frequency.
+    \author   Glenn D. MacGougan
+    \return   true if successful, false if error.
+    */   
+    bool GetStateIndex(
+      const unsigned short prn,           //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
+      const GNSS_enumFrequency freqType,  //!< The frequency type for this channel.
+      unsigned short &state_index         //!< The associated index of the rows and columns of, P, the variance-covariance matrix of the estimated parameters. -1 means no estimated.
+      );
+
+    /**
+    \brief    Get the float ambiguity value associated with this PRN/frequency.
+    \author   Glenn D. MacGougan
+    \return   true if successful, false if error.
+    */       
+    bool GetFloatAmbiguityeValue(
+      const unsigned short prn,           //!< The desired GPS PRN. (1-32 GPS, 120-138 SBAS).
+      const GNSS_enumFrequency freqType,  //!< The frequency type for this channel.
+      double &ambiguity                   //!< The float ambiguity value [m].
+      );
+      
+
+  private:
+    /// \brief   The copy constructor. Disabled!
+    GPS_AmbiguitiesArray( const GPS_AmbiguitiesArray& rhs );
+
+    /// \brief   The assignment operator. Disabled!
+    void operator=(const GPS_AmbiguitiesArray& rhs)
+    {}
+
+  protected:
+
+    /// \brief   Allocate the array.
+    /// \return  true if successful, false if error.
+    bool AllocateArray();
+
+    /// \brief   Get the index of the PRN in the array.
+    /// \return  true if successful, false if error (e.g. unsupported PRN).
+    bool GetIndexGivenPRN( const unsigned short prn, unsigned short &index );
+
+  protected:
+
+    struct stAmbiguityInfo
+    {
+      unsigned short      channel;          //!< The receiver channel number associated with this measurement.
+      unsigned short      prn;              //!< The GPS PRN. (1-32 GPS, 120-138 SBAS).
+      short               state_index;      //!< The index of the corresponding row and column of the state variance-covariance matrix. -1 means no estimated.
+      GNSS_enumFrequency  freqType;         //!< The frequency type for this channel.
+      double              ambiguity;        //!< The float ambiguity value [m].
+      int                 fixed_ambiguity;  //!< The fixed ambiguity value [cycles].
+	  // GDM most recent ambiguity estimate
+	  // GDM time of last above
+	  // GDM flag indicating amb reset
+	  // GDM quality indicator?
+    };    
+
+    struct stFullAmbiguityInfo
+    {
+      stAmbiguityInfo L1;
+      stAmbiguityInfo L2;
+      // add L5 when ready
+    };
+
+    /// A pointer to the array of GPS stFullAmbiguityInfo.
+    stFullAmbiguityInfo* m_array; 
+
+    /// The maximum number of elements in m_array.
+    unsigned m_arrayLength;
+  };
+
+
+#endif
+
+
   //============================================================================
   /// \class   GNSS_RxData
   /// \brief   A class for handling GNSS information for ONE EPOCH for ONE
@@ -496,6 +656,10 @@ namespace GNSS
 
     
   };
+
+
+
+
 
 } // end namespace GNSS
 

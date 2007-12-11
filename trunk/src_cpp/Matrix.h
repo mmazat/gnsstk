@@ -222,11 +222,17 @@ namespace Zenautics
     /// \brief  Is this a square matrix?
     bool isSquare() const;
 
+    /// Check if this matrix is stored as a complex matrix.
+    bool isStoredAsComplex();
+
     /// Check if this a real matrix.
-    bool isReal() const;
+    bool isReal();
 
     /// Check if this a complex matrix.
-    bool isComplex() const; 
+    bool isComplex(); 
+
+    /// Check if this is a vector. Is the matrix either nx1 or 1xn.
+    bool isVector();
 
     unsigned GetNrCols() const;   //!< return no. of cols
     unsigned ncols() const;       //!< return no. of cols
@@ -234,6 +240,7 @@ namespace Zenautics
     unsigned nelems() const;      //!< return total no. of elements
     unsigned GetNrRows() const;   //!< return no. of rows         
     unsigned nrows() const;       //!< return no. of rows         
+    unsigned GetLength() const;   //!< return the maximum dimension either nrows or ncols whichever is greater.
 
 
     /// \brief  Return the real part of the matrix at this row and column.
@@ -375,7 +382,7 @@ namespace Zenautics
     *    
     * \return true if successful, false otherwise
     */
-    bool PrintStdout( const unsigned precision );
+    bool PrintStdout( const unsigned precision = 6 );
 
     /**
     *  \brief  Print the matrix to a buffer of maxlength with automatically determined column width 
@@ -602,139 +609,430 @@ namespace Zenautics
     * A.SetFromMatrixString("1+1i 2+3j 1-2i; 4, 5, 6"); 
     * \endcode
     * All result in \n
+    * \code
     * A = [1+1i 2+3i 1-2i; 4 5 6]; \n
+    * \endcode
     *
     * \return true if successful, false otherwise.
     */
     bool SetFromMatrixString(const char* strMatrix);
 
 
-    /// \breif  Copy the src data in column col to dst matrix, resize dst if possible & necessary.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**    
+    * \brief  Copy the src data in column col to dst matrix, resize dst if possible & necessary.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 -1; 2 -2; 3 -3]".
+    * Matrix B;
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.CopyColumn(0,B); // Copy the first column of A into B.
+    * result = B.PrintStdout();   // Print Matrix B. B = [1;2;3];
+    * \endcode
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool CopyColumn( const unsigned src_col, Matrix &dst );
 
-    /// \brief  Insert a submatrix (src) into dst, starting at indices dst(row,col).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Insert a submatrix (src) into dst, starting at indices dst(row,col).
+    *
+    * \code
+    * Matrix A(4,4); // A 4x4 matrix of zeros.
+    * Matrix B(2,2); // A 2x2 matrix that we will fill with sevens.
+    * B.Fill(7.0);
+    * bool result;
+    * result = A.PrintStdout();           // Print Matrix A.
+    * result = A.InsertSubMatrix(B,1,1);  // Put B in the middle of A.
+    * result = A.PrintStdout();           // Print Matrix A. A = [0 0 0 0; 0 7 7 0; 0 7 7 0; 0 0 0 0].
+    * \endcode
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool InsertSubMatrix( const Matrix &src, const unsigned dst_row, const unsigned dst_col );
 
-    /// \brief  Zero the entire matrix.
-    ///
-    /// \return true if successful, false otherwise.  
+    /**
+    * \brief  Zero the entire matrix.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.Zero();          // Set A back to zeros.
+    * result = A.PrintStdout();   // Print Matrix A. A = [0 0 0; 0 0 0; 0 0 0].
+    * \endcode
+    *
+    * \return true if successful, false otherwise.  
+    */
     bool Zero();
 
-    /// \brief  Zero all elements in a specified column.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Zero all elements in a specified column.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.ZeroColumn(1);   // Set the second column of A back to zeros.
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 0 3; 4 0 6; 7 0 9].
+    * \endcode
+    *    
+    * \return true if successful, false otherwise.    
+    */
     bool ZeroColumn( const unsigned col );
 
-    /// \brief  Zero all elements in a specified row.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Zero all elements in a specified row.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.ZeroRow(1);      // Set the second row of A back to zeros.
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 2 3; 0 0 0; 7 8 9].
+    * \endcode
+    *    
+    * \return true if successful, false otherwise.    
+    */
     bool ZeroRow( const unsigned row );
 
-    /// \brief  Fill the matrix with the given value.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Fill the matrix with the given value.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.Fill(7);         // Fill the matrix with 7.0.
+    * result = A.PrintStdout();   // Print Matrix A. A = [7 7 7; 7 7 7; 7 7 7].
+    * \endcode
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool Fill( const double value );
 
-    /// \brief  Fill the matrix column with the given value.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Fill the matrix column with the given value.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.FillColumn(1,7); // Fill the second column with 7.0.
+    * cout << endl;
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 7 3; 4 7 6; 7 7 9].
+    * \endcode
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool FillColumn( const unsigned col, const double value );
 
-    /// \brief  Fills the matrix row with the given value.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Fills the matrix row with the given value.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.FillRow(1,7);    // Fill the second row with 7.0.
+    * cout << endl;
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 2 3; 7 7 7; 7 8 9].
+    * \endcode
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool FillRow( const unsigned row, const double value );
 
-    /// \brief  Reverse the order of elements of a column.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Reverse the order of elements of a column.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.FlipColumn(1);   // Flip the second column.
+    * cout << endl;
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 8 3; 4 5 6; 7 2 9].
+    * \endcode
+    *    
+    * \return true if successful, false otherwise.    
+    */
     bool FlipColumn( const unsigned col );
 
-    /// \brief  Reverse the order of elements of a row.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Reverse the order of elements of a row.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.FlipRow(1);      // Flip the second row.
+    * cout << endl;
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 2 3; 6 5 4; 7 8 9].
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool FlipRow( const unsigned row );
 
-    /// \brief  Set the matrix to identity using the current dimensions.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Set the matrix to identity using the current dimensions.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();   // Print Matrix A.
+    * result = A.Identity();      // Set A to identity.
+    * cout << endl;
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 0 0; 0 1 0; 0 0 1].
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool Identity();
 
-    /// \brief  Set the matrix to identity using the specified dimension (nxn).
-    ///
-    /// \return true if successful, false otherwise.        
+    /**   
+    * \brief  Set the matrix to identity using the specified dimension (nxn).
+    *
+    * \code
+    * Matrix A;
+    * bool result;
+    * result = A.Identity(3);     // Set A to identity, 3x3.
+    * cout << endl;
+    * result = A.PrintStdout();   // Print Matrix A. A = [1 0 0; 0 1 0; 0 0 1].
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.        
+    */
     bool Identity(const unsigned dimension);
 
 
 
   public: // Inplace Operations
 
-    /// \brief  Transpose the matrix as an inplace operation.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Transpose the matrix as an inplace operation.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();         // Print Matrix A.
+    * result = A.Inplace_Transpose();   // Make A = transpose(A).
+    * cout << endl;
+    * result = A.PrintStdout();         // Print Matrix A. A = [1 4 7; 2 5 8; 3 6 9].
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_Transpose();
+    bool Inplace_transpose() { return this->Inplace_Transpose(); }
 
-    /// \brief  Round the matrix elements to the specified presision. \n
-    /// e.g. precision = 0    1.8    -> 2     \n
-    /// e.g. precision = 1,   1.45   -> 1.5   \n
-    /// e.g. precision = 2    1.456  -> 1.46  \n
-    /// e.g. precision = 3,   1.4566 -> 1.457 \n
-    ///
-    /// \return true if successful, false otherwise.    
-    bool Inplace_Round( const unsigned precision );                             
+    /**
+    * \brief  Round the matrix elements to the specified presision. \n
+    * e.g. precision = 0    1.8    -> 2     (default)\n
+    * e.g. precision = 1,   1.45   -> 1.5   \n
+    * e.g. precision = 2    1.456  -> 1.46  \n
+    * e.g. precision = 3,   1.4566 -> 1.457 \n
+    *
+    * \code
+    * Matrix A;
+    * A = "[1.09 2.08 3.07; 4.06 5.05 6.04; 7.03 8.02 9.01]";
+    * bool result;
+    * result = A.PrintStdout();     // Print Matrix A.
+    * result = A.Inplace_Round(1);  // Make A = round(A) to the 1st decimal place.
+    * cout << endl;
+    * result = A.PrintStdout();     // Print Matrix A. A = "[1.1 2.1 3.1; 4.1 5.1 6.0; 7.0 8.0 9.0]";
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
+    bool Inplace_Round( const unsigned precision = 0 );
+    bool Inplace_round( const unsigned precision = 0 ) { return this->Inplace_Round( precision ); }
 
-    /// \brief  Round the matrix elements to the nearest integers towards minus infinity.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Round the matrix elements to the nearest integers towards minus infinity.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1.9 2.8 3.7; -4.6 -5.5 -6.4; 7.3 8.2 9.1]";
+    * bool result;
+    * result = A.PrintStdout();     // Print Matrix A.
+    * result = A.Inplace_Floor();   // Make A = floor(A).
+    * cout << endl;
+    * result = A.PrintStdout();     // Print Matrix A. A = "[1 2 3; -5 -6 -7; 7 8 9]";
+    * \endcode    
+    *    
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_Floor();
+    bool Inplace_floor() { return this->Inplace_Floor(); }
 
-    /// \brief  Round the matrix elements to the nearest integers towards infinity.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Round the matrix elements to the nearest integers towards infinity.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1.9 2.8 3.7; -4.6 -5.5 -6.4; 7.3 8.2 9.1]";
+    * bool result;
+    * result = A.PrintStdout();     // Print Matrix A.
+    * result = A.Inplace_Ceil();    // Make A = ceil(A).
+    * cout << endl;
+    * result = A.PrintStdout();     // Print Matrix A. A = "[2 3 4; -4 -5 -6; 8 9 10]";
+    * \endcode    
+    *        
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_Ceil();
+    bool Inplace_ceil() { return this->Inplace_Ceil(); }
 
-    /// \brief  Rounds the matrix elements of X to the nearest integers towards zero.
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Rounds the matrix elements of X to the nearest integers towards zero.
+    *
+    * \code
+    * Matrix A;
+    * A = "[1.9 2.8 3.7; -4.6 -5.5 -6.4; 7.3 8.2 9.1]";
+    * bool result;
+    * result = A.PrintStdout();     // Print Matrix A.
+    * result = A.Inplace_Fix();     // Make A = fix(A).
+    * cout << endl;
+    * result = A.PrintStdout();     // Print Matrix A. A = "[1 2 3; -4 -5 -6; 7 8 9]";
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_Fix();
 
-    /// \brief  Add a scaler double (ie: M += 5).
-    ///
-    /// \return true if successful, false otherwise.    
+    /** \brief  Add a scaler double (ie: M += 5).
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();        // Print Matrix A.
+    * result = A.Inplace_AddScalar(1); // A += 1.
+    * cout << endl;
+    * result = A.PrintStdout();        // Print Matrix A. A = "[2 3 4; 5 6 7; 8 9 10]";
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_AddScalar( const double scalar );
 
-    /// \brief  Subtract a scaler double (ie: M += 5).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Subtract a scaler double (ie: M -= 5).
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();             // Print Matrix A.
+    * result = A.Inplace_SubtractScalar(1); // A -= 1.
+    * cout << endl;
+    * result = A.PrintStdout();             // Print Matrix A. A = "[0 1 2; 3 4 5; 6 7 8]";
+    * \endcode    
+    *    
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_SubtractScalar( const double scalar );
 
-    /// \brief  Multiply by scaler double (ie: M *= 5).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Multiply by scaler double (ie: M *= 5).
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();              // Print Matrix A.
+    * result = A.Inplace_MultiplyScalar(15); // A *= 5.
+    * cout << endl;
+    * result = A.PrintStdout();              // Print Matrix A. A = "[5 10 15; 20 25 30; 35 40 45]";
+    * \endcode    
+    *
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_MultiplyScalar( const double scalar );
 
-    /// \brief  Divide by scaler double (ie: M /= 5).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Divide by scaler double (ie: M /= 5).
+    *
+    * \code
+    * Matrix A;
+    * A = "[5 10 15; 20 25 30; 35 40 45]";
+    * bool result;
+    * result = A.PrintStdout();           // Print Matrix A.
+    * result = A.Inplace_DivideScalar(5); // A /= 5.
+    * cout << endl;
+    * result = A.PrintStdout();           // Print Matrix A. A = "[1 2 3; 4 5 6; 7 8 9]";
+    * \endcode    
+    *    
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_DivideScalar( const double scalar );
 
-    /// \brief  Raise the matrix to a power scaler double (ie: M ^= 5).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Raise the matrix to a power scaler double (ie: M ^= 5).
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();           // Print Matrix A.
+    * result = A.Inplace_PowerScalar(2);  // A = A.^2. Not A*A! Each element is raised.
+    * cout << endl;
+    * result = A.PrintStdout();           // Print Matrix A. A = "[1 4 9; 16 25 36; 49 64 81]";
+    * \endcode    
+    *        
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_PowerScalar( const double scalar );
 
-    /// \brief  Add a scaler double (ie: M += (5+2i)).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Add a scaler double (ie: M += (4+2i)).
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();           // Print Matrix A.
+    * std::complex<double> cplx(4.0,2.0);
+    * result = A.Inplace_AddScalarComplex(cplx);  // A += (4+2i).
+    * cout << endl;
+    * result = A.PrintStdout();           // Print Matrix A. A = "[5+2i 6+2i 7+2i; 8+2i 9+2i 10+2i; 11+2i 12+2i 13+2i]";
+    * cout << "A(0,0) = " << A(0,0).real() << "+" << A(0,0).imag() << "i " << endl;
+    * \endcode    
+    *            
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_AddScalarComplex( const std::complex<double> cplx );
 
-    /// \brief  Subtract a scaler double (ie: M -= (5+2i)).
-    ///
-    /// \return true if successful, false otherwise.    
+    /**
+    * \brief  Subtract a scaler double (ie: M -= (5+2i)).
+    *
+    * \code
+    * Matrix A;
+    * A = "[1 2 3; 4 5 6; 7 8 9]";
+    * bool result;
+    * result = A.PrintStdout();           // Print Matrix A.
+    * std::complex<double> cplx(5.0,2.0);
+    * result = A.Inplace_SubtractScalarComplex(cplx);  // A -= (5+2i).
+    * cout << endl;
+    * result = A.PrintStdout();           // Print Matrix A. A = "[-4-2i -3-2i -2-2i; -1-2i 0-2i 1-2i; 2-2i 3-2i 4-2i]";
+    * cout << "A(0,0) = " << A(0,0).real() << "+" << A(0,0).imag() << "i " << endl;
+    * \endcode    
+    *                
+    * \return true if successful, false otherwise.    
+    */
     bool Inplace_SubtractScalarComplex( const std::complex<double> cplx );
 
     /// \brief  Multiply by scaler double (ie: M *= (5+2i)).
@@ -924,6 +1222,68 @@ namespace Zenautics
     /// \return true if successful, false otherwise.    
     bool Inplace_abs();
 
+    /// \brief  Compute the arc-cosine of each element of the matrix inplace.
+    ///         Complex results are obtained if elements are greater than abs(1).
+    ///         Results in radians.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_acos();
+
+    /// \brief  Compute the arc-cosine of each element of the matrix inplace.
+    ///         Complex results are obtained if elements are greater than abs(1).
+    ///         Results in degrees.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_acosd();
+
+    /// \brief  Compute the inverse hyperbolic cosine of each element of the matrix inplace.
+    ///         Results in radians.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_acosh();
+
+    /// \brief  Compute the phase angle in radians of the elements of the matrix.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_angle();
+
+    /// \brief  Compute the arc-sine of each element of the matrix inplace.
+    ///         Complex results are obtained if elements are greater than abs(1).
+    ///         Results in radians.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_asin();
+
+    /// \brief  Compute the arc-sine of each element of the matrix inplace.
+    ///         Complex results are obtained if elements are greater than abs(1).
+    ///         Results in degrees.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_asind();
+
+    /// \brief  Compute the inverse hyperbolic sine of each element of the matrix inplace.
+    ///         Results in radians.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_asinh();
+
+    /// \brief  Compute the arc-tangent of each element of the matrix inplace.
+    ///         Results in radians bounded [-pi/2, pi/2].
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_atan();
+
+    /// \brief  Compute the arc-tangent of each element of the matrix inplace.
+    ///         Results in degrees bounded [-90, 90].
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_atand();
+
+    /// \brief  Compute the inverse hyperbolic tangent of each element of the matrix inplace.
+    ///
+    /// \return true if successful, false otherwise.    
+    bool Inplace_atanh();
+
     /// \brief  Create a column vector [start:increment:end) beginning at start
     /// with step size of increment until less than or equal to end. 
     /// Note that arguments must be real scalars. \n
@@ -939,6 +1299,24 @@ namespace Zenautics
     /// \return true if successful, false otherwise.        
     bool Inplace_cos();
 
+    /// \brief  Compute the hyperbolic cosine of each element of the matrix inplace. This 
+    /// function assumes radian values in the matrix.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_cosh();
+
+    /// \brief  Compute the cotangent of each element of the matrix inplace. This 
+    /// function assumes radian values in the matrix.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_cot();
+
+    /// \brief  Compute the hyperbolic cotangent of each element of the matrix inplace. This 
+    /// function assumes radian values in the matrix.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_coth();
+
     /// \brief  Complex conjugate. z = x+yi. conj(z) = x-yi.
     ///
     /// \return true if successful, false otherwise.        
@@ -948,6 +1326,30 @@ namespace Zenautics
     ///
     /// \return true if successful, false otherwise.        
     bool Inplace_imag();
+
+    /// \brief  Compute the exponential of each element of the matrix inplace. 
+    /// If real, computes the exp(value) of each element in the matrix.
+    /// If complex, computes exp(M) = exp(real)*(cos(imag)+i*sin(imag)).
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_exp();
+
+    /// \brief  Create an indentity matrix with nrows and ncols.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_eye( const unsigned nrows, const unsigned ncols );
+
+    /// \brief  Compute the log base 2 of the elements of the matrix.
+    /// Complex results if elements are negative. 
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_log2();
+
+    /// \brief  Compute the log base 10 of the elements of the matrix.
+    /// Complex results if elements are negative. 
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_log10();
 
     /// \brief  Create a matrix of nrows by ncols filled with 1.0.
     ///
@@ -965,11 +1367,35 @@ namespace Zenautics
     /// \return true if successful, false otherwise.        
     bool Inplace_sin();
 
+    /// \brief  Compute the sinc of each element*pi of the matrix inplace. 
+    /// i.e. y = sin(pi*x)./(pi*x).
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_sinc();
+
+    /// \brief  Compute the hyperbolic sine of each element of the matrix inplace. This 
+    /// function assumes radian values in the matrix.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_sinh();
+
     /// \brief  Compute the sqrt of each element of the matrix inplace. This 
     /// function assumes radian values in the matrix.
     ///
     /// \return true if successful, false otherwise.        
     bool Inplace_sqrt();
+
+    /// \brief  Compute the tangent of each element of the matrix inplace. This 
+    /// function assumes radian values in the matrix.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_tan();
+
+    /// \brief  Compute the hyperbolic tangent of each element of the matrix inplace. This 
+    /// function assumes radian values in the matrix.
+    ///
+    /// \return true if successful, false otherwise.        
+    bool Inplace_tanh();
 
     /// \brief  Create a matrix of nrows by ncols filled with 0.0.
     ///
@@ -1278,6 +1704,13 @@ namespace Zenautics
     ///
     /// \return true if successful, false otherwise.
     bool GetIndexedValues( Matrix& RowIndex, Matrix& ColIndex, Matrix& Result );
+
+    
+    /// \brief  Set the elements of the matrix specified by the index vectors. 
+    /// The index vectors must be nx1 and preferably not complex.
+    ///
+    /// \return true if successful, false otherwise.
+    bool SetIndexedValues( Matrix& RowIndex, Matrix& ColIndex, Matrix& SourceData );
 
 
     /// \brief  

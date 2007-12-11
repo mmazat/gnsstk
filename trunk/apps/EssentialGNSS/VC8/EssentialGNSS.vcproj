@@ -60,7 +60,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cmatrix_basic.lib"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="true"
@@ -194,6 +193,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\Zenautics\repos\src\kissFFT\kiss_fft.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src_cpp\OptionFile.cpp"
 				>
 			</File>
@@ -204,6 +207,10 @@
 			<Filter
 				Name="c"
 				>
+				<File
+					RelativePath="..\..\..\src\cmatrix.c"
+					>
+				</File>
 				<File
 					RelativePath="..\..\..\src\geodesy.c"
 					>
