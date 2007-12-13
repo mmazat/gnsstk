@@ -72,23 +72,23 @@ namespace GNSS
    :
 #define GNSS_ESTIMATE_STATIC
 #ifdef GNSS_ESTIMATE_STATIC
-    m_betaVn(1.0/1000.0),
-    m_betaVe(1.0/1000.0),
-    m_betaVup(1.0/1000.0),
-    m_betaClkDrift(1.0/200.0),
+    m_betaVn(1.0/10000.0),
+    m_betaVe(1.0/10000.0),
+    m_betaVup(1.0/10000.0),
+    m_betaClkDrift(1.0/2000.0),
     m_qVn(1e-20),
     m_qVe(1e-20),
     m_qVup(1e-20),
     m_qClkDrift(0.14),
 #else
-    m_betaVn(1.0/10.0),
-    m_betaVe(1.0/10.0),
-    m_betaVup(1.0/10.0),
-    m_betaClkDrift(1.0/100.0),
+    m_betaVn(1.0/3000.0),
+    m_betaVe(1.0/3000.0),
+    m_betaVup(1.0/3000.0),
+    m_betaClkDrift(1.0/1000.0),
     m_qVn(0.0001),
     m_qVe(0.0001),
-    m_qVup(0.0001),
-    m_qClkDrift(0.1),
+    m_qVup(0.001),
+    m_qClkDrift(0.5),
 #endif
     m_debug(NULL)
   {    
@@ -1212,6 +1212,7 @@ namespace GNSS
                       rxBaseData->m_ObsArray[j].index_differential = i;
                       
                       nrDifferentialPseudoranges++;
+                      break;
                     }
                   }
                 }
@@ -1898,18 +1899,6 @@ namespace GNSS
     unsigned j = 0;
     //unsigned char isGood = 0;
 
-    // Initial the indices of the corresponding differential measurements.
-    for( i = 0; i < rxData->m_nrValidObs; i++ ) 
-    { 
-      rxData->m_ObsArray[i].index_differential = -1; 
-      rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable= 0;
-    }
-    for( i = 0; i < rxBaseData->m_nrValidObs; i++ ) 
-    { 
-      rxBaseData->m_ObsArray[i].index_differential = -1; 
-      rxBaseData->m_ObsArray[i].flags.isDifferentialDopplerAvailable = 0;
-    }
-
     nrDifferentialDoppler = 0;    
     for( i = 0; i < rxData->m_nrValidObs; i++ )
     {
@@ -1936,6 +1925,7 @@ namespace GNSS
                       rxBaseData->m_ObsArray[j].index_differential = i;
                       
                       nrDifferentialDoppler++;
+                      break;
                     }
                   }
                 }
@@ -2939,6 +2929,8 @@ namespace GNSS
     rxData.m_pvt.clockOffset += T[6][7] * rxData.m_pvt.clockDrift;  // for small dT, this should be: clk += dT * clkrate
     rxData.m_pvt.clockDrift  *= T[7][7];  // for small dT, this should be clkdrift = clkdrift
 
+   
+
     //
     ////
 
@@ -2963,6 +2955,32 @@ namespace GNSS
       return false;
     //
     ////
+
+    result = rxData.UpdatePositionAndRxClock(
+      rxData.m_pvt.latitude,
+      rxData.m_pvt.longitude,
+      rxData.m_pvt.height,
+      rxData.m_pvt.clockOffset,
+      sqrt( P[0][0] ),
+      sqrt( P[1][1] ),
+      sqrt( P[2][2] ),
+      sqrt( P[6][6] )
+      );
+    if( !result )
+      return false;   
+
+    result = rxData.UpdateVelocityAndClockDrift(
+      rxData.m_pvt.vn,
+      rxData.m_pvt.ve,
+      rxData.m_pvt.vup,
+      rxData.m_pvt.clockDrift,
+      sqrt( P[3][3] ),
+      sqrt( P[4][4] ),
+      sqrt( P[5][5] ),
+      sqrt( P[7][7] )
+      );
+    if( !result )
+      return false;   
 
     PrintMatToDebug( "P", P );
 
@@ -4571,7 +4589,7 @@ namespace GNSS
                 return false;
 
               // Set the initial variance of the ambiguity state [m].
-              P[amb_info.state_index][amb_info.state_index] = 25; // KO Arbitrary value, to improve
+              P[amb_info.state_index][amb_info.state_index] = 125; // KO Arbitrary value, to improve
 
               // Initialize the ambiguity state [m].
               // Compute the single difference adr measurement [m].
@@ -4583,8 +4601,12 @@ namespace GNSS
 
               // Initialize the ambiguity to the difference between the single difference adr
               // and the single difference pseudorange.
+
               rxData->m_ObsArray[i].ambiguity =  sd_adr_measured - sd_psr_measured; // in meters!  //KO possibly replace psr with position derived range plus clock offset
 
+              //double sd_computed = rxData->m_ObsArray[i].range - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].range;
+              //sd_computed += rxData->m_pvt.clockOffset;
+              //rxData->m_ObsArray[i].ambiguity =  sd_adr_measured - sd_computed;
             }
           }
           else

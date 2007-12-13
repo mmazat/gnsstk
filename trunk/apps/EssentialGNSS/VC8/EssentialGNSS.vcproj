@@ -60,6 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="cmatrix_basic.lib"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="true"
@@ -207,10 +208,6 @@
 			<Filter
 				Name="c"
 				>
-				<File
-					RelativePath="..\..\..\src\cmatrix.c"
-					>
-				</File>
 				<File
 					RelativePath="..\..\..\src\geodesy.c"
 					>
