@@ -1274,10 +1274,10 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     RINEX_LINEBUF_SIZE,
     &nr_lines
     );
-  if( result == TRUE )
+  if( result == FALSE )
+    return FALSE;  
+  if( nr_lines == 1 )
   {    
-    if( nr_lines != 1 )
-      return FALSE;
     if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->x), &(header->y), &(header->z) ) != 3 )
       return FALSE;
   }
@@ -1337,11 +1337,10 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     RINEX_LINEBUF_SIZE,
     &nr_lines
     );
-  if( result == TRUE )
+  if( result == FALSE )
+    return FALSE;
+  if( nr_lines == 1 )
   {    
-    if( nr_lines != 1 )
-      return FALSE; 
-
     if( sscanf( lines_buffer, "%Lf", &(header->interval) ) != 1 )
       return FALSE;
 
@@ -1918,6 +1917,8 @@ BOOL RINEX_GetNextObservationSet(
     // The channel index is simply the order of the data in this case.
     obsArray[obsArray_index].channel = (unsigned short)obsArray_index;
 
+    obsArray[obsArray_index].id = RINEX_sat[RINEX_sat_index].id;
+
     // Set default validity flags.
     obsArray[obsArray_index].flags.isEphemerisValid      = 0; // not yet known
     obsArray[obsArray_index].flags.isAlmanacValid        = 0; // not yet known
@@ -1949,8 +1950,7 @@ BOOL RINEX_GetNextObservationSet(
       {
         obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
         obsArray[obsArray_index].freqType = GNSS_GPSL1; 
-        obsArray[obsArray_index].id       = RINEX_obs[RINEX_obs_index].id;
-
+        
         overwriteCNoL1 = FALSE;
 
         // GDM_TODO - A receiver dependant look up table is needed here to convert to 
@@ -1972,7 +1972,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL1; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
 
           obsArray[obsArray_index].adr = RINEX_obs[RINEX_obs_index].value; // cycles
 
@@ -2063,8 +2062,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL1; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
-
           obsArray[obsArray_index].codeType = GNSS_CACode; 
 
           obsArray[obsArray_index].psr = RINEX_obs[RINEX_obs_index].value; // m
@@ -2092,8 +2089,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL1; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
-
           obsArray[obsArray_index].codeType = GNSS_PCode; 
 
           obsArray[obsArray_index].psr = RINEX_obs[RINEX_obs_index].value; // m
@@ -2122,8 +2117,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL1; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
-
           obsArray[obsArray_index].doppler = (float)RINEX_obs[RINEX_obs_index].value; // m
 
           // Set the validity flags
@@ -2155,6 +2148,8 @@ BOOL RINEX_GetNextObservationSet(
       // Set the time.
       obsArray[obsArray_index].tow  =  tow;
       obsArray[obsArray_index].week = week;
+
+      obsArray[obsArray_index].id = RINEX_sat[RINEX_sat_index].id;
 
       // The channel index is simply the order of the data in this case.
       obsArray[obsArray_index].channel = (unsigned short)obsArray_index;
@@ -2210,8 +2205,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL2; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
-
           obsArray[obsArray_index].adr = RINEX_obs[RINEX_obs_index].value; // cycles
 
           // Set the validity flags
@@ -2299,8 +2292,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL2; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
-
           obsArray[obsArray_index].codeType = GNSS_PCode; 
 
           obsArray[obsArray_index].psr = RINEX_obs[RINEX_obs_index].value; // m
@@ -2328,8 +2319,6 @@ BOOL RINEX_GetNextObservationSet(
         {
           obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
           obsArray[obsArray_index].freqType = GNSS_GPSL2; 
-          obsArray[obsArray_index].id       = RINEX_sat[RINEX_sat_index].id;
-
           obsArray[obsArray_index].doppler = (float)RINEX_obs[RINEX_obs_index].value; // m
 
           // Set the validity flags
@@ -2457,11 +2446,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
     RINEX_LINEBUF_SIZE,
     &nr_lines
     );
-  if( result == TRUE )
+  if( result == FALSE )
+    return FALSE;
+  if( nr_lines == 1 )
   {
-    if( nr_lines != 1 )
-      return FALSE; // weird header
-
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
       return FALSE;
@@ -2508,11 +2496,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
       RINEX_LINEBUF_SIZE,
       &nr_lines
       );
-    if( result == TRUE )
+    if( result == FALSE )
+      return FALSE;
+    if( nr_lines == 1 )
     {
-      if( nr_lines != 1 )
-        return FALSE; // weird header
-
       result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
       if( result == FALSE )
         return FALSE;
@@ -3233,11 +3220,10 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
     RINEX_LINEBUF_SIZE,
     &nr_lines
     );
-  if( result == TRUE )
+  if( result == FALSE )
+    return FALSE;
+  if( nr_lines == 1 )
   {
-    if( nr_lines != 1 )
-      return FALSE; // weird header
-
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
       return FALSE;
@@ -3284,11 +3270,10 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       RINEX_LINEBUF_SIZE,
       &nr_lines
       );
-    if( result == TRUE )
+    if( result == FALSE )
+      return FALSE;
+    if( nr_lines == 1 )
     {
-      if( nr_lines != 1 )
-        return FALSE; // weird header
-
       result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
       if( result == FALSE )
         return FALSE;

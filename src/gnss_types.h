@@ -284,7 +284,7 @@ typedef struct
   unsigned char   utc_minute;   //!< Universal Time Coordinated    [minutes]
   float           utc_seconds;  //!< Universal Time Coordinated    [s]      
   unsigned int    gps_week;     //!< The current GPS week associated with the observations [weeks]. 
-  double          gps_tow;      //!< The GPS time of week (0-604800.0) (receiver time of observation) [s].    
+  double          gps_tow;      //!< The GPS time of week (0-604800.0) (receiver time of observation) [s].      
 } GNSS_structReceiverTime;
 
 

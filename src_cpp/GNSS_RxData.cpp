@@ -643,6 +643,8 @@ namespace GNSS
       &rx_gps_week,
       &rx_gps_tow
       );
+    if( result == FALSE )
+      return false;
 
     if( wasEndOfFileReached )
     {
@@ -1701,14 +1703,22 @@ namespace GNSS
                 }
                 else
                 {
-                  result = m_EphAlmArray.AddEphemeris( 
-                    m_RINEX_eph.eph_array[RINEX_eph_index].prn, 
-                    m_RINEX_eph.eph_array[RINEX_eph_index]
-                  );
-                  if( !result )
-                    return false;
-                  isEphUpToDate = true;
-                  break;
+                  if( RINEX_eph_index >= 0 )
+                  {
+                    result = m_EphAlmArray.AddEphemeris( 
+                      m_RINEX_eph.eph_array[RINEX_eph_index].prn, 
+                      m_RINEX_eph.eph_array[RINEX_eph_index]
+                    );
+                    if( !result )
+                      return false;
+                    isEphUpToDate = true;
+                    break;
+                  }
+                  else
+                  {
+                    // There are no ephemeris records for this rx time yet.                    
+                    break;
+                  }                  
                 }
               }
               else

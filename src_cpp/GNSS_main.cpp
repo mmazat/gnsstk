@@ -37,6 +37,7 @@ SUCH DAMAGE.
 #include <stdio.h>
 #include <math.h>
 #include "constants.h"
+#include "geodesy.h"
 #include "GNSS_RxData.h"
 #include "GNSS_Estimator.h"
 #include "GNSS_OptionFile.h"
@@ -47,6 +48,8 @@ SUCH DAMAGE.
 #endif
 
 using namespace GNSS;
+
+//#define EXTRACTSVDATA 
 
 
 /// \brief    Try to sychronize the base and rover measurement sources.
@@ -92,7 +95,10 @@ int main( int argc, char* argv[] )
   bool wasVelocityComputed = false;
 
   FILE *fid = NULL; 
-  //FILE *svfid = NULL;
+#ifdef EXTRACTSVDATA
+  FILE *svfid = NULL;
+  unsigned short prn = 11;
+#endif
 
   GNSS_OptionFile opt;
 
@@ -103,6 +109,10 @@ int main( int argc, char* argv[] )
   bool useRTK = false;
   
   bool isAtFirstEpoch = true;
+
+  GNSS_structPVT firstPVT;
+  GNSS_structPVT secondPVT;
+  bool firstPVT_isSet = false;
 
   try
   {
@@ -161,10 +171,10 @@ int main( int argc, char* argv[] )
       //return 1;
 
 #ifndef _CRT_SECURE_NO_DEPRECATE    
-    if( fopen_s( &svfid, "C:\\Zen\\GPS\\ErrorFreeDataSet_10kmBaseline\\znav\\ZNAV_SV.txt", "w" ) != 0 )
+    if( fopen_s( &svfid, "prn.txt", "w" ) != 0 )
       return 1;
 #else
-    svfid = fopen( "C:\\Zen\\GPS\\ErrorFreeDataSet_10kmBaseline\\znav\\ZNAV_SV.txt", "w" );
+    svfid = fopen( "theprn.txt", "w" );
     if( svfid == NULL )
       return 1;
 #endif
@@ -265,9 +275,9 @@ int main( int argc, char* argv[] )
       opt.m_Rover.uncertaintyLatitudeOneSigma, 
       opt.m_Rover.uncertaintyLongitudeOneSigma, 
       opt.m_Rover.uncertaintyHeightOneSigma, 
-      100.0, 100.0, 100.0,
+      1.0, 1.0, 1.0,
       1000.0,
-      100.0 );
+      1.0e9 );
     if( !result )
       return 1; 
 
@@ -449,7 +459,7 @@ int main( int argc, char* argv[] )
         if( time > end_time )
           break;
 
-        if( rxDataRover.m_pvt.time.gps_tow > 354278 )
+        if( rxDataRover.m_pvt.time.gps_tow > 242005 )
           int ggg = 99;
 
         if( rxDataRover.m_pvt.time.gps_tow > 353172 )
@@ -498,7 +508,52 @@ int main( int argc, char* argv[] )
           if( !wasPositionComputed ) //KO Could change this to position only to seed filters
             continue;
 
-          if( wasPositionComputed )
+          if( !wasVelocityComputed )
+          {            
+            // Compute two consective position fixes and perform the difference
+            // to initial the velocity filter.            
+            if( !firstPVT_isSet )
+            {
+              firstPVT = rxDataRover.m_pvt;
+              firstPVT_isSet = true;
+              continue;
+            }
+            else
+            {
+              secondPVT = rxDataRover.m_pvt;
+
+              double N = 0;
+              double M = 0;
+              double deltaTime = (secondPVT.time.gps_week*SECONDS_IN_WEEK + secondPVT.time.gps_tow) -
+                (firstPVT.time.gps_week*SECONDS_IN_WEEK + firstPVT.time.gps_tow);
+
+              GEODESY_ComputeMeridianRadiusOfCurvature(
+                GEODESY_REFERENCE_ELLIPSE_WGS84,
+                rxDataRover.m_pvt.latitude,
+                &M );
+
+              GEODESY_ComputePrimeVerticalRadiusOfCurvature(
+                GEODESY_REFERENCE_ELLIPSE_WGS84,
+                rxDataRover.m_pvt.latitude,
+                &N );
+
+              result = rxDataRover.UpdateVelocityAndClockDrift(
+                (secondPVT.latitude - firstPVT.latitude)*(M+secondPVT.height),
+                (secondPVT.longitude - firstPVT.longitude)*((N+secondPVT.height)*cos(secondPVT.latitude)),
+                secondPVT.height - firstPVT.height,
+                secondPVT.clockOffset - firstPVT.clockOffset,
+                5.0*deltaTime,
+                5.0*deltaTime,
+                5.0*deltaTime,
+                5.0*deltaTime
+                );     
+              if( !result )
+                return -1;
+              wasVelocityComputed = true;
+            }            
+          }
+
+          if( wasPositionComputed && wasVelocityComputed )
           {
             if( useEKF || useRTK )
             {            
@@ -513,6 +568,7 @@ int main( int argc, char* argv[] )
                 rxDataRover.m_pvt.std_clk,
                 rxDataRover.m_pvt.std_clkdrift,
                 Estimator.m_P );  //KO Could use LS m_P here to keep all information from LS step.
+              
               if( !result )
                 return 1;
             }
@@ -600,11 +656,39 @@ int main( int argc, char* argv[] )
           rxDataRover.m_pvt.dop.vdop,
           rxDataRover.m_pvt.dop.tdop        
           );        
+
+#ifdef EXTRACTSVDATA
+        for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
+        {
+          if( rxDataRover.m_ObsArray[i].id == prn &&           
+            rxDataRover.m_ObsArray[i].system == GNSS_GPS &&
+            rxDataRover.m_ObsArray[i].freqType == GNSS_GPSL1 
+            ) 
+          {
+            fprintf( svfid, "%12.4lf %4d %10.1f %10.1f %10.1f %20.10lf %20.10lf %20.10lf %20.10lf\n", 
+              rxDataRover.m_pvt.time.gps_tow,
+              rxDataRover.m_pvt.time.gps_week,          
+              rxDataRover.m_ObsArray[i].cno,
+              rxDataRover.m_ObsArray[i].satellite.elevation*RAD2DEG,
+              rxDataRover.m_ObsArray[i].satellite.azimuth*RAD2DEG,
+              rxDataRover.m_ObsArray[i].psr_misclosure,
+              rxDataRover.m_ObsArray[i].doppler_misclosure,
+              rxDataRover.m_ObsArray[i].psr,
+              rxDataRover.m_ObsArray[i].adr
+              );
+          }
+        }        
+#endif
+
+
       }
     }
 
     // close the output file
     fclose( fid );
+#ifdef EXTRACTSVDATA
+    fclose(svfid);
+#endif
   }
   catch( MatrixException& matrixException )
   {
@@ -615,48 +699,6 @@ int main( int argc, char* argv[] )
 
 
 
-#ifdef EXTRACTSVDATA
-    for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
-    {
-      if( rxDataRover.m_ObsArray[i].id == prn &&           
-        rxDataRover.m_ObsArray[i].system == GNSS_GPS &&
-        rxDataRover.m_ObsArray[i].freqType == GNSS_GPSL1 
-        ) 
-      {
-        fprintf( svfid, "%12.4lf %4d %10.1f %10.1f %10.1f %20.10lf %20.10lf %20.10lf\n", 
-          rxDataRover.m_pvt.time.gps_tow,
-          rxDataRover.m_pvt.time.gps_week,          
-          rxDataRover.m_ObsArray[i].cno,
-          rxDataRover.m_ObsArray[i].satellite.elevation*RAD2DEG,
-          rxDataRover.m_ObsArray[i].satellite.azimuth*RAD2DEG,
-          rxDataRover.m_ObsArray[i].psr_misclosure,
-          rxDataRover.m_ObsArray[i].doppler_misclosure,
-          rxDataRover.m_ObsArray[i].time_differenced_psr_misclosure
-          );
-      }
-    }
-
-    for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
-    {
-      if( rxDataRover.m_ObsArray[i].id == prn &&           
-        rxDataRover.m_ObsArray[i].system == GNSS_GPS &&
-        rxDataRover.m_ObsArray[i].freqType == GNSS_GPSL1 
-        ) 
-      {
-        fprintf( svfid, "%12.4lf %4d %10.1f %10.1f %10.1f %20.10lf %20.10lf %20.10lf\n", 
-          rxDataRover.m_pvt.time.gps_tow,
-          rxDataRover.m_pvt.time.gps_week,          
-          rxDataRover.m_ObsArray[i].cno,
-          rxDataRover.m_ObsArray[i].satellite.elevation*RAD2DEG,
-          rxDataRover.m_ObsArray[i].satellite.azimuth*RAD2DEG,
-          rxDataRover.m_ObsArray[i].psr_misclosure,
-          rxDataRover.m_ObsArray[i].doppler_misclosure,
-          rxDataRover.m_ObsArray[i].time_differenced_psr_misclosure
-          );
-      }
-    }
-    fclose(svfid);
-#endif
 
   return 0;
 }
@@ -680,13 +722,13 @@ bool GetNextSetOfSynchronousMeasurements(
 
   result = rxDataBase.LoadNext( endOfStreamBase );
   if( !result )
-    return 1;
+    return false;
   if( endOfStreamBase )
     return true;
 
   result = rxDataRover.LoadNext( endOfStreamRover );
   if( !result )
-    return 1;
+    return false;
   if( endOfStreamRover )
     return true;
 
