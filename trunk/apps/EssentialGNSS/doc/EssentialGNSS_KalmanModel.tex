@@ -1,0 +1,221 @@
+\documentclass[11pt,letterpaper]{article}
+
+%\setlength{\columnsep}{1.0cm}
+\setlength{\topmargin}{-0.20in} \setlength{\headheight}{0.0in} \setlength{\headsep}{0.0in} \setlength{\topskip}{0.0in} \setlength{\topmargin}{0.0in} \setlength{\textheight}{9.0in}
+\setlength{\oddsidemargin}{-0.1in} \setlength{\evensidemargin}{-0.1in} \setlength{\textwidth}{6.8in} \setlength{\parindent}{0mm} \setlength{\parskip}{3mm}
+
+\usepackage{epsfig}
+\usepackage{amsmath}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%TITLE and AUTHOR (date) of the article:
+\title{\Huge {Kalman Model}}
+\author{\copyright 2007 \textbf{Glenn D. MacGougan}}
+\date{}
+
+\maketitle
+
+\pagebreak
+
+\section{8 State Position, Velocity, and Time Filtering Model}
+
+\subsection{Physical Model}
+
+In GNSS Estimation, the primary estimated parameters are position, velocity, receiver clock offset, and receiver clock drift. These parameters can be estimated
+as an 8 state discrete extended Kalman filter.
+
+One such model has velocity states and the receiver clock drift states that are treated as first order Gauss-Markov processes.
+
+The following is a modified excerpt from (Grewel and Andrews, 2001), (p. 81-82).
+
+\begin{quote}
+
+Let $x_k$ be a zero-mean stationary Gaussian random sequence, RS (the discrete equivalent of a random process), with autocorrelation
+
+\begin{equation} \label{eq:autocorr}
+\Psi(k_2-k_1) = \sigma^2 e^{- \beta |k_2-k_1| }
+\end{equation}
+
+where: \\
+$\Psi$ is the autocorrelation value, \\
+$\beta$ is the inverse of the correlation time (1/s), and \\
+$\sigma$ is the standard deviation of the system noise. \\
+
+This type of RS can be modelled as the output of a linear system with input $w_k$ begin a zero-mean white Gaussian noise with power spectral density, PSD,
+equal to unity.
+
+A difference equation model for this type of process can be defined as
+
+\begin{equation} \label{eq:diffeqn}
+\begin{array}{l}
+x_k = \Phi x_{k-1} + G w_{k-1} \\
+z_k = x_k \\
+\end{array}
+\end{equation}
+
+where: \\
+$\Phi$, is the transition matrix, \\
+$G$, is a Shaping matrix, and \\
+$z_k$, is the measurement.
+
+In order to use this model, we need to solve for the unknown parameters $\Phi$ and $G$ as functions of the parameter $\beta$. To do so, we first multiply
+Equation \ref{eq:diffeqn} by $x_{k-1}$ on both sides and take the expected values to obtain the equations
+
+\begin{equation} \label{eq:expvalue}
+\begin{array}{l}
+E[x_k x_{k-1}] = \Phi E[x_{k-1} x_{k-1}] + G E[ w_{k-1} x_{k-1} ] \\
+\sigma^2 e^{-\beta} = \Phi \sigma^2 \\
+\end{array}
+\end{equation}
+
+assuming the $w_k$ are uncorrelated and $E[w_k]=0$, so that $E[ w_{k-1} x_{k-1} ] = 0$. One obtains the solution,
+
+\begin{equation} \label{eq:soln}
+\Phi = e^{-\beta}
+\end{equation}
+
+Next, square the state variable defined by Equation \ref{eq:diffeqn} and take is expected value.
+
+\begin{equation} \label{eq:sqrstate}
+\begin{array}{l}
+E[x_k x_k] = \Phi^2 E[x_{k-1} x_{k-1}] + G^2 E[ w_{k-1} w_{k-1} ] \\
+\sigma^2 = \sigma^2 \Phi^2 + G^2
+\end{array}
+\end{equation}
+
+because the variance $E[w_{k-1}^2]=1$ and the parameter $G = \sigma \sqrt{1-e^{-2\beta}}$. The complete model is then
+
+\begin{equation} \label{eq:completemodel}
+x_k = e^{-\beta} x_{k-1} + \sigma \sqrt{1-e^{-2\beta}} w_{k-1}
+\end{equation}
+
+with $E[w_k]=0$ and $E[w_{k_1} w_{k_2}]=\Delta(k_2-k_1)$.
+
+\end{quote}
+
+
+\subsection{The Model}
+
+The states are (in this order): \\
+$\phi$, latitude [rads] \\
+$\lambda$, longitude [rads] \\
+$h$, height [m] \\
+$v_n$, velocity north [m/s] \\
+$v_e$, velocity east [m/s] \\
+$v_{up}$, velocity up [m/s] \\
+$dT$, receiver clock offset [m] \\
+$\dot{dT}$, receiver clock drift [m/s]
+
+The state transition matrix, T or $\Phi$, is:
+
+\begin{equation} \label{eq:T}
+\Phi = \left[
+\begin{array}{cccccccc}
+1 & 0 & 0 & (1-e^{-\beta_{v_n} \Delta t})/\beta_{v_n} & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & (1-e^{-\beta_{v_e} \Delta t})/\beta_{v_e} & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & (1-e^{-\beta_{v_{up}} \Delta t})/\beta_{v_{up}} & 0 & 0 \\
+0 & 0 & 0 & e^{-\beta_{v_n} \Delta t} & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & e^{-\beta_{v_e} \Delta t} & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & e^{-\beta_{v_{up}} \Delta t} & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & (1-e^{-\beta_{\dot{dT}} \Delta t})/\beta_{\dot{dT}} \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & e^{-\beta_{\dot{dT}} \Delta t} \\
+\end{array}
+\right]
+\end{equation}
+
+The process noise matrix, Q, (refer Brown and Hwang (1997), p. 200-202), is described below.
+
+For convenience:
+
+\begin{equation} \label{eq:conv}
+\begin{array}{l}
+e_{v_n}       = e^{( -\beta_{v_n}      \Delta t )} \\
+e_{v_e}       = e^{( -\beta_{v_e}      \Delta t )} \\
+e_{v_{up}}    = e^{( -\beta_{v_{up}}   \Delta t )} \\
+e_{\dot{dT}}  = e^{( -\beta_{\dot{dT}} \Delta t )} \\
+q_{v_n}       = 2 \sigma_{v_n}^2 \beta_{v_n} \\
+q_{v_e}       = 2 \sigma_{v_e}^2 \beta_{v_e} \\
+q_{v_{up}}    = 2 \sigma_{v_up}^2 \beta_{v_{up}} \\
+q_{\dot{dT}}  = 2 \sigma_{\dot{dT}}^2 \beta_{\dot{dT}} \\
+\end{array}
+\end{equation}
+
+
+\begin{equation} \label{eq:Q}
+Q = \left[
+\begin{array}{cccccccc}
+q_{11} & 0      &     0  & q_{14} &      0 &      0 &      0 &      0  \\
+0      & q_{22} &     0  &      0 & q_{25} &      0 &      0 &      0  \\
+0      &      0 & q_{33} &      0 &      0 & q_{36} &      0 &      0  \\
+q_{41} &      0 &     0  & q_{44} &      0 &      0 &      0 &      0  \\
+0      & q_{52} &     0  &      0 & q_{55} &      0 &      0 &      0  \\
+0      &      0 & q_{63} &      0 &      0 & q_{66} &      0 &      0  \\
+0      &      0 &     0  &      0 &      0 &      0 & q_{77} & q_{78}  \\
+0      &      0 &     0  &      0 &      0 &      0 & q_{87} & q_{88}  \\
+\end{array}
+\right]
+\end{equation}
+
+\begin{equation} \label{eq:q11}
+q_{11} = \frac{q_{v_n}}{\beta_{v_n}^2} [\Delta t - \frac{2}{\beta_{v_n}}(1 - e_{v_n}) + \frac{1}{2 \beta_{v_n}}(1 - e_{v_n}^2)]
+\end{equation}
+
+\begin{equation} \label{eq:q22}
+q_{22} = \frac{q_{v_e}}{\beta_{v_e}^2} [\Delta t - \frac{2}{\beta_{v_e}}(1 - e_{v_e}) + \frac{1}{2 \beta_{v_e}}(1 - e_{v_e}^2)]
+\end{equation}
+
+\begin{equation} \label{eq:q33}
+q_{33} = \frac{q_{v_{up}}}{\beta_{v_{up}}^2} [\Delta t - \frac{2}{\beta_{v_{up}}}(1 - e_{v_{up}}) + \frac{1}{2 \beta_{v_{up}}}(1 - e_{v_{up}}^2)]
+\end{equation}
+
+
+\begin{equation} \label{eq:q14}
+q_{14} = q_{41} = \frac{q_{v_n}}{\beta_{v_n}} [ \frac{1}{\beta_{v_n}}(1 - e_{v_n}) - \frac{1}{2 \beta_{v_n}}(1 - e_{v_n}^2)]
+\end{equation}
+
+\begin{equation} \label{eq:q25}
+q_{25} = q_{52} = \frac{q_{v_e}}{\beta_{v_e}} [ \frac{1}{\beta_{v_e}}(1 - e_{v_e}) - \frac{1}{2 \beta_{v_e}}(1 - e_{v_e}^2)]
+\end{equation}
+
+\begin{equation} \label{eq:q36}
+q_{25} = q_{52} = \frac{q_{v_{up}}}{\beta_{v_{up}}} [ \frac{1}{\beta_{v_{up}}}(1 - e_{v_{up}}) - \frac{1}{2 \beta_{v_{up}}}(1 - e_{v_{up}}^2)]
+\end{equation}
+
+
+\begin{equation} \label{eq:q44}
+q_{44} = \frac{q_{v_n}}{2 \beta_{v_n}} ( 1 - e_{v_n}^2 )
+\end{equation}
+
+\begin{equation} \label{eq:q55}
+q_{55} = \frac{q_{v_e}}{2 \beta_{v_e}} ( 1 - e_{v_e}^2 )
+\end{equation}
+
+\begin{equation} \label{eq:q66}
+q_{66} = \frac{q_{v_{up}}}{2 \beta_{v_{up}}} ( 1 - e_{v_{up}}^2 )
+\end{equation}
+
+
+\begin{equation} \label{eq:q77}
+q_{77} = \frac{q_{\dot{dT}}}{\beta_{\dot{dT}}^2} [\Delta t - \frac{2}{\beta_{\dot{dT}}}(1 - e_{\dot{dT}}) + \frac{1}{2 \beta_{\dot{dT}}}(1 - e_{\dot{dT}}^2)]
+\end{equation}
+
+\begin{equation} \label{eq:q14}
+q_{78} = q_{87} = \frac{q_{\dot{dT}}}{\beta_{\dot{dT}}} [ \frac{1}{\beta_{\dot{dT}}}(1 - e_{\dot{dT}}) - \frac{1}{2 \beta_{\dot{dT}}}(1 - e_{\dot{dT}}^2)]
+\end{equation}
+
+\begin{equation} \label{eq:q44}
+q_{88} = \frac{q_{\dot{dT}}}{2 \beta_{\dot{dT}}} ( 1 - e_{\dot{dT}}^2 )
+\end{equation}
+
+
+
+\section{References}
+
+Brown, R.G. and P.Y.C. Hwang (1997). Introduction to Random Signals and Applied Kalman Filtering, Third Edition, John Wiley and Sons, Inc.
+
+Grewal, M.S. and A.P. Andrews (2001). Kalman Filtering Theory and Practice ; using Matlab. 2nd Edition. John Wiley and Sons Inc.
+
+
+
+\end{document}

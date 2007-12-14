@@ -80,6 +80,26 @@ namespace GNSS
     if( m_ProcessingMethod != "LSQ" && m_ProcessingMethod != "EKF" && m_ProcessingMethod != "RTK" )
       return false;
 
+    if( m_ProcessingMethod != "LSQ" )
+    {
+      if( !GetValue( "alpha_Vn", m_KalmanOptions.alphaVn ) )
+        return false; 
+      if( !GetValue( "alpha_Ve", m_KalmanOptions.alphaVe ) )
+        return false; 
+      if( !GetValue( "alpha_Vup", m_KalmanOptions.alphaVup ) )
+        return false; 
+      if( !GetValue( "alpha_ClkDrift", m_KalmanOptions.alphaClkDrift ) )
+        return false; 
+
+      if( !GetValue( "sigma_Vn", m_KalmanOptions.sigmaVn ) )
+        return false; 
+      if( !GetValue( "sigma_Ve", m_KalmanOptions.sigmaVe ) )
+        return false; 
+      if( !GetValue( "sigma_Vup", m_KalmanOptions.sigmaVup ) )
+        return false; 
+      if( !GetValue( "sigma_ClkDrift", m_KalmanOptions.sigmaClkDrift ) )
+        return false; 
+    }
 
     if( !GetValue( "StartGPSWeek", m_StartTime.GPSWeek ) )
       return false;

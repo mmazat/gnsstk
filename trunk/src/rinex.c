@@ -1,12 +1,12 @@
 /**
 \file    rinex.h
-\brief   GNSS core 'c' function library: RINEX related functions.
+\brief   GNSS core 'c' function library: RINEX VERSION 2.11 related functions.
 \author  Glenn D. MacGougan (GDM)
 \date    2007-12-03
 \since   2007-12-02
 
 \b REFERENCES \n
-- 
+- http://www.aiub-download.unibe.ch/rinex/rinex211.txt
 
 \b "LICENSE INFORMATION" \n
 Copyright (c) 2007, refer to 'author' doxygen tags \n
@@ -60,14 +60,13 @@ static const double RINEX_MAX_URA[16] = {2.40, 3.40, 4.85, 6.85, 9.65, 13.65, 24
 /// A container for a single RINEX data observation.
 typedef struct
 {
-  unsigned char loss_of_lock_indicator;
-  unsigned char signal_strength;
-  double value;
-  RINEX_enumObservationType type;
-  GNSS_enumSystem system;
-  unsigned short id;
-  BOOL isValid;                   //!< A boolean indicating if this observation is valid (The value could be zero or blank).
-
+  unsigned char loss_of_lock_indicator; //!< The loss of lock indicator (0-7).
+  unsigned char signal_strength;        //!< The sign strength (1-9).
+  double value;                         //!< The data value of the observation.
+  RINEX_enumObservationType type;       //!< The type of observation.
+  GNSS_enumSystem system;               //!< The GNSS system.
+  unsigned short id;                    //!< The satellite id.
+  BOOL isValid;                         //!< A boolean indicating if this observation is valid (The value could be zero or blank).
 } struct_RINEX_obs;
 
 /// A container for a single RINEX satellite descriptor.
@@ -103,9 +102,9 @@ static BOOL RINEX_erase(
  
 /// A static function to decode the "# / TYPES OF OBSERV" part of the RINEX OBS header.
 static BOOL RINEX_GetObservationTypes(
-  const char* header_buffer,
-  const unsigned header_buffer_size,
-  RINEX_structDecodedHeader* header
+  const char* header_buffer,          //!< (input) The full RINEX header buffer.
+  const unsigned header_buffer_size,  //!< (input) The size of the valid data in the RINEX header buffer.
+  RINEX_structDecodedHeader* header   //!< (input/output) The container for decoded header information.
   );
 
 
@@ -422,9 +421,9 @@ BOOL RINEX_erase(
 
 // static 
 BOOL RINEX_GetObservationTypes(
-  const char* header_buffer,
-  const unsigned header_buffer_size,
-  RINEX_structDecodedHeader* header
+  const char* header_buffer,          //!< (input) The full RINEX header buffer.
+  const unsigned header_buffer_size,  //!< (input) The size of the valid data in the RINEX header buffer.
+  RINEX_structDecodedHeader* header   //!< (input/output) The container for decoded header information.  
   )
 {
   char lines_buffer[RINEX_LINEBUF_SIZE];
@@ -1098,18 +1097,6 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
 
   return TRUE;
 }
-
-
-
-
-
-// static
-// The conversion from RINEX signal strength to Carrier to Noise Density Ratio (CNo)
-// is ad-hoc. We will use the NovAtel OEM4 definition for CNo (dB-Hz). Nominally,
-// NovAtel maintains phase lock above 28 dB-Hz and a reasonable maximum signal strength
-// occurs at about 50 dB-Hz. We'll map linearly using 5 to 9 signals strength mapping to
-// 28 to 50 dB-Hz. (50-28)/(9-5) = (y-28)/(x-5) where x is known, solve for y.
-// y = 5.5x+0.5.
 
 
 BOOL RINEX_ConvertSignalStrengthToUsableCNo(
@@ -1920,18 +1907,19 @@ BOOL RINEX_GetNextObservationSet(
     obsArray[obsArray_index].id = RINEX_sat[RINEX_sat_index].id;
 
     // Set default validity flags.
-    obsArray[obsArray_index].flags.isEphemerisValid      = 0; // not yet known
-    obsArray[obsArray_index].flags.isAlmanacValid        = 0; // not yet known
-    obsArray[obsArray_index].flags.isAboveElevationMask  = 0; // not yet known
-    obsArray[obsArray_index].flags.isAboveCNoMask        = 0; // not yet known
-    obsArray[obsArray_index].flags.isAboveLockTimeMask   = 0; // not yet known
-    obsArray[obsArray_index].flags.isNotUserRejected     = 1; // assume not rejected
-    obsArray[obsArray_index].flags.isNotPsrRejected      = 1; // assume not rejected
-    obsArray[obsArray_index].flags.isNotAdrRejected      = 1; // assume not rejected
-    obsArray[obsArray_index].flags.isNotDopplerRejected  = 1; // assume not rejected
-    obsArray[obsArray_index].flags.isNoCycleSlipDetected = 1; // assume no slip
-    obsArray[obsArray_index].flags.isUsedInPosSolution   = 0; // not yet known
-    obsArray[obsArray_index].flags.isUsedInVelSolution   = 0; // not yet known
+    obsArray[obsArray_index].flags.isEphemerisValid        = 0; // not yet known
+    obsArray[obsArray_index].flags.isAlmanacValid          = 0; // not yet known
+    obsArray[obsArray_index].flags.isAboveElevationMask    = 0; // not yet known
+    obsArray[obsArray_index].flags.isAboveCNoMask          = 0; // not yet known
+    obsArray[obsArray_index].flags.isAboveLockTimeMask     = 0; // not yet known
+    obsArray[obsArray_index].flags.isNotUserRejected       = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNotPsrRejected        = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNotAdrRejected        = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNotDopplerRejected    = 1; // assume not rejected
+    obsArray[obsArray_index].flags.isNoCycleSlipDetected   = 1; // assume no slip
+    obsArray[obsArray_index].flags.isPsrUsedInSolution     = 0; // not yet known
+    obsArray[obsArray_index].flags.isDopplerUsedInSolution = 0; // not yet known
+    obsArray[obsArray_index].flags.isAdrUsedInSolution     = 0; // not yet known
     obsArray[obsArray_index].flags.useTropoCorrection          = 1; // default to yes
     obsArray[obsArray_index].flags.useBroadcastIonoCorrection  = 1; // default to yes
 
@@ -2155,19 +2143,20 @@ BOOL RINEX_GetNextObservationSet(
       obsArray[obsArray_index].channel = (unsigned short)obsArray_index;
 
       // Set default validity flags.
-      obsArray[obsArray_index].flags.isEphemerisValid      = 0; // not yet known
-      obsArray[obsArray_index].flags.isAlmanacValid        = 0; // not yet known
-      obsArray[obsArray_index].flags.isAboveElevationMask  = 0; // not yet known
-      obsArray[obsArray_index].flags.isAboveCNoMask        = 0; // not yet known
-      obsArray[obsArray_index].flags.isAboveLockTimeMask   = 0; // not yet known
-      obsArray[obsArray_index].flags.isNotUserRejected     = 1; // assume not rejected
-      obsArray[obsArray_index].flags.isNotPsrRejected      = 1; // assume not rejected
-      obsArray[obsArray_index].flags.isNotAdrRejected      = 1; // assume not rejected
-      obsArray[obsArray_index].flags.isNotDopplerRejected  = 1; // assume not rejected
-      obsArray[obsArray_index].flags.isNoCycleSlipDetected = 1; // assume no slip
-      obsArray[obsArray_index].flags.isUsedInPosSolution   = 0; // not yet known
-      obsArray[obsArray_index].flags.isUsedInVelSolution   = 0; // not yet known
-      obsArray[obsArray_index].flags.useTropoCorrection          = 1; // default to yes
+      obsArray[obsArray_index].flags.isEphemerisValid        = 0; // not yet known
+      obsArray[obsArray_index].flags.isAlmanacValid          = 0; // not yet known
+      obsArray[obsArray_index].flags.isAboveElevationMask    = 0; // not yet known
+      obsArray[obsArray_index].flags.isAboveCNoMask          = 0; // not yet known
+      obsArray[obsArray_index].flags.isAboveLockTimeMask     = 0; // not yet known
+      obsArray[obsArray_index].flags.isNotUserRejected       = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNotPsrRejected        = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNotAdrRejected        = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNotDopplerRejected    = 1; // assume not rejected
+      obsArray[obsArray_index].flags.isNoCycleSlipDetected   = 1; // assume no slip
+      obsArray[obsArray_index].flags.isPsrUsedInSolution     = 0; // not yet known
+      obsArray[obsArray_index].flags.isDopplerUsedInSolution = 0; // not yet known
+      obsArray[obsArray_index].flags.isAdrUsedInSolution     = 0; // not yet known
+      obsArray[obsArray_index].flags.useTropoCorrection      = 1; // default to yes
       obsArray[obsArray_index].flags.useBroadcastIonoCorrection  = 1; // default to yes
     }
 
@@ -3317,10 +3306,4 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
 
   return TRUE;
 }
-
-
-
- 
-
-
 

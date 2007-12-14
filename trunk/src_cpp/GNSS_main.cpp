@@ -66,7 +66,7 @@ bool GetNextSetOfSynchronousMeasurements(
 int main( int argc, char* argv[] )
 {
   GNSS_RxData rxDataBase;
-  GNSS_RxData rxDataRover;
+  GNSS_RxData rxDataRover;  
   GNSS_Estimator Estimator;
   bool isValidPath;
   bool result;
@@ -152,6 +152,18 @@ int main( int argc, char* argv[] )
       useLSQ = true; // least squares is used for the first epoch
       useEKF = false;
       useRTK  = true;
+    }
+
+    if( opt.m_ProcessingMethod != "LSQ" )
+    {
+      Estimator.m_KF.alphaVn       = opt.m_KalmanOptions.alphaVn;
+      Estimator.m_KF.alphaVe       = opt.m_KalmanOptions.alphaVe;
+      Estimator.m_KF.alphaVup      = opt.m_KalmanOptions.alphaVup;
+      Estimator.m_KF.alphaClkDrift = opt.m_KalmanOptions.alphaClkDrift;
+      Estimator.m_KF.sigmaVn       = opt.m_KalmanOptions.sigmaVn;
+      Estimator.m_KF.sigmaVe       = opt.m_KalmanOptions.sigmaVe;
+      Estimator.m_KF.sigmaVup      = opt.m_KalmanOptions.sigmaVup;
+      Estimator.m_KF.sigmaClkDrift = opt.m_KalmanOptions.sigmaClkDrift;
     }
 
 
@@ -281,162 +293,16 @@ int main( int argc, char* argv[] )
     if( !result )
       return 1; 
 
-    if( !opt.m_Reference.isValid )
+
+    while( !endOfStreamRover )
     {
-      ////
-      // This is processing of stand-alone data.
-
-      while( !endOfStreamRover )
+      if( !isAtFirstEpoch ) 
       {
-        result = rxDataRover.LoadNext( endOfStreamRover );
-        if( !result )
-          return 1;
-        if( rxDataRover.m_pvt.time.gps_week == 0 )
-          continue;
-
-
-        time = rxDataRover.m_pvt.time.gps_week*SECONDS_IN_WEEK + rxDataRover.m_pvt.time.gps_tow;
-
-        if( time < start_time )
-          continue;
-
-        if( time > end_time )
-          break;
-
-
-
-        // exclude satellites as indicated in the option file
-        for( j = 0; j < opt.m_Rover.nrSatsToExclude; j++ )
-        {
-          for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
-          {
-            if( rxDataRover.m_ObsArray[i].id == opt.m_Rover.satsToExclude[j] )
-            {
-              rxDataRover.m_ObsArray[i].flags.isNotUserRejected = 0;
-            }
-          }
-        } 
-
-        if( useLSQ )
-        {      
-          result = Estimator.PerformLeastSquares_8StatePVT(
-            &rxDataRover,
-            NULL,
-            wasPositionComputed,
-            wasVelocityComputed );
-          if( !result )
-            return 1;
-
-          if( !wasPositionComputed )
-            continue;
-
-          if( wasPositionComputed && wasVelocityComputed )
-          {
-            if( useEKF || useRTK )
-            {
-              useLSQ = false; // position/velocity is now seeded
-              result = Estimator.InitializeStateVarianceCovariance_8StatePVGM(
-                rxDataRover.m_pvt.std_lat,
-                rxDataRover.m_pvt.std_lon,
-                rxDataRover.m_pvt.std_hgt,
-                rxDataRover.m_pvt.std_vn,
-                rxDataRover.m_pvt.std_ve,
-                rxDataRover.m_pvt.std_vup,
-                rxDataRover.m_pvt.std_clk,
-                rxDataRover.m_pvt.std_clkdrift,
-                Estimator.m_P );
-              if( !result )
-                return 1;
-            }
-          }
-        }
-        else if( useEKF )
-        {
-          result = Estimator.PredictAhead_8StatePVGM(
-            rxDataRover,
-            dT,
-            Estimator.m_T,
-            Estimator.m_Q,
-            Estimator.m_P );
-          if( !result )
-            return 1;
-
-          result = Estimator.Kalman_Update_8StatePVGM(
-            &rxDataRover,
-            NULL,
-            Estimator.m_P );
-          if( !result )
-            return 1;
-        }
-        else if( useRTK )
-        {
-          result = Estimator.PredictAhead_8StatePVGM_Float(
-            rxDataRover,
-            dT,
-            Estimator.m_T,
-            Estimator.m_Q,
-            Estimator.m_P );
-          if( !result )
-            return 1;
-
-          result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
-            &rxDataRover,
-            NULL,
-            Estimator.m_P );
-          if( !result )
-            return 1;
-        }
-
-        printf( "%12.3lf %5d %d %d %d \n", 
-          rxDataRover.m_pvt.time.gps_tow, 
-          rxDataRover.m_pvt.time.gps_week,         
-          rxDataRover.m_pvt.nrPsrObsUsed,
-          rxDataRover.m_pvt.nrDopplerObsUsed,
-          rxDataRover.m_pvt.nrAdrObsUsed );    
-
-
-        /*
-        rxDataRover.Debug_WriteSuperMsg80CharsWide( 
-          supermsg,
-          8192,
-          51.0916666667*DEG2RAD,
-          -114.0000000000*DEG2RAD,
-          1000.000,
-          nrBytesInBuffer );
-
-        printf( supermsg );
-        */
-
-
-        fprintf( fid, "%12.4lf %4d %20.10lf %20.10lf %15.3lf %20.10lf %4d %10.4lf %10.4lf %10.4lf %20.10lf %10.4lf %10.4lf %10.4lf %10.4lf %10.2f %10.2f %10.2f\n", 
-          rxDataRover.m_pvt.time.gps_tow,
-          rxDataRover.m_pvt.time.gps_week,
-          rxDataRover.m_pvt.latitudeDegs,
-          rxDataRover.m_pvt.longitudeDegs,
-          rxDataRover.m_pvt.height,
-          rxDataRover.m_pvt.clockOffset,
-          rxDataRover.m_pvt.nrPsrObsUsed,
-          rxDataRover.m_pvt.vn,
-          rxDataRover.m_pvt.ve,
-          rxDataRover.m_pvt.vup,
-          rxDataRover.m_pvt.clockDrift,
-          rxDataRover.m_pvt.std_lat,
-          rxDataRover.m_pvt.std_lon,
-          rxDataRover.m_pvt.std_hgt,
-          rxDataRover.m_pvt.std_clk,
-          rxDataRover.m_pvt.dop.hdop,
-          rxDataRover.m_pvt.dop.vdop,
-          rxDataRover.m_pvt.dop.tdop        
-          );        
+        time_prev = rxDataRover.m_pvt.time.gps_week*SECONDS_IN_WEEK + rxDataRover.m_pvt.time.gps_tow;
       }
-    }
-    else
-    {
-      while( !endOfStreamBase && !endOfStreamRover )
-      {
-        if( !isAtFirstEpoch ) 
-          time_prev = rxDataRover.m_pvt.time.gps_week*SECONDS_IN_WEEK + rxDataRover.m_pvt.time.gps_tow;
 
+      if( opt.m_Reference.isValid )
+      {
         result = GetNextSetOfSynchronousMeasurements( 
           rxDataBase,
           endOfStreamBase,
@@ -444,165 +310,238 @@ int main( int argc, char* argv[] )
           endOfStreamRover,
           isSynchronized );
         if( !result )
-          return 1;
+          return -1;
+      }
+      else
+      {
+        result = rxDataRover.LoadNext( endOfStreamRover );
+        if( !result )
+          return -1;
+      }
 
-        if( endOfStreamRover || endOfStreamBase )
+      if( endOfStreamRover )
+        break;
+
+      if( opt.m_Reference.isValid )
+      {
+        if( endOfStreamBase )
           break;
+      }
 
-        if( rxDataRover.m_nrValidObs == 0 )
-          continue;
+      if( rxDataRover.m_nrValidObs == 0 )
+        continue;
 
-        // Check that the processing time is within the processing interval.
-        time = rxDataRover.m_pvt.time.gps_week*SECONDS_IN_WEEK + rxDataRover.m_pvt.time.gps_tow;
-        if( time < start_time )
-          continue;
-        if( time > end_time )
-          break;
-
-        if( rxDataRover.m_pvt.time.gps_tow > 242005 )
-          int ggg = 99;
-
-        if( rxDataRover.m_pvt.time.gps_tow > 353172 )
-          int ggga = 99;
+      // Check that the processing time is within the processing interval.
+      time = rxDataRover.m_pvt.time.gps_week*SECONDS_IN_WEEK + rxDataRover.m_pvt.time.gps_tow;
+      if( time < start_time )
+        continue;
+      if( time > end_time )
+        break;
 
 
-        if( isAtFirstEpoch )
+      // GDM_DEBUG breakpoint times
+      if( rxDataRover.m_pvt.time.gps_tow > 242005 )
+        int ggg = 99;
+
+      if( rxDataRover.m_pvt.time.gps_tow > 353172 )
+        int ggga = 99;
+
+
+      if( isAtFirstEpoch )
+      {
+        isAtFirstEpoch = false;
+        dT = 0.0;
+      }
+      else
+      {
+        dT = time - time_prev;      
+        if( dT < 0.0 )
         {
-          isAtFirstEpoch = false;
-          dT = 0.0;
-        }
-        else
-        {
-          dT = time - time_prev;      
-          if( dT < 0.0 )
-          {
-            // should never happen
-            printf( "\ndT is negative!\n");
-            return 1; 
-          }        
-        }
+          // should never happen
+          printf( "\ndT is negative!\n");
+          return 1; 
+        }        
+      }
 
         
-        // exclude satellites as indicated in the option file
-        for( j = 0; j < opt.m_Rover.nrSatsToExclude; j++ )
+      // exclude satellites as indicated in the option file
+      for( j = 0; j < opt.m_Rover.nrSatsToExclude; j++ )
+      {
+        for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
         {
-          for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
+          if( rxDataRover.m_ObsArray[i].id == opt.m_Rover.satsToExclude[j] )
           {
-            if( rxDataRover.m_ObsArray[i].id == opt.m_Rover.satsToExclude[j] )
+            rxDataRover.m_ObsArray[i].flags.isNotUserRejected = 0;
+          }
+        }
+      } 
+
+      if( opt.m_Reference.isValid )
+      {
+        // exclude satellites as indicated in the option file
+        for( j = 0; j < opt.m_Reference.nrSatsToExclude; j++ )
+        {
+          for( i = 0; i < rxDataBase.m_nrValidObs; i++ )
+          {
+            if( rxDataBase.m_ObsArray[i].id == opt.m_Reference.satsToExclude[j] )
             {
-              rxDataRover.m_ObsArray[i].flags.isNotUserRejected = 0;
+              rxDataBase.m_ObsArray[i].flags.isNotUserRejected = 0;
             }
           }
         } 
+      }
 
-        if( useLSQ )
-        {      
+
+      if( useLSQ )
+      {      
+        if( opt.m_Reference.isValid )
+        {
           result = Estimator.PerformLeastSquares_8StatePVT(
             &rxDataRover,
             &rxDataBase,
             wasPositionComputed,
             wasVelocityComputed );
           if( !result )
-            return 1;
+            return -1;
+        }
+        else
+        {
+          result = Estimator.PerformLeastSquares_8StatePVT(
+            &rxDataRover,
+            NULL,
+            wasPositionComputed,
+            wasVelocityComputed );
+          if( !result )
+            return -1;
+        }
 
-          if( !wasPositionComputed ) //KO Could change this to position only to seed filters
+        if( !wasPositionComputed )
+          continue;
+
+        if( !wasVelocityComputed && (useEKF || useRTK) ) // compute initial velocity estimate for EKF or RTK if needed
+        {            
+          // Compute two consective position fixes and perform the difference
+          // to initial the velocity filter.            
+          if( !firstPVT_isSet )
+          {
+            firstPVT = rxDataRover.m_pvt;
+            firstPVT_isSet = true;
             continue;
+          }
+          else
+          {
+            secondPVT = rxDataRover.m_pvt;
 
-          if( !wasVelocityComputed )
-          {            
-            // Compute two consective position fixes and perform the difference
-            // to initial the velocity filter.            
-            if( !firstPVT_isSet )
+            double N = 0;
+            double M = 0;
+            double tmp_vn = 0;
+            double tmp_ve = 0;
+            double tmp_vup = 0;
+            double tmp_clkdrift = 0;
+            double deltaTime = (secondPVT.time.gps_week*SECONDS_IN_WEEK + secondPVT.time.gps_tow) -
+              (firstPVT.time.gps_week*SECONDS_IN_WEEK + firstPVT.time.gps_tow);
+
+            if( deltaTime < 1e-04 )
             {
-              firstPVT = rxDataRover.m_pvt;
-              firstPVT_isSet = true;
+              firstPVT_isSet = false;
               continue;
             }
-            else
-            {
-              secondPVT = rxDataRover.m_pvt;
 
-              double N = 0;
-              double M = 0;
-              double deltaTime = (secondPVT.time.gps_week*SECONDS_IN_WEEK + secondPVT.time.gps_tow) -
-                (firstPVT.time.gps_week*SECONDS_IN_WEEK + firstPVT.time.gps_tow);
+            GEODESY_ComputeMeridianRadiusOfCurvature(
+              GEODESY_REFERENCE_ELLIPSE_WGS84,
+              rxDataRover.m_pvt.latitude,
+              &M );
 
-              GEODESY_ComputeMeridianRadiusOfCurvature(
-                GEODESY_REFERENCE_ELLIPSE_WGS84,
-                rxDataRover.m_pvt.latitude,
-                &M );
+            GEODESY_ComputePrimeVerticalRadiusOfCurvature(
+              GEODESY_REFERENCE_ELLIPSE_WGS84,
+              rxDataRover.m_pvt.latitude,
+              &N );
 
-              GEODESY_ComputePrimeVerticalRadiusOfCurvature(
-                GEODESY_REFERENCE_ELLIPSE_WGS84,
-                rxDataRover.m_pvt.latitude,
-                &N );
+            tmp_vn = (secondPVT.latitude - firstPVT.latitude)*(M+secondPVT.height) / deltaTime;
+            tmp_ve = (secondPVT.longitude - firstPVT.longitude)*((N+secondPVT.height)*cos(secondPVT.latitude)) / deltaTime;
+            tmp_vup = (secondPVT.height - firstPVT.height) / deltaTime;
+            tmp_clkdrift = (secondPVT.clockOffset - firstPVT.clockOffset) / deltaTime;
 
-              result = rxDataRover.UpdateVelocityAndClockDrift(
-                (secondPVT.latitude - firstPVT.latitude)*(M+secondPVT.height),
-                (secondPVT.longitude - firstPVT.longitude)*((N+secondPVT.height)*cos(secondPVT.latitude)),
-                secondPVT.height - firstPVT.height,
-                secondPVT.clockOffset - firstPVT.clockOffset,
-                5.0*deltaTime,
-                5.0*deltaTime,
-                5.0*deltaTime,
-                5.0*deltaTime
-                );     
-              if( !result )
-                return -1;
-              wasVelocityComputed = true;
-            }            
-          }
+            result = rxDataRover.UpdateVelocityAndClockDrift(
+              tmp_vn,
+              tmp_ve,
+              tmp_vup,
+              tmp_clkdrift,
+              5.0*deltaTime,
+              5.0*deltaTime,
+              5.0*deltaTime,
+              5.0*deltaTime
+              );     
+            if( !result )
+              return -1;
+            wasVelocityComputed = true;              
+          }            
+        }
 
-          if( wasPositionComputed && wasVelocityComputed )
-          {
-            if( useEKF || useRTK )
-            {            
-              useLSQ = false; // position/velocity is now seeded
-              result = Estimator.InitializeStateVarianceCovariance_8StatePVGM(
-                rxDataRover.m_pvt.std_lat,
-                rxDataRover.m_pvt.std_lon,
-                rxDataRover.m_pvt.std_hgt,
-                rxDataRover.m_pvt.std_vn,
-                rxDataRover.m_pvt.std_ve,
-                rxDataRover.m_pvt.std_vup,
-                rxDataRover.m_pvt.std_clk,
-                rxDataRover.m_pvt.std_clkdrift,
-                Estimator.m_P );  //KO Could use LS m_P here to keep all information from LS step.
-              
-              if( !result )
-                return 1;
-            }
+        if( wasPositionComputed && wasVelocityComputed )
+        {
+          if( useEKF || useRTK )
+          {            
+            useLSQ = false; // position/velocity is now seeded
+            result = Estimator.InitializeStateVarianceCovariance_8StatePVGM(
+              rxDataRover.m_pvt.std_lat,
+              rxDataRover.m_pvt.std_lon,
+              rxDataRover.m_pvt.std_hgt,
+              rxDataRover.m_pvt.std_vn,
+              rxDataRover.m_pvt.std_ve,
+              rxDataRover.m_pvt.std_vup,
+              rxDataRover.m_pvt.std_clk,
+              rxDataRover.m_pvt.std_clkdrift,
+              Estimator.m_P );  //KO Could use LS m_P here to keep all information from LS step.
+
+            if( !result )
+              return 1;
           }
         }
-        else if( useEKF )
-        {
-          result = Estimator.PredictAhead_8StatePVGM(
-            rxDataRover,
-            dT,
-            Estimator.m_T,
-            Estimator.m_Q,
-            Estimator.m_P );
-          if( !result )
-            return 1;
+      }
+      else if( useEKF )
+      {
+        result = Estimator.PredictAhead_8StatePVGM(
+          rxDataRover,
+          dT,
+          Estimator.m_T,
+          Estimator.m_Q,
+          Estimator.m_P );
+        if( !result )
+          return 1;
 
+        if( opt.m_Reference.isValid )
+        {
           result = Estimator.Kalman_Update_8StatePVGM(
             &rxDataRover,
             &rxDataBase,
             Estimator.m_P );
           if( !result )
-            return 1;
+            return -1;
         }
-        else if( useRTK )
+        else
         {
-          result = Estimator.PredictAhead_8StatePVGM_Float(
-            rxDataRover,
-            dT,
-            Estimator.m_T,
-            Estimator.m_Q,
+          result = Estimator.Kalman_Update_8StatePVGM(
+            &rxDataRover,
+            NULL,
             Estimator.m_P );
           if( !result )
-            return 1;
+            return -1;
+        }
+      }
+      else if( useRTK )
+      {
+        result = Estimator.PredictAhead_8StatePVGM_Float(
+          rxDataRover,
+          dT,
+          Estimator.m_T,
+          Estimator.m_Q,
+          Estimator.m_P );
+        if( !result )
+          return 1;
 
+        if( opt.m_Reference.isValid )
+        {
           result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
             &rxDataRover,
             &rxDataBase,
@@ -610,78 +549,84 @@ int main( int argc, char* argv[] )
           if( !result )
             return 1;
         }
+        else
+        {
+          result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
+            &rxDataRover,
+            NULL,
+            Estimator.m_P );
+          if( !result )
+            return 1;
+        }
+      }
 
-        printf( "%12.3lf %5d %d %d %d \n", 
-          rxDataRover.m_pvt.time.gps_tow, 
-          rxDataRover.m_pvt.time.gps_week,         
-          rxDataRover.m_pvt.nrPsrObsUsed,
-          rxDataRover.m_pvt.nrDopplerObsUsed,
-          rxDataRover.m_pvt.nrAdrObsUsed );    
+      printf( "%12.3lf %5d %d %d %d \n", 
+        rxDataRover.m_pvt.time.gps_tow, 
+        rxDataRover.m_pvt.time.gps_week,         
+        rxDataRover.m_pvt.nrPsrObsUsed,
+        rxDataRover.m_pvt.nrDopplerObsUsed,
+        rxDataRover.m_pvt.nrAdrObsUsed );    
 
-        /*
-        char supermsg[8192];
-        unsigned nrBytesInBuffer;
-        rxDataRover.Debug_WriteSuperMsg80CharsWide( 
-          supermsg,
-          8192,
-          51.0916666667*DEG2RAD,
-          -114.0000000000*DEG2RAD,
-          1000.000,
-          nrBytesInBuffer );
+      /*
+      char supermsg[8192];
+      unsigned nrBytesInBuffer;
+      rxDataRover.Debug_WriteSuperMsg80CharsWide( 
+      supermsg,
+      8192,
+      51.0916666667*DEG2RAD,
+      -114.0000000000*DEG2RAD,
+      1000.000,
+      nrBytesInBuffer );
 
-        printf( supermsg );
-        */
+      printf( supermsg );
+      */
 
+      rxDataRover.m_prev_pvt = rxDataRover.m_pvt;
+      rxDataBase.m_prev_pvt = rxDataBase.m_pvt;
 
-        rxDataRover.m_prev_pvt = rxDataRover.m_pvt;
-        rxDataBase.m_prev_pvt = rxDataBase.m_pvt;
-
-        fprintf( fid, "%12.4lf %4d %20.10lf %20.10lf %15.3lf %20.10lf %4d %10.4lf %10.4lf %10.4lf %20.10lf %10.4lf %10.4lf %10.4lf %10.4lf %10.2f %10.2f %10.2f\n", 
-          rxDataRover.m_pvt.time.gps_tow,
-          rxDataRover.m_pvt.time.gps_week,
-          rxDataRover.m_pvt.latitudeDegs,
-          rxDataRover.m_pvt.longitudeDegs,
-          rxDataRover.m_pvt.height,
-          rxDataRover.m_pvt.clockOffset,
-          rxDataRover.m_pvt.nrPsrObsUsed,
-          rxDataRover.m_pvt.vn,
-          rxDataRover.m_pvt.ve,
-          rxDataRover.m_pvt.vup,
-          rxDataRover.m_pvt.clockDrift,
-          rxDataRover.m_pvt.std_lat,
-          rxDataRover.m_pvt.std_lon,
-          rxDataRover.m_pvt.std_hgt,
-          rxDataRover.m_pvt.std_clk,
-          rxDataRover.m_pvt.dop.hdop,
-          rxDataRover.m_pvt.dop.vdop,
-          rxDataRover.m_pvt.dop.tdop        
-          );        
+      fprintf( fid, "%12.4lf %4d %20.10lf %20.10lf %15.3lf %20.10lf %4d %10.4lf %10.4lf %10.4lf %20.10lf %10.4lf %10.4lf %10.4lf %10.4lf %10.2f %10.2f %10.2f\n", 
+        rxDataRover.m_pvt.time.gps_tow,
+        rxDataRover.m_pvt.time.gps_week,
+        rxDataRover.m_pvt.latitudeDegs,
+        rxDataRover.m_pvt.longitudeDegs,
+        rxDataRover.m_pvt.height,
+        rxDataRover.m_pvt.clockOffset,
+        rxDataRover.m_pvt.nrPsrObsUsed,
+        rxDataRover.m_pvt.vn,
+        rxDataRover.m_pvt.ve,
+        rxDataRover.m_pvt.vup,
+        rxDataRover.m_pvt.clockDrift,
+        rxDataRover.m_pvt.std_lat,
+        rxDataRover.m_pvt.std_lon,
+        rxDataRover.m_pvt.std_hgt,
+        rxDataRover.m_pvt.std_clk,
+        rxDataRover.m_pvt.dop.hdop,
+        rxDataRover.m_pvt.dop.vdop,
+        rxDataRover.m_pvt.dop.tdop        
+        );        
 
 #ifdef EXTRACTSVDATA
-        for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
+      for( i = 0; i < rxDataRover.m_nrValidObs; i++ )
+      {
+        if( rxDataRover.m_ObsArray[i].id == prn &&           
+          rxDataRover.m_ObsArray[i].system == GNSS_GPS &&
+          rxDataRover.m_ObsArray[i].freqType == GNSS_GPSL1 
+          ) 
         {
-          if( rxDataRover.m_ObsArray[i].id == prn &&           
-            rxDataRover.m_ObsArray[i].system == GNSS_GPS &&
-            rxDataRover.m_ObsArray[i].freqType == GNSS_GPSL1 
-            ) 
-          {
-            fprintf( svfid, "%12.4lf %4d %10.1f %10.1f %10.1f %20.10lf %20.10lf %20.10lf %20.10lf\n", 
-              rxDataRover.m_pvt.time.gps_tow,
-              rxDataRover.m_pvt.time.gps_week,          
-              rxDataRover.m_ObsArray[i].cno,
-              rxDataRover.m_ObsArray[i].satellite.elevation*RAD2DEG,
-              rxDataRover.m_ObsArray[i].satellite.azimuth*RAD2DEG,
-              rxDataRover.m_ObsArray[i].psr_misclosure,
-              rxDataRover.m_ObsArray[i].doppler_misclosure,
-              rxDataRover.m_ObsArray[i].psr,
-              rxDataRover.m_ObsArray[i].adr
-              );
-          }
-        }        
+          fprintf( svfid, "%12.4lf %4d %10.1f %10.1f %10.1f %20.10lf %20.10lf %20.10lf %20.10lf\n", 
+            rxDataRover.m_pvt.time.gps_tow,
+            rxDataRover.m_pvt.time.gps_week,          
+            rxDataRover.m_ObsArray[i].cno,
+            rxDataRover.m_ObsArray[i].satellite.elevation*RAD2DEG,
+            rxDataRover.m_ObsArray[i].satellite.azimuth*RAD2DEG,
+            rxDataRover.m_ObsArray[i].psr_misclosure,
+            rxDataRover.m_ObsArray[i].doppler_misclosure,
+            rxDataRover.m_ObsArray[i].psr,
+            rxDataRover.m_ObsArray[i].adr
+            );
+        }
+      }        
 #endif
-
-
-      }
     }
 
     // close the output file
@@ -694,11 +639,10 @@ int main( int argc, char* argv[] )
   {
     printf( "%s", matrixException.GetExceptionMessage().c_str() );
   }
-
-
-
-
-
+  catch ( ... )
+  {
+    printf( "\nCaught unknown exception\n" );
+  }
 
   return 0;
 }

@@ -57,29 +57,29 @@ enum GNSS_enumRxDataType
 /// A 32 bit bit-field for GNSS measurement associated flags (all are boolean indicators).
 typedef struct 
 {
-  unsigned isActive:1;              //!< This flag indicates that the channel is active for use. If this is not set, no other flags are valid for use.
-  unsigned isCodeLocked:1;          //!< Indicates if the code tracking is locked.
-  unsigned isPhaseLocked:1;         //!< Indicates if the phase tracking is locked.
-  unsigned isParityValid:1;         //!< Indicates if the phase parity if valid.      
-  unsigned isPsrValid:1;            //!< Indicates if the pseudorange valid for use.
-  unsigned isAdrValid:1;            //!< Indicates if the ADR is valid for use.
-  unsigned isDopplerValid:1;        //!< Indicates if the Doppler if valid for use.
-  unsigned isGrouped:1;             //!< Indicates if this channel has another associated channel. eg. L1 and L2 measurements.
-  unsigned isAutoAssigned:1;        //!< Indicates if the channel was receiver assigned (otherwise, the user forced this channel assignment).
-  unsigned isCarrierSmoothed:1;     //!< Indicates if the pseudorange has carrier smoothing enabled.
-  unsigned isEphemerisValid:1;      //!< Indicates if this channel has valid associated ephemeris information. 
-  unsigned isAlmanacValid:1;        //!< Indicates if this channel has valid associated almanac information.
-  unsigned isAboveElevationMask:1;  //!< Indicates if the satellite tracked is above the elevation mask.    
-  unsigned isAboveCNoMask:1;        //!< Indciates if the channel's C/No is above a threshold value.
-  unsigned isAboveLockTimeMask:1;   //!< Indicates if the channel's locktime is above a treshold value.
-  unsigned isNotUserRejected:1;     //!< Indicates if the user has not forced the rejection of this channel or PRN.
-  unsigned isNotPsrRejected:1;      //!< Indicates if the pseudorange was not rejetced (ie Fault Detection and Exclusion).
-  unsigned isNotAdrRejected:1;      //!< Indicates if the ADR was not rejetced (ie Fault Detection and Exclusion).
-  unsigned isNotDopplerRejected:1;  //!< Indicates if the Doppler was not rejected (ie Fault Detection and Exclusion).
-  unsigned isNoCycleSlipDetected:1; //!< Indicates that no cycle slip has occurred at this epoch.
-  unsigned isUsedInPosSolution:1;   //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
-  unsigned isUsedInVelSolution:1;   //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
-  unsigned isAdrUsedInSolution:1;   //!< Indicates if the the ADR is used in the solution.
+  unsigned isActive:1;                //!< This flag indicates that the channel is active for use. If this is not set, no other flags are valid for use.
+  unsigned isCodeLocked:1;            //!< Indicates if the code tracking is locked.
+  unsigned isPhaseLocked:1;           //!< Indicates if the phase tracking is locked.
+  unsigned isParityValid:1;           //!< Indicates if the phase parity if valid.      
+  unsigned isPsrValid:1;              //!< Indicates if the pseudorange valid for use.
+  unsigned isAdrValid:1;              //!< Indicates if the ADR is valid for use.
+  unsigned isDopplerValid:1;          //!< Indicates if the Doppler if valid for use.
+  unsigned isGrouped:1;               //!< Indicates if this channel has another associated channel. eg. L1 and L2 measurements.
+  unsigned isAutoAssigned:1;          //!< Indicates if the channel was receiver assigned (otherwise, the user forced this channel assignment).
+  unsigned isCarrierSmoothed:1;       //!< Indicates if the pseudorange has carrier smoothing enabled.
+  unsigned isEphemerisValid:1;        //!< Indicates if this channel has valid associated ephemeris information. 
+  unsigned isAlmanacValid:1;          //!< Indicates if this channel has valid associated almanac information.
+  unsigned isAboveElevationMask:1;    //!< Indicates if the satellite tracked is above the elevation mask.    
+  unsigned isAboveCNoMask:1;          //!< Indciates if the channel's C/No is above a threshold value.
+  unsigned isAboveLockTimeMask:1;     //!< Indicates if the channel's locktime is above a treshold value.
+  unsigned isNotUserRejected:1;       //!< Indicates if the user has not forced the rejection of this channel or PRN.
+  unsigned isNotPsrRejected:1;        //!< Indicates if the pseudorange was not rejetced (ie Fault Detection and Exclusion).
+  unsigned isNotAdrRejected:1;        //!< Indicates if the ADR was not rejetced (ie Fault Detection and Exclusion).
+  unsigned isNotDopplerRejected:1;    //!< Indicates if the Doppler was not rejected (ie Fault Detection and Exclusion).
+  unsigned isNoCycleSlipDetected:1;   //!< Indicates that no cycle slip has occurred at this epoch.
+  unsigned isPsrUsedInSolution:1;     //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
+  unsigned isDopplerUsedInSolution:1; //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
+  unsigned isAdrUsedInSolution:1;     //!< Indicates if the the ADR is used in the solution.
 
   unsigned isDifferentialPsrAvailable:1;     //!< Indicates if a matching pseudrange observation is available from another receiver.
   unsigned isDifferentialDopplerAvailable:1; //!< Indicates if a matching Doppler observation is available from another receiver.
@@ -208,7 +208,7 @@ typedef struct
   GNSS_enumCodeType         codeType; //!< The code type for this channel.
   GNSS_enumFrequency        freqType; //!< The frequency type for this channel.
   GNSS_structFlagsBitField  flags;    //!< The flags associated with this channel. ie Validity flags, etc.
-
+  short reserved1;  
   unsigned short week;  //!< The measurement gps week (at 'transmit' time) [weeks].
   double   tow;         //!< The measurement gps time of week (at 'transmit' time) [s].
 
@@ -236,13 +236,11 @@ typedef struct
   float    azimuthRads;       //!< The associated satellite azimuth for this channel [rad].
   float    elevationRads;     //!< The associated satellite elevation for this channel  [rad].
 
-
   short index_differential;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
   short index_time_differential; //!< The channel index of a matching time differential observation. -1 means there is no matching channel.
   short index_between_satellite_differential; //!< The channel index for between satellite difference of the satellite that is substracted from this one. -1 means there is no matching channel.
-  int    index_differential_adr;  //!< The channel index of a matching differential observation. -1 means there is no matching channel.
-  int    index_ambiguity_state;   //!< The index into the state vector for this ambiguity state. -1 not estimated.
-  double adr_misclosure;          //!< The measured ADR minus the computed ADR estimate [m]. This is likely a differential quantity.
+  short index_ambiguity_state;   //!< The index into the state vector for this ambiguity state. -1 not estimated.
+  double adr_misclosure;         //!< The measured ADR minus the computed ADR estimate [m]. This is likely a differential quantity.
 
   double H_p[3]; //!< The design matrix row relating the pseudorange measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
   double H_v[3]; //!< The design matrix row relating the Doppler measurements to the velocity solution. dD/d(lat), dD/d(lon), dD/d(hgt).
