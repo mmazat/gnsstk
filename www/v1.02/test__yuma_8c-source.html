@@ -1251,11 +1251,11 @@
 <a name="l01226"></a>01226 <span class="stringliteral">Eccentricity:               0.007102489471\n\</span>
 <a name="l01227"></a>01227 <span class="stringliteral">Time of Applicability(s):   589824.0000\n\</span>
 <a name="l01228"></a>01228 <span class="stringliteral">Orbital Inclination(rad):   0.9908943176\n\</span>
-<a name="l01229"></a>01229 <span class="stringliteral">Rate of Right Ascen(r/s):  -7.632479537e-009\n\</span>
+<a name="l01229"></a>01229 <span class="stringliteral">Rate of Right Ascen(r/s):   -7.632479537e-009\n\</span>
 <a name="l01230"></a>01230 <span class="stringliteral">SQRT(A)  (m 1/2):           5153.553711\n\</span>
-<a name="l01231"></a>01231 <span class="stringliteral">Right Ascen at Week(rad):  -1.04144752\n\</span>
-<a name="l01232"></a>01232 <span class="stringliteral">Argument of Perigee(rad):  -1.798838139\n\</span>
-<a name="l01233"></a>01233 <span class="stringliteral">Mean Anom(rad):            -2.883712769\n\</span>
+<a name="l01231"></a>01231 <span class="stringliteral">Right Ascen at Week(rad):   -1.04144752\n\</span>
+<a name="l01232"></a>01232 <span class="stringliteral">Argument of Perigee(rad):   -1.798838139\n\</span>
+<a name="l01233"></a>01233 <span class="stringliteral">Mean Anom(rad):             -2.883712769\n\</span>
 <a name="l01234"></a>01234 <span class="stringliteral">Af0(s):                     0.0001697540283\n\</span>
 <a name="l01235"></a>01235 <span class="stringliteral">Af1(s/s):                   3.637978807e-012\n\</span>
 <a name="l01236"></a>01236 <span class="stringliteral">week:                       431\n\n"</span>;
@@ -1278,10 +1278,20 @@
 <a name="l01253"></a>01253     );
 <a name="l01254"></a>01254   CU_ASSERT_FATAL( result );
 <a name="l01255"></a>01255 
-<a name="l01256"></a>01256   CU_ASSERT( strcmp( buffer, test_buffer ) == 0 );  
-<a name="l01257"></a>01257 }
-<a name="l01258"></a>01258 
-</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:44 2007 for The Essential GNSS Project by&nbsp;
+<a name="l01256"></a>01256   <span class="comment">/*</span>
+<a name="l01257"></a>01257 <span class="comment">  printf( buffer );</span>
+<a name="l01258"></a>01258 <span class="comment">  printf( test_buffer );</span>
+<a name="l01259"></a>01259 <span class="comment">  {</span>
+<a name="l01260"></a>01260 <span class="comment">    int ii = strlen( buffer);</span>
+<a name="l01261"></a>01261 <span class="comment">    int jj = strlen( test_buffer );</span>
+<a name="l01262"></a>01262 <span class="comment">    int gg= 0;</span>
+<a name="l01263"></a>01263 <span class="comment">  }</span>
+<a name="l01264"></a>01264 <span class="comment">  */</span>
+<a name="l01265"></a>01265 
+<a name="l01266"></a>01266   CU_ASSERT( strcmp( buffer, test_buffer ) == 0 );  
+<a name="l01267"></a>01267 }
+<a name="l01268"></a>01268 
+</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:56 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

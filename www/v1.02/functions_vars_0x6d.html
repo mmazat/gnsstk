@@ -36,7 +36,6 @@
     <li><a href="functions.html"><span>All</span></a></li>
     <li><a href="functions_func.html"><span>Functions</span></a></li>
     <li class="current"><a href="functions_vars.html"><span>Variables</span></a></li>
-    <li><a href="functions_enum.html"><span>Enumerations</span></a></li>
     <li><a href="functions_rela.html"><span>Related&nbsp;Functions</span></a></li>
   </ul>
 </div>
@@ -83,6 +82,8 @@
 : <a class="el" href="class_g_n_s_s_1_1_g_p_s___broadcast_ephemeris_and_almanac_array.html#cb71e6efa4e051ab073739b7c98f0399">GNSS::GPS_BroadcastEphemerisAndAlmanacArray</a>
 <li>m_arrayLength
 : <a class="el" href="class_g_n_s_s_1_1_g_p_s___broadcast_ephemeris_and_almanac_array.html#d135bc16dd26b133c7bd75943d21180d">GNSS::GPS_BroadcastEphemerisAndAlmanacArray</a>
+<li>m_CheckRinexObservationHeader
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#78c25e716103b4df72a71ad856ebb5c0">GNSS::GNSS_RxData</a>
 <li>m_cnoMask
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#ed2b8bae4e929218f07d3706d7f11747">GNSS::GNSS_OptionFile</a>
 , <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#329804b1acff1d8b9b5f7b593b597f6b">GNSS::GNSS_RxData</a>
@@ -107,6 +108,10 @@
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#118a40f3976e56b4daa2d02d22b5afd6">GNSS::GNSS_Estimator</a>
 <li>m_IsMTXInitialized
 : <a class="el" href="class_zenautics_1_1_matrix.html#b077f9d35c3daedb5ac77b438b94ea38">Zenautics::Matrix</a>
+<li>m_KalmanOptions
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#8ffc4b47364ece29a564e35efab5deec">GNSS::GNSS_OptionFile</a>
+<li>m_KF
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#ba8437144417f7f77f02b305ee1be715">GNSS::GNSS_Estimator</a>
 <li>m_klobuchar
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#3541286d1ca8c8b98ec464f78d33cc12">GNSS::GNSS_OptionFile</a>
 , <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#9a74f2a075fcf027835ca172d33481ed">GNSS::GNSS_RxData</a>
@@ -147,6 +152,8 @@
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#764463f0eb40af483c056ba91cb1ebf5">GNSS::GNSS_RxData</a>
 <li>m_prev_pvt
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#b5a4d70eb050a710917d2593c63c5392">GNSS::GNSS_RxData</a>
+<li>m_processDGPSOnly
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#f78093cbbe0386a4060edfd604d043aa">GNSS::GNSS_OptionFile</a>
 <li>m_ProcessingMethod
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#049bbe720b2cb65fa2ca9dcd99516a26">GNSS::GNSS_OptionFile</a>
 <li>m_pvt
@@ -161,6 +168,12 @@
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#dd3e77059af77a4502577471a202e353">GNSS::GNSS_Estimator</a>
 <li>m_Reference
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#0654e2415f792e5f2f06b5e686a0e0cf">GNSS::GNSS_OptionFile</a>
+<li>m_RINEX_eph_index
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#990c43c8b1273ff72909a8503e727b9d">GNSS::GNSS_RxData</a>
+<li>m_RINEX_obs_header
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#4ae69480ba39617fdbe0121be51ca6d8">GNSS::GNSS_RxData</a>
+<li>m_RINEX_use_eph
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#d2f707e92f7d02b850598a49baa7cf81">GNSS::GNSS_RxData</a>
 <li>m_Rover
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#60521288cf4e08aec4bedaea0c8885a0">GNSS::GNSS_OptionFile</a>
 <li>m_rxDataType
@@ -177,14 +190,23 @@
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#518833ce65711b8c440eaece6928c3ff">GNSS::GNSS_Estimator</a>
 <li>m_x
 : <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#ad727f629f85df4c85876c745cc22841">GNSS::GNSS_Estimator</a>
+<li>marker_name
+: <a class="el" href="struct_r_i_n_e_x__struct_raw_header.html#5011897bc90125b6a4e7c889168b6f1c">RINEX_structRawHeader</a>
+, <a class="el" href="struct_r_i_n_e_x__struct_decoded_header.html#45c9c323c444dcc2b32145d2c5cf46ef">RINEX_structDecodedHeader</a>
+<li>marker_nr
+: <a class="el" href="struct_r_i_n_e_x__struct_raw_header.html#55231539e8d15aac11d603fe61b1ebee">RINEX_structRawHeader</a>
+<li>marker_type
+: <a class="el" href="struct_r_i_n_e_x__struct_raw_header.html#78b6b478308e66deace35473142e63b1">RINEX_structRawHeader</a>
+<li>max_array_length
+: <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html#e593b1c355ff93b23006803cc1130f05">GNSS::GNSS_RxData</a>
 <li>messageID
 : <a class="el" href="struct_n_o_v_a_t_e_l_o_e_m4__struct_binary_header.html#a6e1589e89a94df81a71d22a0f581627">NOVATELOEM4_structBinaryHeader</a>
 <li>messageType
 : <a class="el" href="struct_n_o_v_a_t_e_l_o_e_m4__struct_binary_header.html#995259842fd1416766f6d654ab0d3be2">NOVATELOEM4_structBinaryHeader</a>
 <li>minutes
-: <a class="el" href="struct_g_n_s_s_1_1_g_n_s_s__struct_d_m_s.html#3f36131ee9e584facbf11fcb6e95d3f0">GNSS::GNSS_structDMS</a>
+: <a class="el" href="struct_g_n_s_s__struct_d_m_s.html#1340efda1994ade4ab644775023c12c5">GNSS_structDMS</a>
 </ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:46 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:57 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

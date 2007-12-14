@@ -69,7 +69,7 @@ The index mapping is as follows: <br>
 <dl class="date" compact><dt><b>Date:</b></dt><dd>2007-10-29 </dd></dl>
 <dl class="since" compact><dt><b>Since:</b></dt><dd>2006-11-15 </dd></dl>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8h-source.html#l00096">96</a> of file <a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8h-source.html#l00098">98</a> of file <a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a>.</p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Public Member Functions</h2></td></tr>
@@ -91,6 +91,9 @@ The index mapping is as follows: <br>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_p_s___broadcast_ephemeris_and_almanac_array.html#a9ad11c2fb7a1b40c502ff5d8979fe85">GetEphemeris</a> (const unsigned short prn, <a class="el" href="struct_g_p_s__struct_ephemeris.html">GPS_structEphemeris</a> &amp;eph, bool &amp;isAvailable, char iode=-1)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Try to get the most current ephemeris or the ephemeris with the issue of data (ephemeris), iode, specified.  <a href="#a9ad11c2fb7a1b40c502ff5d8979fe85"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_p_s___broadcast_ephemeris_and_almanac_array.html#f036d2626299c9d2e0e2223a4c2f0967">GetEphemerisTOW</a> (const unsigned short prn, bool &amp;isAvailable, unsigned short &amp;week, unsigned &amp;tow)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Try to get the week, and time of week of the most current ephemeris for the prn specified if available.  <a href="#f036d2626299c9d2e0e2223a4c2f0967"></a><br></td></tr>
 <tr><td colspan="2"><br><h2>Protected Member Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_p_s___broadcast_ephemeris_and_almanac_array.html#e97fa93acc56afa64ac674c9f43eb5e4">AllocateArray</a> ()</td></tr>
 
@@ -126,7 +129,7 @@ The index mapping is as follows: <br>
 The default constructor (no data allocated yet). 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00060">60</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00069">69</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -149,7 +152,7 @@ The default constructor (no data allocated yet).
 The destructor. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00067">67</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00076">76</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -184,7 +187,7 @@ Add an ephemeris structure.
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00101">101</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00110">110</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -218,7 +221,7 @@ Add an almanac structure.
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00121">121</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00130">130</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -267,7 +270,7 @@ This boolean indicates if ephemeris data is available or not. </td></tr>
 The issue of data for the ephemeris, -1 means get the most current. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00187">187</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00251">251</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -326,7 +329,66 @@ This boolean indicates if ephemeris data is available or not. </td></tr>
 The issue of data for the ephemeris, -1 means get the most current. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00139">139</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00148">148</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+
+</div>
+</div><p>
+<a class="anchor" name="f036d2626299c9d2e0e2223a4c2f0967"></a><!-- doxytag: member="GNSS::GPS_BroadcastEphemerisAndAlmanacArray::GetEphemerisTOW" ref="f036d2626299c9d2e0e2223a4c2f0967" args="(const unsigned short prn, bool &amp;isAvailable, unsigned short &amp;week, unsigned &amp;tow)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool GNSS::GPS_BroadcastEphemerisAndAlmanacArray::GetEphemerisTOW           </td>
+          <td>(</td>
+          <td class="paramtype">const unsigned short&nbsp;</td>
+          <td class="paramname"> <em>prn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool &amp;&nbsp;</td>
+          <td class="paramname"> <em>isAvailable</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned short &amp;&nbsp;</td>
+          <td class="paramname"> <em>week</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned &amp;&nbsp;</td>
+          <td class="paramname"> <em>tow</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Try to get the week, and time of week of the most current ephemeris for the prn specified if available. 
+<p>
+<dl class="author" compact><dt><b>Author:</b></dt><dd>Glenn D. MacGougan </dd></dl>
+<dl class="date" compact><dt><b>Date:</b></dt><dd>2007-12-07 </dd></dl>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
+<dl compact><dt><b>Parameters: </b></dt><dd>
+<table border="0" cellspacing="2" cellpadding="0">
+<tr><td valign="top"><em>prn</em>&nbsp;</td><td>
+The desired GPS PRN. (1-32 GPS, 120-138 SBAS). </td></tr>
+<tr><td valign="top"><em>isAvailable</em>&nbsp;</td><td>
+This boolean indicates if ephemeris data is available or not. </td></tr>
+<tr><td valign="top"><em>week</em>&nbsp;</td><td>
+The correct week corresponding to the time of week based on the Z-count in the Hand Over Word. </td></tr>
+<tr><td valign="top"><em>tow</em>&nbsp;</td><td>
+The time of week based on the Z-count in the Hand Over Word. </td></tr>
+</table>
+</dl>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00196">196</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -350,7 +412,7 @@ Allocate the array.
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00076">76</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00085">85</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -384,7 +446,7 @@ Get the index of the PRN in the array.
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error (e.g. unsupported PRN). </dd></dl>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00236">236</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html#l00300">300</a> of file <a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -404,7 +466,7 @@ Get the index of the PRN in the array.
 A pointer to the array of GPS satellite orbit information structs. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8h-source.html#l00164">164</a> of file <a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8h-source.html#l00180">180</a> of file <a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a>.</p>
 
 </div>
 </div><p>
@@ -423,13 +485,13 @@ A pointer to the array of GPS satellite orbit information structs.
 The maximum number of elements in m_array. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8h-source.html#l00167">167</a> of file <a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___rx_data_8h-source.html#l00183">183</a> of file <a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a>.</p>
 
 </div>
 </div><p>
 <hr>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="_g_n_s_s___rx_data_8h-source.html">GNSS_RxData.h</a><li><a class="el" href="_g_n_s_s___rx_data_8cpp-source.html">GNSS_RxData.cpp</a></ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:47 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:58 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

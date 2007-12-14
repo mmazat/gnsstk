@@ -537,7 +537,38 @@
 <a name="l00512"></a>00512   CU_ASSERT_FATAL( result );
 <a name="l00513"></a>00513   CU_ASSERT( dayofyear == 365 );
 <a name="l00514"></a>00514 }
-</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:44 2007 for The Essential GNSS Project by&nbsp;
+<a name="l00515"></a>00515 
+<a name="l00516"></a>00516 
+<a name="l00517"></a><a class="code" href="test__time__conversion_8h.html#77b9ae13b90daab02ba354ebf33143bf">00517</a> <span class="keywordtype">void</span> <a class="code" href="test__time__conversion_8c.html#77b9ae13b90daab02ba354ebf33143bf" title="Test TIMECONV_GetGPSTimeFromYearAndDayOfYear().">test_TIMECONV_GetGPSTimeFromYearAndDayOfYear</a>(<span class="keywordtype">void</span>)
+<a name="l00518"></a>00518 {
+<a name="l00519"></a>00519   <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> result = 0;
+<a name="l00520"></a>00520 
+<a name="l00521"></a>00521   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span> year = 1999;
+<a name="l00522"></a>00522   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span> dayofyear = 31;
+<a name="l00523"></a>00523   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span> gps_week = 0;
+<a name="l00524"></a>00524   <span class="keywordtype">double</span> gps_tow = 0;
+<a name="l00525"></a>00525  
+<a name="l00526"></a>00526   result = <a class="code" href="time__conversion_8c.html#31336320a93e40b230b29bfba24bb089" title="Determines the GPS time of the start of a day from the day of year and the year.">TIMECONV_GetGPSTimeFromYearAndDayOfYear</a>(
+<a name="l00527"></a>00527     year,
+<a name="l00528"></a>00528     dayofyear,
+<a name="l00529"></a>00529     &amp;gps_week,
+<a name="l00530"></a>00530     &amp;gps_tow );
+<a name="l00531"></a>00531 
+<a name="l00532"></a>00532   CU_ASSERT( gps_week == 995 ) ;
+<a name="l00533"></a>00533   CU_ASSERT_DOUBLE_EQUAL( gps_tow, 0, 1e-03 ) ;
+<a name="l00534"></a>00534 
+<a name="l00535"></a>00535   result = <a class="code" href="time__conversion_8c.html#31336320a93e40b230b29bfba24bb089" title="Determines the GPS time of the start of a day from the day of year and the year.">TIMECONV_GetGPSTimeFromYearAndDayOfYear</a>(
+<a name="l00536"></a>00536     2000,
+<a name="l00537"></a>00537     60,
+<a name="l00538"></a>00538     &amp;gps_week,
+<a name="l00539"></a>00539     &amp;gps_tow );
+<a name="l00540"></a>00540 
+<a name="l00541"></a>00541   CU_ASSERT( gps_week == 1051 ) ;
+<a name="l00542"></a>00542   CU_ASSERT_DOUBLE_EQUAL( gps_tow, 172800, 1e-03 ) ;
+<a name="l00543"></a>00543 }
+<a name="l00544"></a>00544 
+<a name="l00545"></a>00545 
+</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:56 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

@@ -36,26 +36,26 @@
 <h1>Zenautics::MatrixException Class Reference</h1><!-- doxytag: class="Zenautics::MatrixException" --><code>#include &lt;<a class="el" href="_matrix_8h-source.html">Matrix.h</a>&gt;</code>
 <p>
 <hr><a name="_details"></a><h2>Detailed Description</h2>
-A class for exceptions thrown by the <a class="el" href="class_zenautics_1_1_matrix.html" title="The two dimensional matrix class. Both real and complex data are inherently supported...">Matrix</a> class. 
+A class for exceptions thrown by the <a class="el" href="class_zenautics_1_1_matrix.html" title="The matrix/vector class. Both real and complex data are inherently supported. One...">Matrix</a> class. 
 <p>
 The MATRIX_USE_EXCEPTION_HANDLING define enables the use of exception handling using try{} catch{}. A <a class="el" href="class_zenautics_1_1_matrix_exception.html" title="A class for exceptions thrown by the Matrix class.">MatrixException</a> is thrown. The use of exception handling is very highly recommended. When it is turned off, the matrix will try to output a message and then call 'exit(1)'.<p>
-<div class="fragment"><pre class="fragment"> <span class="keywordtype">int</span> <a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97">main</a>()
- { 
-   <span class="keywordflow">try</span>
-   {
-     Matrix A(2,2);
-     <span class="keywordtype">double</span> d = A(3,1).real(); <span class="comment">// causes an out of bounds exception</span>
-   }
-   <span class="keywordflow">catch</span>( <a class="code" href="class_zenautics_1_1_matrix_exception.html#a71bb43613bc2a3cf335aef07969af00" title="The constructor.">MatrixException</a>&amp; matrix_exception )
-   {
-     cout &lt;&lt; matrix_exception &lt;&lt; endl;
-   }
-   <span class="keywordflow">catch</span> ( ... )
-   {
-     cout &lt;&lt; <span class="stringliteral">"Caught unknown exception"</span> &lt;&lt; endl;
-   }
-   <span class="keywordflow">return</span> 0;
- }
+<div class="fragment"><pre class="fragment">  <span class="keywordtype">int</span> <a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97" title="A main() for a geodesy application.">main</a>()
+  { 
+    <span class="keywordflow">try</span>
+    {
+      Matrix A(2,2);
+      <span class="keywordtype">double</span> d = A(3,1).real(); <span class="comment">// causes an out of bounds exception</span>
+    }
+    <span class="keywordflow">catch</span>( <a class="code" href="class_zenautics_1_1_matrix_exception.html#a71bb43613bc2a3cf335aef07969af00" title="The constructor.">MatrixException</a>&amp; matrix_exception )
+    {
+      cout &lt;&lt; matrix_exception &lt;&lt; endl;
+    }
+    <span class="keywordflow">catch</span> ( ... )
+    {
+      cout &lt;&lt; <span class="stringliteral">"Caught unknown exception"</span> &lt;&lt; endl;
+    }
+    <span class="keywordflow">return</span> 0;
+  }
 </pre></div> 
 <p>Definition at line <a class="el" href="_matrix_8h-source.html#l00091">91</a> of file <a class="el" href="_matrix_8h-source.html">Matrix.h</a>.</p>
 <table border="0" cellpadding="0" cellspacing="0">
@@ -102,7 +102,7 @@ The MATRIX_USE_EXCEPTION_HANDLING define enables the use of exception handling u
 The constructor. 
 <p>
 
-<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00070">70</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00079">79</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -126,7 +126,7 @@ The constructor.
 The copy constructor. 
 <p>
 
-<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00113">113</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00122">122</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -173,7 +173,7 @@ The destuctor.
 Return a copy of the exception message. 
 <p>
 
-<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00119">119</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00128">128</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -196,7 +196,7 @@ Return a copy of the exception message.
 Overload the casting operator to a string. 
 <p>
 
-<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00124">124</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_matrix_8cpp-source.html#l00133">133</a> of file <a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -222,7 +222,7 @@ The matrix exception string.
 </div><p>
 <hr>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="_matrix_8h-source.html">Matrix.h</a><li><a class="el" href="_matrix_8cpp-source.html">Matrix.cpp</a></ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:47 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:58 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

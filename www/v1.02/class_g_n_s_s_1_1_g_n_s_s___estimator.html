@@ -63,12 +63,9 @@ A class for estimating navigation information provided GNSS measurements.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#8c7fdda095926c02f0670d51812596cb">DetermineUsableAdrMeasurements_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> &amp;rxData, unsigned &amp;nrUsableAdr)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the usable GPS L1 ADR measurements.  <a href="#8c7fdda095926c02f0670d51812596cb"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#0325ac1ddd31befdbfc2a8b67e97c69c">DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxData, <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxBaseData, const bool setToUseOnlyDifferntial, unsigned &amp;nrDifferentialPseudoranges)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#89d622b54e346463aabaa22fb22515fb">DetermineBetweenReceiverDifferentialIndex</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxData, <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxBaseData, const bool setToUseOnlyDifferential)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the differential GPS L1 pseudorange measurements.  <a href="#0325ac1ddd31befdbfc2a8b67e97c69c"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#9046c3495a8b425bc111a6312e5c91f4">DetermineDifferentialAdrMeasurements_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxData, <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxBaseData, const bool setToUseOnlyDifferential, unsigned &amp;nrDifferentialAdr)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the differential GPS L1 ADR measurements. Allow only differential ADR measurements.  <a href="#9046c3495a8b425bc111a6312e5c91f4"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the corresponding indices for between receiver differencing.  <a href="#89d622b54e346463aabaa22fb22515fb"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#5b662c0621a045780f42bf1bc98fbae6">DetermineDesignMatrixForThePositionSolution_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> &amp;rxData, const unsigned nrRowsInH, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;H)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the design matrix for the GPS L1 position solution based on pseudroange measurements.  <a href="#5b662c0621a045780f42bf1bc98fbae6"></a><br></td></tr>
@@ -87,9 +84,6 @@ A class for estimating navigation information provided GNSS measurements.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#e34436e320fbd94934948bacc58eb5be">DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> &amp;rxData, unsigned &amp;nrUsableDopplers)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the usable GPS L1 Doppler measurements.  <a href="#e34436e320fbd94934948bacc58eb5be"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#92db9d6064dda154b675f62f07b53573">DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxData, <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxBaseData, const bool setToUseOnlyDifferential, unsigned &amp;nrDifferentialDoppler)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determine the differential GPS L1 Doppler measurements.  <a href="#92db9d6064dda154b675f62f07b53573"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#5279f3ab46554e64129eb57d5c9ea941">DetermineDopplerMisclosures_GPSL1</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxData, <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *rxBaseData, const unsigned n, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;w)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the GPS L1 Doppler misclosures.  <a href="#5279f3ab46554e64129eb57d5c9ea941"></a><br></td></tr>
@@ -105,13 +99,13 @@ A class for estimating navigation information provided GNSS measurements.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#08bc49b2a24eeb6106182db329612797">PerformGlobalTestAndTestForMeasurementFaults</a> (<a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> &amp;rxData, bool testPsrOrDoppler, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;H, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;Ht, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;W, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;R, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;r, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;P, const unsigned char n, const unsigned char u, double &amp;avf, bool &amp;isGlobalTestPassed, bool &amp;hasRejectionOccurred, unsigned char &amp;indexOfRejected)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Perform the Global Internal Reliability Test, followed by a search using local testing for a single measurement fault if the global test fails.  <a href="#08bc49b2a24eeb6106182db329612797"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#e0a326c17c9c6e39368f7ebc9aa43ab1">ComputeTransitionMatrix_8StatePVGM</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;T, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#4b740a36bfa93efeb2adaec0ad84d4cf">ComputeTransitionMatrix_8StatePVGM</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;T)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#6b021d1efba0203fff9992400f4891c5">ComputeTransitionMatrix_8StatePVGM_Float</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;T, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#8ba6bac747be4d47b90eafd716b121b9">ComputeTransitionMatrix_8StatePVGM_Float</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;T)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#45ee367eb2b37a2e0586d55e7b2afdf1">ComputeProcessNoiseMatrix_8StatePVGM</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;Q, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift, const double qVn, const double qVe, const double qVup, const double qClkDrift)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#86a9c1a4ea01ec80d2ffc0ea11e91dfd">ComputeProcessNoiseMatrix_8StatePVGM</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;Q)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#b55a5de11ab9a6a91bde4ac385a23bbe">ComputeProcessNoiseMatrix_8StatePVGM_Float</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;Q, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift, const double qVn, const double qVe, const double qVup, const double qClkDrift)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#5186b203871b1784294ce7b5d3341b84">ComputeProcessNoiseMatrix_8StatePVGM_Float</a> (const double dT, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;Q)</td></tr>
 
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#286a380dfdb7472d35a875916189da92">InitializeStateVarianceCovariance_8StatePVGM</a> (const double std_lat, const double std_lon, const double std_hgt, const double std_vn, const double std_ve, const double std_vup, const double std_clk, const double std_clkdrift, <a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;P)</td></tr>
 
@@ -175,6 +169,8 @@ A class for estimating navigation information provided GNSS measurements.
 <tr><td class="memItemLeft" nowrap align="right" valign="top"><a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#775fbf630ed01643ba66d095904e8c6e">m_Q_prev</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The previous process noise matrix, [u x u].  <a href="#775fbf630ed01643ba66d095904e8c6e"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">stKalmanModel&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#ba8437144417f7f77f02b305ee1be715">m_KF</a></td></tr>
+
 <tr><td class="memItemLeft" nowrap align="right" valign="top">std::list&lt; stAmbiguityInfo &gt;&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#ae1ea80b8b1ce92ca93be7e5cf27fa09">m_ActiveAmbiguitiesList</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">GDM store in RxData?  <a href="#ae1ea80b8b1ce92ca93be7e5cf27fa09"></a><br></td></tr>
@@ -229,7 +225,7 @@ The default constructor (no data allocated yet).
 The destructor. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00097">97</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00077">77</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -299,7 +295,7 @@ The pointer to the reference receiver data. NULL if not available. </td></tr>
 The number of GPS L1 channels with valid ephemeris for the rover. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00642">642</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00646">646</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -340,7 +336,7 @@ Determine the tropospheric and ionospheric delay for each GPS L1 channel in rxDa
 The receiver data. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00958">958</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00962">962</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -382,7 +378,7 @@ Determine the usable GPS L1 pseudroange measurements.
 <dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The following flags are set: rxData.m_ObsArray[i].flags.isAboveElevationMask <br>
  rxData.m_ObsArray[i].flags.isAboveCNoMask <br>
  rxData.m_ObsArray[i].flags.isAboveLockTimeMask <br>
- rxData.m_ObsArray[i].flags.isUsedInPosSolution.</dd></dl>
+ rxData.m_ObsArray[i].flags.isPsrUsedInSolution.</dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 <dl compact><dt><b>Parameters: </b></dt><dd>
 <table border="0" cellspacing="2" cellpadding="0">
@@ -392,7 +388,7 @@ The receiver data. </td></tr>
 the number of usable GPS L1 pseudorange measurements. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01029">1029</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01033">1033</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -439,16 +435,16 @@ The receiver data. </td></tr>
 The number of usable GPS L1 adr measurements. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01100">1100</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01150">1150</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="0325ac1ddd31befdbfc2a8b67e97c69c"></a><!-- doxytag: member="GNSS::GNSS_Estimator::DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1" ref="0325ac1ddd31befdbfc2a8b67e97c69c" args="(GNSS_RxData *rxData, GNSS_RxData *rxBaseData, const bool setToUseOnlyDifferntial, unsigned &amp;nrDifferentialPseudoranges)" -->
+<a class="anchor" name="89d622b54e346463aabaa22fb22515fb"></a><!-- doxytag: member="GNSS::GNSS_Estimator::DetermineBetweenReceiverDifferentialIndex" ref="89d622b54e346463aabaa22fb22515fb" args="(GNSS_RxData *rxData, GNSS_RxData *rxBaseData, const bool setToUseOnlyDifferential)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool GNSS::GNSS_Estimator::DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1           </td>
+          <td class="memname">bool GNSS::GNSS_Estimator::DetermineBetweenReceiverDifferentialIndex           </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *&nbsp;</td>
           <td class="paramname"> <em>rxData</em>, </td>
@@ -463,13 +459,7 @@ The number of usable GPS L1 adr measurements. </td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const bool&nbsp;</td>
-          <td class="paramname"> <em>setToUseOnlyDifferntial</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned &amp;&nbsp;</td>
-          <td class="paramname"> <em>nrDifferentialPseudoranges</em></td><td>&nbsp;</td>
+          <td class="paramname"> <em>setToUseOnlyDifferential</em></td><td>&nbsp;</td>
         </tr>
         <tr>
           <td></td>
@@ -481,99 +471,33 @@ The number of usable GPS L1 adr measurements. </td></tr>
 <div class="memdoc">
 
 <p>
-Determine the differential GPS L1 pseudorange measurements. 
+Determine the corresponding indices for between receiver differencing. 
 <p>
-<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData-&gt;m_ObsArray[i].flags.isUsedInPosSolution <br>
- rxBaseData-&gt;m_ObsArray[i].flags.isUsedInPosSolution <br>
+<dl class="author" compact><dt><b>Author:</b></dt><dd>Glenn D. MacGougan </dd></dl>
+<dl class="date" compact><dt><b>Date:</b></dt><dd>2007-12-13</dd></dl>
+<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: for rxData and rxBaseData obsservations <br>
+ flags.isPsrUsedInSolution <br>
+ flags.isDopplerUsedInSolution <br>
+ flags.isAdrUsedInSolution <br>
 </dd></dl>
-<dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The following are set: <br>
- rxData-&gt;m_ObsArray[i].flags.isDifferentialPsrAvailable <br>
- rxBaseData-&gt;m_ObsArray[i].flags.isDifferentialPsrAvailable <br>
- rxData-&gt;m_ObsArray[i].index_differential <br>
- rxBaseData-&gt;m_ObsArray[i].index_differential <br>
+<dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The following are set: for rxData and rxBaseData obsservations <br>
+ flags.isDifferentialPsrAvailable <br>
+ flags.isDifferentialDopplerAvailable <br>
+ flags.isDifferentialAdrAvailable <br>
+ index_differential <br>
 </dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 <dl compact><dt><b>Parameters: </b></dt><dd>
 <table border="0" cellspacing="2" cellpadding="0">
 <tr><td valign="top"><em>rxData</em>&nbsp;</td><td>
-The pointer to the receiver data. </td></tr>
+(input) The pointer to the receiver data. </td></tr>
 <tr><td valign="top"><em>rxBaseData</em>&nbsp;</td><td>
-The pointer to the reference receiver data. </td></tr>
-<tr><td valign="top"><em>setToUseOnlyDifferntial</em>&nbsp;</td><td>
-This indicates that only differential measurements should be used. </td></tr>
-<tr><td valign="top"><em>nrDifferentialPseudoranges</em>&nbsp;</td><td>
-The number of usable GPS L1 pseudorange measurements. </td></tr>
-</table>
-</dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01165">1165</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
-
-</div>
-</div><p>
-<a class="anchor" name="9046c3495a8b425bc111a6312e5c91f4"></a><!-- doxytag: member="GNSS::GNSS_Estimator::DetermineDifferentialAdrMeasurements_GPSL1" ref="9046c3495a8b425bc111a6312e5c91f4" args="(GNSS_RxData *rxData, GNSS_RxData *rxBaseData, const bool setToUseOnlyDifferential, unsigned &amp;nrDifferentialAdr)" -->
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool GNSS::GNSS_Estimator::DetermineDifferentialAdrMeasurements_GPSL1           </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *&nbsp;</td>
-          <td class="paramname"> <em>rxData</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *&nbsp;</td>
-          <td class="paramname"> <em>rxBaseData</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const bool&nbsp;</td>
-          <td class="paramname"> <em>setToUseOnlyDifferential</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned &amp;&nbsp;</td>
-          <td class="paramname"> <em>nrDifferentialAdr</em></td><td>&nbsp;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td><td width="100%"></td>
-        </tr>
-      </table>
-</div>
-<div class="memdoc">
-
-<p>
-Determine the differential GPS L1 ADR measurements. Allow only differential ADR measurements. 
-<p>
-<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData-&gt;m_ObsArray[i].flags.isAdrUsedInSolution <br>
- rxBaseData-&gt;m_ObsArray[i].flags.isAdrUsedInSolution <br>
-</dd></dl>
-<dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The following are set: <br>
- rxData-&gt;m_ObsArray[i].flags.isDifferentialAdrAvailable <br>
- rxBaseData-&gt;m_ObsArray[i].flags.isDifferentialAdrAvailable <br>
- rxData-&gt;m_ObsArray[i].index_differential_adr <br>
- rxBaseData-&gt;m_ObsArray[i].index_differential_adr <br>
-</dd></dl>
-<dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
-<dl compact><dt><b>Parameters: </b></dt><dd>
-<table border="0" cellspacing="2" cellpadding="0">
-<tr><td valign="top"><em>rxData</em>&nbsp;</td><td>
-The pointer to the receiver data. </td></tr>
-<tr><td valign="top"><em>rxBaseData</em>&nbsp;</td><td>
-The pointer to the reference receiver data. </td></tr>
+(input) The pointer to the reference receiver data. NULL if not available. </td></tr>
 <tr><td valign="top"><em>setToUseOnlyDifferential</em>&nbsp;</td><td>
-This indicates that only differential measurements should be used. </td></tr>
-<tr><td valign="top"><em>nrDifferentialAdr</em>&nbsp;</td><td>
-The number of usable GPS L1 ADR measurements. </td></tr>
+(input) This indicates that only differential measurements should be used. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01254">1254</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01593">1593</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -611,7 +535,7 @@ The number of usable GPS L1 ADR measurements. </td></tr>
 <p>
 Determine the design matrix for the GPS L1 position solution based on pseudroange measurements. 
 <p>
-<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: rxData.m_pvt rxData.m_ObsArray[i].satellite rxData.m_ObsArray[i].flags.isUsedInPosSolution</dd></dl>
+<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: rxData.m_pvt rxData.m_ObsArray[i].satellite rxData.m_ObsArray[i].flags.isPsrUsedInSolution</dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 <dl compact><dt><b>Parameters: </b></dt><dd>
 <table border="0" cellspacing="2" cellpadding="0">
@@ -623,7 +547,7 @@ The number of valid rows in H. </td></tr>
 The position &amp; rx clock design matrix [n x 4]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01340">1340</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01215">1215</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -662,7 +586,7 @@ The position &amp; rx clock design matrix [n x 4]. </td></tr>
 Determine the measurement weight matrix for the GPS L1 position solution based on pseudroange measurement standard deviation values specified in rxData.m_ObsArray[i].stdev_psr. 
 <p>
 <dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData.m_ObsArray[i].flags.isUsedInPosSolution <br>
+ rxData.m_ObsArray[i].flags.isPsrUsedInSolution <br>
  rxData.m_ObsArray[i].stdev_psr (not zero) <br>
 </dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
@@ -676,7 +600,7 @@ The number of usable GPS L1 pseudorange measurements. </td></tr>
 The inverse of the pseudorange measurement variance-coraiance matrix [nP x nP]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01431">1431</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01306">1306</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -715,7 +639,7 @@ The inverse of the pseudorange measurement variance-coraiance matrix [nP x nP]. 
 Determine the measurement variance-coariance matrix for the GPS L1 position solution based on pseudroange measurement standard deviation values specified in rxData.m_ObsArray[i].stdev_psr. 
 <p>
 <dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData.m_ObsArray[i].flags.isUsedInPosSolution <br>
+ rxData.m_ObsArray[i].flags.isPsrUsedInSolution <br>
  rxData.m_ObsArray[i].stdev_psr (not zero) <br>
 </dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
@@ -729,7 +653,7 @@ The number of measurements and pseudo-measurements (constraints). </td></tr>
 The pseudorange measurement variance-covariance matrix [n x n]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01496">1496</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01371">1371</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -774,7 +698,7 @@ The pseudorange measurement variance-covariance matrix [n x n]. </td></tr>
 Compute the GPS L1 pseudroange misclosures. 
 <p>
 <dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData-&gt;m_ObsArray[i].flags.isUsedInPosSolution <br>
+ rxData-&gt;m_ObsArray[i].flags.isPsrUsedInSolution <br>
  rxData-&gt;m_ObsArray[i].satellite.clkdrift <br>
  rxData-&gt;m_ObsArray[i].corrections.prcTropoDry <br>
  rxData-&gt;m_ObsArray[i].corrections.prcTropoWet <br>
@@ -798,7 +722,7 @@ The number of GPS L1 pseudorange measurements. </td></tr>
 The pseudorange misclosure vector [nP x 1]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01562">1562</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01437">1437</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -867,7 +791,7 @@ The number of misclosures. </td></tr>
 The adr misclosure vector [n x 1]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01719">1719</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01707">1707</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -909,7 +833,7 @@ Determine the usable GPS L1 Doppler measurements.
  rxData.m_ObsArray[i].flags.isNotDopplerRejected <br>
  rxData.m_ObsArray[i].flags.isEphemerisValid <br>
 </dd></dl>
-<dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The rxData.m_ObsArray[i].flags.isUsedInVelSolution will be set to 1(used) or 0(not used). </dd></dl>
+<dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The rxData.m_ObsArray[i].flags.isDopplerUsedInSolution will be set to 1(used) or 0(not used). </dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 <dl compact><dt><b>Parameters: </b></dt><dd>
 <table border="0" cellspacing="2" cellpadding="0">
@@ -919,74 +843,7 @@ The receiver data. </td></tr>
 the number of usable GPS L1 Doppler measurements. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01844">1844</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
-
-</div>
-</div><p>
-<a class="anchor" name="92db9d6064dda154b675f62f07b53573"></a><!-- doxytag: member="GNSS::GNSS_Estimator::DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1" ref="92db9d6064dda154b675f62f07b53573" args="(GNSS_RxData *rxData, GNSS_RxData *rxBaseData, const bool setToUseOnlyDifferential, unsigned &amp;nrDifferentialDoppler)" -->
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool GNSS::GNSS_Estimator::DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1           </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *&nbsp;</td>
-          <td class="paramname"> <em>rxData</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___rx_data.html">GNSS_RxData</a> *&nbsp;</td>
-          <td class="paramname"> <em>rxBaseData</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const bool&nbsp;</td>
-          <td class="paramname"> <em>setToUseOnlyDifferential</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned &amp;&nbsp;</td>
-          <td class="paramname"> <em>nrDifferentialDoppler</em></td><td>&nbsp;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td><td width="100%"></td>
-        </tr>
-      </table>
-</div>
-<div class="memdoc">
-
-<p>
-Determine the differential GPS L1 Doppler measurements. 
-<p>
-<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData-&gt;m_ObsArray[i].flags.isUsedInVelSolution <br>
- rxBaseData-&gt;m_ObsArray[i].flags.isUsedInVelSolution <br>
-</dd></dl>
-<dl class="post" compact><dt><b>Postcondition:</b></dt><dd>The following are set: <br>
- rxData-&gt;m_ObsArray[i].flags.isDifferentialDopplerAvailable <br>
- rxBaseData-&gt;m_ObsArray[i].flags.isDifferentialDopplerAvailable <br>
- rxData-&gt;m_ObsArray[i].index_differential <br>
- rxBaseData-&gt;m_ObsArray[i].index_differential <br>
-</dd></dl>
-<dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
-<dl compact><dt><b>Parameters: </b></dt><dd>
-<table border="0" cellspacing="2" cellpadding="0">
-<tr><td valign="top"><em>rxData</em>&nbsp;</td><td>
-The pointer to the receiver data. </td></tr>
-<tr><td valign="top"><em>rxBaseData</em>&nbsp;</td><td>
-The pointer to the reference receiver data. </td></tr>
-<tr><td valign="top"><em>setToUseOnlyDifferential</em>&nbsp;</td><td>
-This indicates that only differential measurements should be used. </td></tr>
-<tr><td valign="top"><em>nrDifferentialDoppler</em>&nbsp;</td><td>
-The number of usable differential GPS L1 Doppler measurements. </td></tr>
-</table>
-</dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01889">1889</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01105">1105</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1031,7 +888,7 @@ The number of usable differential GPS L1 Doppler measurements. </td></tr>
 Compute the GPS L1 Doppler misclosures. 
 <p>
 <dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The folloing must be valid: <br>
- rxData.m_ObsArray[i].flags.isUsedInVelSolution <br>
+ rxData.m_ObsArray[i].flags.isDopplerUsedInSolution <br>
  rxData.m_ObsArray[i].satellite.clkdrift <br>
  rxData.m_ObsArray[i].rangerate <br>
  rxData.m_pvt.clockDrift <br>
@@ -1052,7 +909,7 @@ The number of misclosures. </td></tr>
 The pseudorange misclosure vector [n x 1]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01977">1977</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01827">1827</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1090,7 +947,7 @@ The pseudorange misclosure vector [n x 1]. </td></tr>
 <p>
 Determine the design matrix for the GPS L1 velocity solution based on Doppler measurements. 
 <p>
-<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: rxData.m_pvt rxData.m_ObsArray[i].satellite rxData.m_ObsArray[i].flags.isUsedInVelSolution</dd></dl>
+<dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: rxData.m_pvt rxData.m_ObsArray[i].satellite rxData.m_ObsArray[i].flags.isDopplerUsedInSolution</dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 <dl compact><dt><b>Parameters: </b></dt><dd>
 <table border="0" cellspacing="2" cellpadding="0">
@@ -1102,7 +959,7 @@ The number of usable GPS L1 Doppler measurements. </td></tr>
 The velocity &amp; rx clock drift design matrix [nD x 4]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02076">2076</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l01926">1926</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1141,7 +998,7 @@ The velocity &amp; rx clock drift design matrix [nD x 4]. </td></tr>
 Determine the measurement weight matrix for the GPS L1 velocity solution based on Doppler measurement standard deviation values specified in rxData.m_ObsArray[i].stdev_doppler. 
 <p>
 <dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData.m_ObsArray[i].flags.isUsedInVelSolution <br>
+ rxData.m_ObsArray[i].flags.isDopplerUsedInSolution <br>
  rxData.m_ObsArray[i].stdev_doppler (not zero) <br>
 </dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
@@ -1155,7 +1012,7 @@ The number of rows in W. </td></tr>
 The inverse of the Doppler measurement variance-coraiance matrix [n x n]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02172">2172</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02022">2022</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1194,7 +1051,7 @@ The inverse of the Doppler measurement variance-coraiance matrix [n x n]. </td><
 Determine the measurement variance-covariance matrix for the GPS L1 velocity solution based on Doppler measurement standard deviation values specified in rxData.m_ObsArray[i].stdev_doppler. 
 <p>
 <dl class="pre" compact><dt><b>Precondition:</b></dt><dd>The following must be valid: <br>
- rxData.m_ObsArray[i].flags.isUsedInVelSolution <br>
+ rxData.m_ObsArray[i].flags.isDopplerUsedInSolution <br>
  rxData.m_ObsArray[i].stdev_doppler (not zero) <br>
 </dd></dl>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
@@ -1208,7 +1065,7 @@ The number of rows in R. </td></tr>
 The inverse of the Doppler measurement variance-coraiance matrix [n x n]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02238">2238</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02088">2088</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1368,11 +1225,11 @@ This indicates if a rejection occurred. Only one measurement is flagged. </td></
 This is the index of the rejected observation. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02327">2327</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02177">2177</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="e0a326c17c9c6e39368f7ebc9aa43ab1"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeTransitionMatrix_8StatePVGM" ref="e0a326c17c9c6e39368f7ebc9aa43ab1" args="(const double dT, Matrix &amp;T, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift)" -->
+<a class="anchor" name="4b740a36bfa93efeb2adaec0ad84d4cf"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeTransitionMatrix_8StatePVGM" ref="4b740a36bfa93efeb2adaec0ad84d4cf" args="(const double dT, Matrix &amp;T)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -1386,31 +1243,7 @@ This is the index of the rejected observation. </td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;&nbsp;</td>
-          <td class="paramname"> <em>T</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVe</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVup</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaClkDrift</em></td><td>&nbsp;</td>
+          <td class="paramname"> <em>T</em></td><td>&nbsp;</td>
         </tr>
         <tr>
           <td></td>
@@ -1428,21 +1261,13 @@ This is the index of the rejected observation. </td></tr>
 The change in time since the last update [s]. </td></tr>
 <tr><td valign="top"><em>T</em>&nbsp;</td><td>
 The transition matrix [8 x 8]. </td></tr>
-<tr><td valign="top"><em>betaVn</em>&nbsp;</td><td>
-The Gauss Markov beta for northing velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVe</em>&nbsp;</td><td>
-The Gauss Markov beta for easting velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVup</em>&nbsp;</td><td>
-The Gauss Markov beta for up velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaClkDrift</em>&nbsp;</td><td>
-The Gauss Markov beta for the clock bias [1/s]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02501">2501</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02351">2351</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="6b021d1efba0203fff9992400f4891c5"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeTransitionMatrix_8StatePVGM_Float" ref="6b021d1efba0203fff9992400f4891c5" args="(const double dT, Matrix &amp;T, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift)" -->
+<a class="anchor" name="8ba6bac747be4d47b90eafd716b121b9"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeTransitionMatrix_8StatePVGM_Float" ref="8ba6bac747be4d47b90eafd716b121b9" args="(const double dT, Matrix &amp;T)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -1456,31 +1281,7 @@ The Gauss Markov beta for the clock bias [1/s]. </td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;&nbsp;</td>
-          <td class="paramname"> <em>T</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVe</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVup</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaClkDrift</em></td><td>&nbsp;</td>
+          <td class="paramname"> <em>T</em></td><td>&nbsp;</td>
         </tr>
         <tr>
           <td></td>
@@ -1498,21 +1299,13 @@ The Gauss Markov beta for the clock bias [1/s]. </td></tr>
 The change in time since the last update [s]. </td></tr>
 <tr><td valign="top"><em>T</em>&nbsp;</td><td>
 The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. </td></tr>
-<tr><td valign="top"><em>betaVn</em>&nbsp;</td><td>
-The Gauss Markov beta for northing velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVe</em>&nbsp;</td><td>
-The Gauss Markov beta for easting velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVup</em>&nbsp;</td><td>
-The Gauss Markov beta for up velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaClkDrift</em>&nbsp;</td><td>
-The Gauss Markov beta for the clock bias [1/s]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02551">2551</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02402">2402</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="45ee367eb2b37a2e0586d55e7b2afdf1"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM" ref="45ee367eb2b37a2e0586d55e7b2afdf1" args="(const double dT, Matrix &amp;Q, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift, const double qVn, const double qVe, const double qVup, const double qClkDrift)" -->
+<a class="anchor" name="86a9c1a4ea01ec80d2ffc0ea11e91dfd"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM" ref="86a9c1a4ea01ec80d2ffc0ea11e91dfd" args="(const double dT, Matrix &amp;Q)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -1526,55 +1319,7 @@ The Gauss Markov beta for the clock bias [1/s]. </td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;&nbsp;</td>
-          <td class="paramname"> <em>Q</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVe</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVup</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaClkDrift</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qVn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qVe</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qVup</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qClkDrift</em></td><td>&nbsp;</td>
+          <td class="paramname"> <em>Q</em></td><td>&nbsp;</td>
         </tr>
         <tr>
           <td></td>
@@ -1592,29 +1337,13 @@ The Gauss Markov beta for the clock bias [1/s]. </td></tr>
 The change in time since the last update [s]. </td></tr>
 <tr><td valign="top"><em>Q</em>&nbsp;</td><td>
 The process noise matrix [8 x 8]. </td></tr>
-<tr><td valign="top"><em>betaVn</em>&nbsp;</td><td>
-The Gauss Markov beta for northing velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVe</em>&nbsp;</td><td>
-The Gauss Markov beta for easting velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVup</em>&nbsp;</td><td>
-The Gauss Markov beta for up velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaClkDrift</em>&nbsp;</td><td>
-The Gauss Markov beta for the clock bias [1/s]. </td></tr>
-<tr><td valign="top"><em>qVn</em>&nbsp;</td><td>
-The process noise value for northing velocity. </td></tr>
-<tr><td valign="top"><em>qVe</em>&nbsp;</td><td>
-The process noise value for easting velocity. </td></tr>
-<tr><td valign="top"><em>qVup</em>&nbsp;</td><td>
-The process noise value for up velocity. </td></tr>
-<tr><td valign="top"><em>qClkDrift</em>&nbsp;</td><td>
-The process noise value for clock drift. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02597">2597</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02448">2448</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="b55a5de11ab9a6a91bde4ac385a23bbe"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM_Float" ref="b55a5de11ab9a6a91bde4ac385a23bbe" args="(const double dT, Matrix &amp;Q, const double betaVn, const double betaVe, const double betaVup, const double betaClkDrift, const double qVn, const double qVe, const double qVup, const double qClkDrift)" -->
+<a class="anchor" name="5186b203871b1784294ce7b5d3341b84"></a><!-- doxytag: member="GNSS::GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM_Float" ref="5186b203871b1784294ce7b5d3341b84" args="(const double dT, Matrix &amp;Q)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -1628,55 +1357,7 @@ The process noise value for clock drift. </td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="class_zenautics_1_1_matrix.html">Matrix</a> &amp;&nbsp;</td>
-          <td class="paramname"> <em>Q</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVe</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaVup</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>betaClkDrift</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qVn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qVe</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qVup</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const double&nbsp;</td>
-          <td class="paramname"> <em>qClkDrift</em></td><td>&nbsp;</td>
+          <td class="paramname"> <em>Q</em></td><td>&nbsp;</td>
         </tr>
         <tr>
           <td></td>
@@ -1694,25 +1375,9 @@ The process noise value for clock drift. </td></tr>
 The change in time since the last update [s]. </td></tr>
 <tr><td valign="top"><em>Q</em>&nbsp;</td><td>
 The process noise matrix [(8 + nrAmb) x (8 + nrAmb)]. </td></tr>
-<tr><td valign="top"><em>betaVn</em>&nbsp;</td><td>
-The Gauss Markov beta for northing velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVe</em>&nbsp;</td><td>
-The Gauss Markov beta for easting velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaVup</em>&nbsp;</td><td>
-The Gauss Markov beta for up velocity [1/s]. </td></tr>
-<tr><td valign="top"><em>betaClkDrift</em>&nbsp;</td><td>
-The Gauss Markov beta for the clock bias [1/s]. </td></tr>
-<tr><td valign="top"><em>qVn</em>&nbsp;</td><td>
-The process noise value for northing velocity. </td></tr>
-<tr><td valign="top"><em>qVe</em>&nbsp;</td><td>
-The process noise value for easting velocity. </td></tr>
-<tr><td valign="top"><em>qVup</em>&nbsp;</td><td>
-The process noise value for up velocity. </td></tr>
-<tr><td valign="top"><em>qClkDrift</em>&nbsp;</td><td>
-The process noise value for clock drift. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02683">2683</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02533">2533</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1809,7 +1474,7 @@ The standard deviation uncertainty in the clock drift [m/s]. </td></tr>
 The variance covariance of the states [8x8]. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02973">2973</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02817">2817</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1871,7 +1536,7 @@ The process noise matrix [8 x 8] (output). </td></tr>
 The state variance covariance matrix [8 x 8] (input/output). </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02768">2768</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02617">2617</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1933,7 +1598,7 @@ The process noise matrix [(8 + nrAmb) x (8 + nrAmb)] (output). </td></tr>
 The state variance covariance matrix [(8 + nrAmb) x (8 + nrAmb)] (input/output). </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02868">2868</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02700">2700</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -1979,7 +1644,7 @@ A pointer to the reference receiver data if available. NULL if not available. </
 The variance-covariance of the states. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l03009">3009</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l02853">2853</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2025,7 +1690,7 @@ A pointer to the reference receiver data if available. NULL if not available. </
 The variance-covariance of the states. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l03389">3389</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l03247">3247</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2071,7 +1736,7 @@ A pointer to the reference receiver data if available. NULL if not available. </
 The variance-covariance of the states. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l03834">3834</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l03704">3704</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2101,7 +1766,7 @@ Update the rest of m_pvt.time struct based on the gps week and time of week only
 The receiver data. The m_pvt.time struct is updated. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00617">617</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00621">621</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2158,7 +1823,7 @@ A boolean to indicate if a position solution was computed. </td></tr>
 A boolean to indicate if a velocity solution was computed. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00105">105</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l00086">86</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2191,7 +1856,7 @@ A boolean to indicate if a velocity solution was computed. </td></tr>
 A static function for outputting a matrix to the console. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l04375">4375</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l04260">4260</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2246,7 +1911,7 @@ Pointer to the reference receiver data if any (NULL if not available). </td></tr
 The state variance-covariance matrix. </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l04405">4405</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8cpp-source.html#l04290">4290</a> of file <a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -2266,7 +1931,7 @@ The state variance-covariance matrix. </td></tr>
 The states, [u x 1]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00658">658</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00593">593</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2285,7 +1950,7 @@ The states, [u x 1].
 The iterative update to the states, [u x 1]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00659">659</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00594">594</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2304,7 +1969,7 @@ The iterative update to the states, [u x 1].
 The states variance-covariance matrix, [u x u]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00660">660</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00595">595</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2323,7 +1988,7 @@ The states variance-covariance matrix, [u x u].
 The design matrix, [n x u]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00661">661</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00596">596</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2342,7 +2007,7 @@ The design matrix, [n x u].
 The observation misclosure vector, [n x 1]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00662">662</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00597">597</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2361,7 +2026,7 @@ The observation misclosure vector, [n x 1].
 The variance covariance matrix of the observations, [n x n]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00663">663</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00598">598</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2380,7 +2045,7 @@ The variance covariance matrix of the observations, [n x n].
 The inverse of m_R, [n x n]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00664">664</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00599">599</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2399,7 +2064,7 @@ The inverse of m_R, [n x n].
 The diagonal of the observations variance-covariance matrix, [n x 1]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00665">665</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00600">600</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2418,7 +2083,7 @@ The diagonal of the observations variance-covariance matrix, [n x 1].
 The transition matrix, [u x u]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00666">666</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00601">601</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2437,7 +2102,7 @@ The transition matrix, [u x u].
 The process noise matrix, [u x u]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00667">667</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00602">602</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2456,7 +2121,7 @@ The process noise matrix, [u x u].
 The previous transition matrix, [u x u]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00669">669</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00604">604</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2475,7 +2140,24 @@ The previous transition matrix, [u x u].
 The previous process noise matrix, [u x u]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00670">670</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00605">605</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+
+</div>
+</div><p>
+<a class="anchor" name="ba8437144417f7f77f02b305ee1be715"></a><!-- doxytag: member="GNSS::GNSS_Estimator::m_KF" ref="ba8437144417f7f77f02b305ee1be715" args="" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">stKalmanModel <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___estimator.html#ba8437144417f7f77f02b305ee1be715">GNSS::GNSS_Estimator::m_KF</a>          </td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Kalman filter model settings for 1st order Gauss Markov Velocity/ClkDrift states. 8 state PVGM model. 
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00634">634</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2494,7 +2176,7 @@ The previous process noise matrix, [u x u].
 GDM store in RxData? 
 <p>
 This list keeps track of which amibiguities are active. i.e. already included in the state vector and state variance-covariance matrix. 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00698">698</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00653">653</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2513,7 +2195,7 @@ This list keeps track of which amibiguities are active. i.e. already included in
 The design matrix, H, transposed times W u x n. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00702">702</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00657">657</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
@@ -2532,13 +2214,13 @@ The design matrix, H, transposed times W u x n.
 The inverse of the normal matrix, N = (H^T*W*H)^-1, u x u. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00703">703</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___estimator_8h-source.html#l00658">658</a> of file <a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a>.</p>
 
 </div>
 </div><p>
 <hr>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="_g_n_s_s___estimator_8h-source.html">GNSS_Estimator.h</a><li><a class="el" href="_g_n_s_s___estimator_8cpp-source.html">GNSS_Estimator.cpp</a></ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:47 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:58 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>
