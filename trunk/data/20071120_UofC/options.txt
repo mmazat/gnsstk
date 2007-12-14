@@ -1,0 +1,80 @@
+; EssentialGNSS
+; Post Processing Options File
+
+OutputFilePath,                                               = results.txt
+
+; General Processing Options
+StartGPSWeek,         (GPS week (0-1024+)                     = 1454
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0.0
+EndGPSWeek,           (GPS week (0-1024+)                     = 1454
+EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 604800.0
+
+ElevationMask,        (decimal degrees)                       = 3.0
+CNoMask,              (decimal dB-Hz)                         = 0.0
+LockTimeMask,         (decimal seconds)                       = 0.0
+
+; Select a processing method:
+; LSQ: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
+; EKF: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
+; RTK: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift and float ambiguities are currently estimated.
+ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
+
+;Process only single difference measurements between reference and rover receivers.
+ProcessOnlyDGPS,      (enable(1),disable(0))                  = 1  ;If no reference data is available at all, this defaults to disabled
+
+; Broadcast Ionospheric Correction Information
+Iono_ObtainFromRINEXNavFile,    (yes/no)                      = yes  ; If yes, this is try to extract the parameters from Reference_NavDataPath. If no, the next five options can be used to specify the values.
+Iono_KlobucharIsValid,          (yes/no)                      = no   ; This option will override Iono_ObtainFromRINEXNavFile. Are the following four parameters valid for use? 
+Iono_KlobucharReferenceWeek,    (GPS week (0-1024+)           = 0      
+Iono_KlobucharReferenceTime,    (0.0-604800.0 s)              = 0    
+Iono_KlobucharAlphaParameters,  (alpha0 alpha1 alpha2 alpha3) = 
+Iono_KlobucharBetaParameters,   (beta0  beta1  beta2  beta3)  = 
+
+; Global Navigation Ephemeris Information    
+RINEXNavigationDataPath, (if applicable, e.g. a RINEX GPS NAV file)      = nw1_3240.07n
+	
+; +--------------------------------------+  
+; | Reference Station Processing Options |
+; +--------------------------------------+  
+Reference_DataType, (NovAtelOEM4, RINEX2.1, RINEX2.11 supported)         = RINEX2.11
+Reference_DataPath, (full path or relative path, empty if not available) = nw1_3240.07o
+
+Reference_UseECEF,               (yes/no)                                = no
+Reference_ECEF_X,                (WGS84 m)                               = 
+Reference_ECEF_Y,                (WGS84 m)                               = 
+Reference_ECEF_Z,                (WGS84 m)                               = 
+
+Reference_UseLLH,                (yes/no)                                = yes
+Reference_Latitude,              (decimal degrees or dd mm ss.ss)        = 51.079428128
+Reference_Longitude,             (decimal degrees or dd mm ss.ss)        = -114.132860964
+Reference_Height,                (m)                                     = 1116.617
+
+Reference_EnableTropoCorrection, (enable(1)/disable(0))                  = 1
+Reference_EnableIonoCorrection,  (enable(1)/disable(0))                  = 1
+Reference_ExcludeSatellites,     (array of PRN's to exclude)             = 
+
+
+; +----------------------------------+  
+; | Rover Station Processing Options |
+; +----------------------------------+  
+Rover_DataType, (NOVATELOEM4, RINEX2.1, RINEX2.11 supported)             = RINEX2.11
+Rover_DataPath, (full path or relative path, empty if not available)     = nw2_3240.07o
+
+Rover_UseECEF,               (yes/no)                                    = no
+Rover_ECEF_X,                (WGS84 m)                                   = 
+Rover_ECEF_Y,                (WGS84 m)                                   = 
+Rover_ECEF_Z,                (WGS84 m)                                   = 
+
+Rover_UseLLH,                (yes/no)                                    = yes
+Rover_Latitude,              (decimal degrees or dd mm ss.ss)            = 51.079428117
+Rover_Longitude,             (decimal degrees or dd mm ss.ss)            = -114.132818611
+Rover_Height,                (m)                                         = 1116.585
+
+Rover_UncertaintyLatitude,   (1 sigma [m])                               = 1.0
+Rover_UncertaintyLongitude,  (1 sigma [m])                               = 1.0
+Rover_UncertaintyHeight,     (1 sigma [m])                               = 1.0
+
+Rover_EnableTropoCorrection, (enable(1)/disable(0))                      = 1
+Rover_EnableIonoCorrection,  (enable(1)/disable(0))                      = 1
+Rover_ExcludeSatellites,     (array of PRN's to exclude)                 = 
+																				   
