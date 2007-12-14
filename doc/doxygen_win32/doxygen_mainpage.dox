@@ -7,7 +7,7 @@ This project provides essential Global Navigation Satellite Systems (GNSS) algor
 
 The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-restrictive use for commercial and open source development.
 
-\html <br><img src="gnss.jpg">
+\html <br><img src="files\gnss.jpg">
 
 \htmlonly 
 <center>
@@ -35,7 +35,7 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 - Avoid complicated programming concepts. Keep it Simple S.....
 - Include an example code snippet in the comment block whenever possible.
 
-\html <img src="CodingStructure.png">
+\html <img src="files\CodingStructure.png">
 
 \html <hr>
 
@@ -46,7 +46,7 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 - Units provided for each parameter in the documenation.
 
 \section postprocessing_sec GNSS Post Processing
-- Easy to interpret and configure the option file. \html <a href="example_options.txt">click here for an example.</a>
+- Easy to interpret and configure the option file. \html <a href="files\example_options.txt">click here for an example.</a>
 - Stand alone and differential modes.
 - Least squares.
 - Extended Kalman filtering.
@@ -99,6 +99,16 @@ The 'BSD-style' license (http://en.wikipedia.org/wiki/BSD_license) allows non-re
 - Decode YUMA format almanac files for GPS... refer yuma.h.
 - Decode SEM format almanac files for GPS... refer sem.h.
 - Decode NovAtel OEM4 GPS data files...	 refer novatel.h.
+- Decode RINEX version 2.1, 2.11... refer rinex.h
+
+\section rinex_sec RINEX
+- RINEX version \html <a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk/ref/RINEX/rinex2.1.txt">2.1</a>, 
+<a href="https://gnsstk.svn.sourceforge.net/svnroot/gnsstk/trunk/ref/RINEX/rinex2.11.txt">2.11</a> support
+- Decode header information.
+- Decode Observation files, one observation at a time.
+- Decode Navigation files.
+- refere rinex.h.
+
 
 \section cslip_sec Cycle Clip Detection
 - Test data for cycle slips
@@ -163,24 +173,21 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
-SUCH DAMAGE.
+SUCH DAMAGE. \n
 
-\page page1 Online Utilities
+\page page2 Online Utilities
 
 - Compute Azimuth and Elevation - \html <a href="http://gnsstk.sourceforge.net/forms/compute_azel.html">click here</a>
 - Compute Local Geodetic Coordinates from two Geodetic Coordinates - \html <a href="http://gnsstk.sourceforge.net/forms/compute_nev.html">click here</a>
 - Compute Coordinate Conversions - \html <a href="http://gnsstk.sourceforge.net/forms/coordinate_conversion.html">click here</a>
 - Compute Position Error - \html <a href="http://gnsstk.sourceforge.net/forms/compute_pos_err.html">click here</a>
 
-\page page2 Links
+\page page3 Links
 
 - Klobuchar parameters computed post mission by CODE - Center for Orbit Determination in Europe. \html <a href="http://www.aiub-download.unibe.ch/CODE/">download here</a>\n 
 e.g. Download CGIM3280.07N from ftp://ftp.unibe.ch/aiub/CODE/2007/  for 2007-11-29 to get alpha0, alpha1, alpha2, alpha3, beta0, beta1, beta2, beta3.
 
 - \html <a href="http://www.zenautics.com/matrixdoc/index.html">Zenautics Matrix Project</a>
-
-
-
 
 
 */

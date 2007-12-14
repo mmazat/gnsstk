@@ -69,28 +69,7 @@ namespace GNSS
 
 
   GNSS_Estimator::GNSS_Estimator()
-   :
-#define GNSS_ESTIMATE_STATIC
-#ifdef GNSS_ESTIMATE_STATIC
-    m_betaVn(1.0/10000.0),
-    m_betaVe(1.0/10000.0),
-    m_betaVup(1.0/10000.0),
-    m_betaClkDrift(1.0/2000.0),
-    m_qVn(1e-20),
-    m_qVe(1e-20),
-    m_qVup(1e-20),
-    m_qClkDrift(0.14),
-#else
-    m_betaVn(1.0/3000.0),
-    m_betaVe(1.0/3000.0),
-    m_betaVup(1.0/3000.0),
-    m_betaClkDrift(1.0/1000.0),
-    m_qVn(0.0001),
-    m_qVe(0.0001),
-    m_qVup(0.001),
-    m_qClkDrift(0.5),
-#endif
-    m_debug(NULL)
+   : m_debug(NULL)
   {    
   }
 
@@ -102,6 +81,7 @@ namespace GNSS
       fclose(m_debug);
     }
   }
+
 
   bool GNSS_Estimator::PerformLeastSquares_8StatePVT(
     GNSS_RxData *rxData,       //!< A pointer to the rover receiver data. This must be a valid pointer.
@@ -273,13 +253,24 @@ namespace GNSS
         if( !DetermineUsablePseudorangeMeasurementsForThePositionSolution_GPSL1( *rxBaseData, nrP_base ) )
           return false;
 
-        result = DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1(
+        result = DetermineBetweenReceiverDifferentialIndex(
           rxData,
           rxBaseData,
-          true,
-          nrDifferentialPsr );
+          true
+          );
         if( !result )
           return false;
+
+        nrDifferentialPsr = 0;
+        for( i = 0; i < rxData->m_nrValidObs; i++ )
+        {
+          if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+            rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+            rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          {
+            nrDifferentialPsr++;
+          }
+        }
 
         nrP = nrDifferentialPsr;
         n = nrP;
@@ -482,13 +473,24 @@ namespace GNSS
         if( !DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( *rxBaseData, nrP_base ) )
           return false;
 
-        result = DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1(
+        result = DetermineBetweenReceiverDifferentialIndex(
           rxData,
           rxBaseData,
-          true,
-          nrDifferentialDoppler );
+          true
+          );
         if( !result )
           return false;
+
+        nrDifferentialDoppler = 0;
+        for( i = 0; i < rxData->m_nrValidObs; i++ )
+        {
+          if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+            rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+            rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+          {
+            nrDifferentialDoppler++;
+          }
+        }
 
         // Check uniqueness.
         nrD = nrDifferentialDoppler;
@@ -515,7 +517,7 @@ namespace GNSS
         {
           if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
           {
-            if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
+            if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
             {
               GPS_ComputeUserToSatelliteRangeAndRangeRate(
                 rxData->m_pvt.x,
@@ -614,6 +616,7 @@ namespace GNSS
 
     return true;
   }
+
 
   bool GNSS_Estimator::UpdateTime(
     GNSS_RxData &rxData  //!< The receiver data. The m_pvt.time struct is updated.    
@@ -1084,12 +1087,12 @@ namespace GNSS
             rxData.m_ObsArray[i].flags.isEphemerisValid;
           if( isGood )
           {
-            rxData.m_ObsArray[i].flags.isUsedInPosSolution = 1;
+            rxData.m_ObsArray[i].flags.isPsrUsedInSolution = 1;
             nrUsablePseudoranges++;            
           }
           else
           {
-            rxData.m_ObsArray[i].flags.isUsedInPosSolution = 0;
+            rxData.m_ObsArray[i].flags.isPsrUsedInSolution = 0;
           }
         }
       }
@@ -1097,6 +1100,52 @@ namespace GNSS
     rxData.m_pvt.nrPsrObsAvailable = nrUsablePseudoranges;
     return true;
   }
+
+
+  bool GNSS_Estimator::DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( 
+    GNSS_RxData &rxData,       //!< The receiver data.
+    unsigned &nrUsableDopplers //!< the number of usable GPS L1 Doppler measurements.
+    )
+  {
+    unsigned i = 0;
+    unsigned char isGood = 0;
+
+    rxData.m_pvt.nrDopplerObsAvailable = 0;
+    rxData.m_pvt.nrDopplerObsUsed = 0;
+    rxData.m_pvt.nrDopplerObsRejected = 0;
+
+    nrUsableDopplers = 0;    
+    for( i = 0; i < rxData.m_nrValidObs; i++ )
+    {
+      if( rxData.m_ObsArray[i].flags.isActive )
+      {
+        if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
+        {
+          isGood = 
+            rxData.m_ObsArray[i].flags.isCodeLocked         & 
+            rxData.m_ObsArray[i].flags.isDopplerValid       &
+            rxData.m_ObsArray[i].flags.isAboveElevationMask &
+            rxData.m_ObsArray[i].flags.isAboveCNoMask       &
+            rxData.m_ObsArray[i].flags.isAboveLockTimeMask  &
+            rxData.m_ObsArray[i].flags.isNotUserRejected    &
+            rxData.m_ObsArray[i].flags.isNotDopplerRejected &
+            rxData.m_ObsArray[i].flags.isEphemerisValid;
+          if( isGood )
+          {
+            rxData.m_ObsArray[i].flags.isDopplerUsedInSolution = 1;
+            nrUsableDopplers++;            
+          }
+          else
+          {
+            rxData.m_ObsArray[i].flags.isDopplerUsedInSolution = 0;
+          }
+        }
+      }
+    }
+    rxData.m_pvt.nrDopplerObsAvailable = nrUsableDopplers;
+    return true;
+  }
+
 
   bool GNSS_Estimator::DetermineUsableAdrMeasurements_GPSL1( 
     GNSS_RxData &rxData,   //!< The receiver data.
@@ -1163,182 +1212,6 @@ namespace GNSS
   }
 
 
-  bool GNSS_Estimator::DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1( 
-    GNSS_RxData *rxData,                  //!< The pointer to the receiver data.    
-    GNSS_RxData *rxBaseData,              //!< The pointer to the reference receiver data. 
-    const bool setToUseOnlyDifferential,  //!< This indicates that only differential measurements should be used.
-    unsigned &nrDifferentialPseudoranges  //!< The number of usable GPS L1 pseudorange measurements.    
-    )
-  {
-    unsigned i = 0;
-    unsigned j = 0;
-    //unsigned char isGood = 0;
-
-    // Initial the indices of the corresponding differential measurements.
-    for( i = 0; i < rxData->m_nrValidObs; i++ ) 
-    { 
-      rxData->m_ObsArray[i].index_differential = -1; 
-      rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable = 0;      
-    }
-    for( i = 0; i < rxBaseData->m_nrValidObs; i++ ) 
-    { 
-      rxBaseData->m_ObsArray[i].index_differential = -1; 
-      rxBaseData->m_ObsArray[i].flags.isDifferentialPsrAvailable = 0;
-    }
-
-    nrDifferentialPseudoranges = 0;    
-    for( i = 0; i < rxData->m_nrValidObs; i++ )
-    {
-      if( rxData->m_ObsArray[i].flags.isActive )
-      {
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          if( rxData->m_ObsArray[i].flags.isUsedInPosSolution )
-          {
-            // Look for a matching differential channel in the base station data.
-            for( j = 0; j < rxBaseData->m_nrValidObs; j++ )
-            {
-              if( rxBaseData->m_ObsArray[j].flags.isActive )
-              {
-                if( rxBaseData->m_ObsArray[j].system == GNSS_GPS && rxBaseData->m_ObsArray[j].freqType == GNSS_GPSL1 )
-                {
-                  if( rxBaseData->m_ObsArray[j].id == rxData->m_ObsArray[i].id )
-                  {                      
-                    if( rxBaseData->m_ObsArray[j].flags.isUsedInPosSolution )
-                    {
-                      rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable = 1;
-                      rxBaseData->m_ObsArray[j].flags.isDifferentialPsrAvailable = 1;
-                      rxData->m_ObsArray[i].index_differential     = j;
-                      rxBaseData->m_ObsArray[j].index_differential = i;
-                      
-                      nrDifferentialPseudoranges++;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if( setToUseOnlyDifferential )
-    {
-      for( i = 0; i < rxData->m_nrValidObs; i++ )
-      {
-        if( rxData->m_ObsArray[i].flags.isActive )
-        {
-          if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-          {
-            if( rxData->m_ObsArray[i].flags.isUsedInPosSolution )
-            {
-              if( rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable )
-              {
-                rxData->m_ObsArray[i].flags.isUsedInPosSolution = 1;
-                if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
-                  rxData->m_ObsArray[i].flags.isUsedInVelSolution = 1;                
-              }
-              else
-              {
-                rxData->m_ObsArray[i].flags.isUsedInPosSolution = 0;
-                rxData->m_ObsArray[i].flags.isUsedInVelSolution = 0;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return true;
-  }
-
-  bool GNSS_Estimator::DetermineDifferentialAdrMeasurements_GPSL1( 
-    GNSS_RxData *rxData,                  //!< The pointer to the receiver data.    
-    GNSS_RxData *rxBaseData,              //!< The pointer to the reference receiver data. 
-    const bool setToUseOnlyDifferential,  //!< This indicates that only differential measurements should be used.
-    unsigned &nrDifferentialAdr           //!< The number of usable GPS L1 ADR measurements.        
-    )
-  {
-    unsigned i = 0;
-    unsigned j = 0;
-    //unsigned char isGood = 0;
-
-    // Initial the indices of the corresponding differential measurements.
-    for( i = 0; i < rxData->m_nrValidObs; i++ ) 
-    { 
-      rxData->m_ObsArray[i].index_differential_adr = -1; 
-      rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable = 0;      
-    }
-    for( i = 0; i < rxBaseData->m_nrValidObs; i++ ) 
-    { 
-      rxBaseData->m_ObsArray[i].index_differential_adr = -1; 
-      rxBaseData->m_ObsArray[i].flags.isDifferentialAdrAvailable = 0;
-    }
-
-    nrDifferentialAdr = 0;    
-    for( i = 0; i < rxData->m_nrValidObs; i++ )
-    {
-      if( rxData->m_ObsArray[i].flags.isActive )
-      {
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-          {
-            // Look for a matching differential channel in the base station data.
-            for( j = 0; j < rxBaseData->m_nrValidObs; j++ )
-            {
-              if( rxBaseData->m_ObsArray[j].flags.isActive )
-              {
-                if( rxBaseData->m_ObsArray[j].system == GNSS_GPS && rxBaseData->m_ObsArray[j].freqType == GNSS_GPSL1 )
-                {
-                  if( rxBaseData->m_ObsArray[j].id == rxData->m_ObsArray[i].id )
-                  {                      
-                    if( rxBaseData->m_ObsArray[j].flags.isAdrUsedInSolution )
-                    {
-                      rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable = 1;
-                      rxBaseData->m_ObsArray[j].flags.isDifferentialAdrAvailable = 1;
-                      rxData->m_ObsArray[i].index_differential_adr     = j;
-                      rxBaseData->m_ObsArray[j].index_differential_adr = i;
-                      
-                      nrDifferentialAdr++;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if( setToUseOnlyDifferential ) // always use only differntial ADR measurements
-    {
-      for( i = 0; i < rxData->m_nrValidObs; i++ )
-      {
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution && rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
-          {
-            rxData->m_ObsArray[i].flags.isAdrUsedInSolution = 1;
-          }
-          else
-          {
-            rxData->m_ObsArray[i].flags.isAdrUsedInSolution = 0;
-          }
-        }  
-        else
-        {
-          rxData->m_ObsArray[i].flags.isAdrUsedInSolution = 0;
-        }
-      }
-    }
-
-    return true;
-  }
- 
-  
-
   bool GNSS_Estimator::DetermineDesignMatrixForThePositionSolution_GPSL1( 
     GNSS_RxData &rxData,      //!< The receiver data.
     const unsigned nrRowsInH, //!< The number of valid rows in H.
@@ -1361,7 +1234,7 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
-          if( rxData.m_ObsArray[i].flags.isUsedInPosSolution )
+          if( rxData.m_ObsArray[i].flags.isPsrUsedInSolution )
           {
             // Sanity index check.            
             if( j >= nrRowsInH )
@@ -1452,7 +1325,7 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
-          if( rxData.m_ObsArray[i].flags.isUsedInPosSolution )
+          if( rxData.m_ObsArray[i].flags.isPsrUsedInSolution )
           {
             // Sanity index check.
             if( j >= n )
@@ -1517,7 +1390,7 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
-          if( rxData.m_ObsArray[i].flags.isUsedInPosSolution )
+          if( rxData.m_ObsArray[i].flags.isPsrUsedInSolution )
           {
             // Sanity index check.
             if( j >= n )
@@ -1656,7 +1529,7 @@ namespace GNSS
           // The misclosure is the corrected measured value minus the computed valid.
           rxData->m_ObsArray[i].psr_misclosure = psr_measured - psr_computed;            
 
-          if( rxData->m_ObsArray[i].flags.isUsedInPosSolution )
+          if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
           {
             // Sanity index check.
             if( j >= n )
@@ -1716,7 +1589,120 @@ namespace GNSS
     return true;
   }
 
-  
+
+  bool GNSS_Estimator::DetermineBetweenReceiverDifferentialIndex(
+    GNSS_RxData *rxData,                 //!< (input) The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData,             //!< (input) The pointer to the reference receiver data. NULL if not available.        
+    const bool setToUseOnlyDifferential  //!< (input) This indicates that only differential measurements should be used.    
+    )
+  {
+    unsigned i = 0;
+    unsigned j = 0;
+    //unsigned char isGood = 0;
+
+    // Initial the indices of the corresponding differential measurements.
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) 
+    { 
+      rxData->m_ObsArray[i].index_differential = -1; 
+      rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable = 0;      
+      rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable = 0;      
+      rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable = 0;      
+    }
+    for( i = 0; i < rxBaseData->m_nrValidObs; i++ ) 
+    { 
+      rxBaseData->m_ObsArray[i].index_differential = -1; 
+      rxBaseData->m_ObsArray[i].flags.isDifferentialPsrAvailable = 0;
+      rxBaseData->m_ObsArray[i].flags.isDifferentialAdrAvailable = 0;
+      rxBaseData->m_ObsArray[i].flags.isDifferentialDopplerAvailable = 0;
+    }
+    if( rxBaseData == NULL )
+      return true;
+
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( rxData->m_ObsArray[i].flags.isActive )
+      {
+        // Look for a matching differential channel in the base station data.
+        for( j = 0; j < rxBaseData->m_nrValidObs; j++ )
+        {
+          if( rxBaseData->m_ObsArray[j].flags.isActive )
+          {
+            if( rxData->m_ObsArray[i].system == rxBaseData->m_ObsArray[j].system &&
+              rxData->m_ObsArray[i].codeType == rxBaseData->m_ObsArray[j].codeType &&
+              rxData->m_ObsArray[i].freqType == rxBaseData->m_ObsArray[j].freqType &&
+              rxData->m_ObsArray[i].id       == rxBaseData->m_ObsArray[j].id )
+            {
+              rxData->m_ObsArray[i].index_differential     = j;
+              rxBaseData->m_ObsArray[j].index_differential = i;
+
+              if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution &&
+                rxBaseData->m_ObsArray[j].flags.isPsrUsedInSolution )
+              {
+                rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable = 1;
+                rxBaseData->m_ObsArray[j].flags.isDifferentialPsrAvailable = 1;
+              }
+
+              if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution &&
+                rxBaseData->m_ObsArray[j].flags.isDopplerUsedInSolution )
+              {
+                rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable = 1;
+                rxBaseData->m_ObsArray[j].flags.isDifferentialDopplerAvailable = 1;
+              }
+
+              if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution &&
+                rxBaseData->m_ObsArray[j].flags.isAdrUsedInSolution )
+              {
+                rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable = 1;
+                rxBaseData->m_ObsArray[j].flags.isDifferentialAdrAvailable = 1;
+              }
+
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if( setToUseOnlyDifferential )
+    {
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+
+          if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          {
+            if( !rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable )
+            {
+              rxData->m_ObsArray[i].flags.isPsrUsedInSolution = 0;              
+            }
+          }
+
+          if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+          {
+            if( !rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable )
+            {
+              rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable = 0;              
+            }
+          }
+
+          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            if( !rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
+            {
+              rxData->m_ObsArray[i].flags.isAdrUsedInSolution = 0;              
+            }
+          }
+
+        }
+
+      }
+    }
+
+    return true;
+  }
+
 
   bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosures_GPSL1( 
     GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
@@ -1777,7 +1763,7 @@ namespace GNSS
           {    
             if( rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
             {
-              k = rxData->m_ObsArray[i].index_differential_adr;
+              k = rxData->m_ObsArray[i].index_differential;
               if( k != -1 )
               {
                 adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
@@ -1834,135 +1820,8 @@ namespace GNSS
         }
       }
     }
-
     return true;
   }
-
-  
-
-
-
-
-  bool GNSS_Estimator::DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( 
-    GNSS_RxData &rxData,       //!< The receiver data.
-    unsigned &nrUsableDopplers //!< the number of usable GPS L1 Doppler measurements.
-    )
-  {
-    unsigned i = 0;
-    unsigned char isGood = 0;
-
-    rxData.m_pvt.nrDopplerObsAvailable = 0;
-    rxData.m_pvt.nrDopplerObsUsed = 0;
-    rxData.m_pvt.nrDopplerObsRejected = 0;
-
-    nrUsableDopplers = 0;    
-    for( i = 0; i < rxData.m_nrValidObs; i++ )
-    {
-      if( rxData.m_ObsArray[i].flags.isActive )
-      {
-        if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          isGood = 
-            rxData.m_ObsArray[i].flags.isCodeLocked         & 
-            rxData.m_ObsArray[i].flags.isDopplerValid       &
-            rxData.m_ObsArray[i].flags.isAboveElevationMask &
-            rxData.m_ObsArray[i].flags.isAboveCNoMask       &
-            rxData.m_ObsArray[i].flags.isAboveLockTimeMask  &
-            rxData.m_ObsArray[i].flags.isNotUserRejected    &
-            rxData.m_ObsArray[i].flags.isNotDopplerRejected &
-            rxData.m_ObsArray[i].flags.isEphemerisValid;
-          if( isGood )
-          {
-            rxData.m_ObsArray[i].flags.isUsedInVelSolution = 1;
-            nrUsableDopplers++;            
-          }
-          else
-          {
-            rxData.m_ObsArray[i].flags.isUsedInVelSolution = 0;
-          }
-        }
-      }
-    }
-    rxData.m_pvt.nrDopplerObsAvailable = nrUsableDopplers;
-    return true;
-  }
-
-
-  bool GNSS_Estimator::DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1( 
-    GNSS_RxData *rxData,                  //!< The pointer to the receiver data.    
-    GNSS_RxData *rxBaseData,              //!< The pointer to the reference receiver data. 
-    const bool setToUseOnlyDifferential,  //!< This indicates that only differential measurements should be used.
-    unsigned &nrDifferentialDoppler       //!< The number of usable differential GPS L1 Doppler measurements.    
-    )
-  {
-    unsigned i = 0;
-    unsigned j = 0;
-    //unsigned char isGood = 0;
-
-    nrDifferentialDoppler = 0;    
-    for( i = 0; i < rxData->m_nrValidObs; i++ )
-    {
-      if( rxData->m_ObsArray[i].flags.isActive )
-      {
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
-          {
-            // Look for a matching differential channel in the base station data.
-            for( j = 0; j < rxBaseData->m_nrValidObs; j++ )
-            {
-              if( rxBaseData->m_ObsArray[j].flags.isActive )
-              {
-                if( rxBaseData->m_ObsArray[j].system == GNSS_GPS && rxBaseData->m_ObsArray[j].freqType == GNSS_GPSL1 )
-                {
-                  if( rxBaseData->m_ObsArray[j].id == rxData->m_ObsArray[i].id )
-                  {                      
-                    if( rxBaseData->m_ObsArray[j].flags.isUsedInVelSolution )
-                    {
-                      rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable = 1;
-                      rxBaseData->m_ObsArray[j].flags.isDifferentialDopplerAvailable = 1;
-                      rxData->m_ObsArray[i].index_differential     = j;
-                      rxBaseData->m_ObsArray[j].index_differential = i;
-                      
-                      nrDifferentialDoppler++;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if( setToUseOnlyDifferential )
-    {
-      for( i = 0; i < rxData->m_nrValidObs; i++ )
-      {
-        if( rxData->m_ObsArray[i].flags.isActive )
-        {
-          if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-          {
-            if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
-            {
-              if( rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable )
-              {
-                rxData->m_ObsArray[i].flags.isUsedInVelSolution = 1;                
-              }
-              else
-              {                
-                rxData->m_ObsArray[i].flags.isUsedInVelSolution = 0;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return true;
-  }
-  
 
 
   bool GNSS_Estimator::DetermineDopplerMisclosures_GPSL1( 
@@ -2027,7 +1886,7 @@ namespace GNSS
           // The misclosure is the corrected measured value minus the computed valid.            
           rxData->m_ObsArray[i].doppler_misclosure = doppler_measured - doppler_computed;
 
-          if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
+          if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
           {
             if( j >= n )
               return false;
@@ -2089,7 +1948,7 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
-          if( rxData.m_ObsArray[i].flags.isUsedInVelSolution )
+          if( rxData.m_ObsArray[i].flags.isDopplerUsedInSolution )
           {
             // Sanity index check.            
             if( j >= n )
@@ -2183,7 +2042,7 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
-          if( rxData.m_ObsArray[i].flags.isUsedInVelSolution )
+          if( rxData.m_ObsArray[i].flags.isDopplerUsedInSolution )
           {
             // Sanity index check.
             if( j >= n )
@@ -2249,7 +2108,7 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
-          if( rxData.m_ObsArray[i].flags.isUsedInVelSolution )
+          if( rxData.m_ObsArray[i].flags.isDopplerUsedInSolution )
           {
             // Sanity index check.
             if( j >= n )
@@ -2405,7 +2264,7 @@ namespace GNSS
         {
           if( testPsrOrDoppler )
           {
-            if( rxData.m_ObsArray[i].flags.isUsedInPosSolution )
+            if( rxData.m_ObsArray[i].flags.isPsrUsedInSolution )
             {
               indexvec[j] = i;
               j++;
@@ -2413,7 +2272,7 @@ namespace GNSS
           }
           else
           {
-            if( rxData.m_ObsArray[i].flags.isUsedInVelSolution )
+            if( rxData.m_ObsArray[i].flags.isDopplerUsedInSolution )
             {
               indexvec[j] = i;
               j++;
@@ -2490,20 +2349,21 @@ namespace GNSS
 
 
   bool GNSS_Estimator::ComputeTransitionMatrix_8StatePVGM(
-    const double dT,            //!< The change in time since the last update [s].
-    Matrix &T,                  //!< The transition matrix [8 x 8].
-    const double betaVn,        //!< The Gauss Markov beta for northing velocity [1/s].
-    const double betaVe,        //!< The Gauss Markov beta for easting velocity [1/s].
-    const double betaVup,       //!< The Gauss Markov beta for up velocity [1/s].
-    const double betaClkDrift   //!< The Gauss Markov beta for the clock bias [1/s].
+    const double dT,  //!< The change in time since the last update [s].
+    Matrix &T         //!< The transition matrix [8 x 8].
     )
   {
-    //double dN = 0;
+    const double betaVn       = 1.0/m_KF.alphaVn;       // The Gauss Markov beta for northing velocity [1/s].
+    const double betaVe       = 1.0/m_KF.alphaVe;       // The Gauss Markov beta for easting velocity [1/s].
+    const double betaVup      = 1.0/m_KF.alphaVup;      // The Gauss Markov beta for up velocity [1/s].
+    const double betaClkDrift = 1.0/m_KF.alphaClkDrift; // The Gauss Markov beta for the clock drift [1/s].
+
     double eVn = 0;
     double eVe = 0;
     double eVup = 0;
     double eClkDrift = 0;
 
+    
     if( T.GetNrRows() != 8 || T.GetNrCols() != 8 )
     {
       if( !T.Resize(8,8) )
@@ -2540,15 +2400,15 @@ namespace GNSS
   }
 
   bool GNSS_Estimator::ComputeTransitionMatrix_8StatePVGM_Float(
-    const double dT,            //!< The change in time since the last update [s].
-    Matrix &T,                  //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
-    const double betaVn,        //!< The Gauss Markov beta for northing velocity [1/s].
-    const double betaVe,        //!< The Gauss Markov beta for easting velocity [1/s].
-    const double betaVup,       //!< The Gauss Markov beta for up velocity [1/s].
-    const double betaClkDrift   //!< The Gauss Markov beta for the clock bias [1/s].
+    const double dT,  //!< The change in time since the last update [s].
+    Matrix &T         //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
     )
   {
-    //double dN = 0;
+    const double betaVn       = 1.0/m_KF.alphaVn;       // The Gauss Markov beta for northing velocity [1/s].
+    const double betaVe       = 1.0/m_KF.alphaVe;       // The Gauss Markov beta for easting velocity [1/s].
+    const double betaVup      = 1.0/m_KF.alphaVup;      // The Gauss Markov beta for up velocity [1/s].
+    const double betaClkDrift = 1.0/m_KF.alphaClkDrift; // The Gauss Markov beta for the clock drift [1/s].
+
     double eVn = 0;
     double eVe = 0;
     double eVup = 0;
@@ -2586,19 +2446,20 @@ namespace GNSS
 
 
   bool GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM(
-    const double dT,           //!< The change in time since the last update [s].
-    Matrix &Q,                 //!< The process noise matrix [8 x 8].
-    const double betaVn,       //!< The Gauss Markov beta for northing velocity [1/s].
-    const double betaVe,       //!< The Gauss Markov beta for easting velocity [1/s].
-    const double betaVup,      //!< The Gauss Markov beta for up velocity [1/s].
-    const double betaClkDrift, //!< The Gauss Markov beta for the clock bias [1/s].
-    const double qVn,          //!< The process noise value for northing velocity.
-    const double qVe,          //!< The process noise value for easting  velocity.
-    const double qVup,         //!< The process noise value for up       velocity.
-    const double qClkDrift     //!< The process noise value for clock drift.
+    const double dT,  //!< The change in time since the last update [s].
+    Matrix &Q         //!< The process noise matrix [8 x 8].
     )
   {
-    //const double dT2 = dT*dT;
+    const double betaVn       = 1.0/m_KF.alphaVn;       // The Gauss Markov beta for northing velocity [1/s].
+    const double betaVe       = 1.0/m_KF.alphaVe;       // The Gauss Markov beta for easting velocity [1/s].
+    const double betaVup      = 1.0/m_KF.alphaVup;      // The Gauss Markov beta for up velocity [1/s].
+    const double betaClkDrift = 1.0/m_KF.alphaClkDrift; // The Gauss Markov beta for the clock drift [1/s].
+
+    const double qVn       = 2 * m_KF.sigmaVn  * m_KF.sigmaVn  * betaVn;  // The process noise value for northing velocity.
+    const double qVe       = 2 * m_KF.sigmaVe  * m_KF.sigmaVe  * betaVe;  // The process noise value for easting  velocity.
+    const double qVup      = 2 * m_KF.sigmaVup * m_KF.sigmaVup * betaVup; // The process noise value for up       velocity.
+    const double qClkDrift = 2 * m_KF.sigmaClkDrift * m_KF.sigmaClkDrift * betaClkDrift; // The process noise value for clock drift.
+
     double eVn = 0;
     double eVe = 0;
     double eVup = 0;
@@ -2644,8 +2505,6 @@ namespace GNSS
 
     Q[5][5]  = qVup * (1.0 - eVup2) / (2.0*betaVup);
 
-    // GDM_HACK added the 0.009
-    //Q[6][6]  = 0.3*dT + qClkDrift / (betaClkDrift*betaClkDrift);
     Q[6][6]  = qClkDrift / (betaClkDrift*betaClkDrift);
     Q[6][6] *= dT - 2.0*(1.0 - eClkDrift)/(betaClkDrift) + (1.0 - eClkDrift2)/(2.0*betaClkDrift);
     
@@ -2672,19 +2531,20 @@ namespace GNSS
 
   
   bool GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM_Float(
-    const double dT,           //!< The change in time since the last update [s].
-    Matrix &Q,                 //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
-    const double betaVn,       //!< The Gauss Markov beta for northing velocity [1/s].
-    const double betaVe,       //!< The Gauss Markov beta for easting velocity [1/s].
-    const double betaVup,      //!< The Gauss Markov beta for up velocity [1/s].
-    const double betaClkDrift, //!< The Gauss Markov beta for the clock bias [1/s].
-    const double qVn,          //!< The process noise value for northing velocity.
-    const double qVe,          //!< The process noise value for easting  velocity.
-    const double qVup,         //!< The process noise value for up       velocity.
-    const double qClkDrift     //!< The process noise value for clock drift.
+    const double dT,  //!< The change in time since the last update [s].
+    Matrix &Q         //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
     )
   {
-    //const double dT2 = dT*dT;
+    const double betaVn       = 1.0/m_KF.alphaVn;       // The Gauss Markov beta for northing velocity [1/s].
+    const double betaVe       = 1.0/m_KF.alphaVe;       // The Gauss Markov beta for easting velocity [1/s].
+    const double betaVup      = 1.0/m_KF.alphaVup;      // The Gauss Markov beta for up velocity [1/s].
+    const double betaClkDrift = 1.0/m_KF.alphaClkDrift; // The Gauss Markov beta for the clock drift [1/s].
+
+    const double qVn       = 2 * m_KF.sigmaVn  * m_KF.sigmaVn  * betaVn;  // The process noise value for northing velocity.
+    const double qVe       = 2 * m_KF.sigmaVe  * m_KF.sigmaVe  * betaVe;  // The process noise value for easting  velocity.
+    const double qVup      = 2 * m_KF.sigmaVup * m_KF.sigmaVup * betaVup; // The process noise value for up       velocity.
+    const double qClkDrift = 2 * m_KF.sigmaClkDrift * m_KF.sigmaClkDrift * betaClkDrift; // The process noise value for clock drift.
+
     double eVn = 0;
     double eVe = 0;
     double eVup = 0;
@@ -2729,8 +2589,6 @@ namespace GNSS
 
     Q[5][5]  = qVup * (1.0 - eVup2) / (2.0*betaVup);
 
-    // GDM_HACK added the 0.009
-    //Q[6][6]  = 0.3*dT + qClkDrift / (betaClkDrift*betaClkDrift);
     Q[6][6]  = qClkDrift / (betaClkDrift*betaClkDrift);
     Q[6][6] *= dT - 2.0*(1.0 - eClkDrift)/(betaClkDrift) + (1.0 - eClkDrift2)/(2.0*betaClkDrift);
     
@@ -2782,31 +2640,14 @@ namespace GNSS
       &N );
 
     // Get the transition Matrix
-    result = ComputeTransitionMatrix_8StatePVGM(
-      dT,
-      T,
-      m_betaVn,
-      m_betaVe,
-      m_betaVup,
-      m_betaClkDrift );
+    result = ComputeTransitionMatrix_8StatePVGM( dT, T );
     if( result == false )
       return false;
 
     // Set the process noise Matrix
-    result = ComputeProcessNoiseMatrix_8StatePVGM(
-      dT,
-      Q,
-      m_betaVn,
-      m_betaVe,
-      m_betaVup,
-      m_betaClkDrift,
-      m_qVn,
-      m_qVe,
-      m_qVup,
-      m_qClkDrift );
+    result = ComputeProcessNoiseMatrix_8StatePVGM( dT, Q );      
     if( result == false )
       return false;
-
 
     
     ////
@@ -2882,30 +2723,14 @@ namespace GNSS
       &N );
 
     // Get the transition Matrix
-    result = ComputeTransitionMatrix_8StatePVGM_Float(
-      dT,
-      T,
-      m_betaVn,
-      m_betaVe,
-      m_betaVup,
-      m_betaClkDrift );
+    result = ComputeTransitionMatrix_8StatePVGM_Float( dT, T );
     if( result == false )
       return false;
 
     PrintMatToDebug( "T", T );
 
     // Set the process noise Matrix
-    result = ComputeProcessNoiseMatrix_8StatePVGM_Float(
-      dT,
-      Q,
-      m_betaVn,
-      m_betaVe,
-      m_betaVup,
-      m_betaClkDrift,
-      m_qVn,
-      m_qVe,
-      m_qVup,
-      m_qClkDrift );
+    result = ComputeProcessNoiseMatrix_8StatePVGM_Float( dT, Q );
     if( result == false )
       return false;
 
@@ -3137,30 +2962,44 @@ namespace GNSS
         return false;
       result = DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( *rxBaseData, nrD_base );
       if( !result )
-        return false;    
-
+        return false;
 
       // When in differential mode, only differntial measurements will be used
-      result = DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1(
+      result = DetermineBetweenReceiverDifferentialIndex( 
         rxData,
         rxBaseData,
-        true,
-        nrDifferentialPsr );
+        true 
+        );
       if( !result )
         return false;
+
+       nrDifferentialPsr = 0;
+        for( i = 0; i < rxData->m_nrValidObs; i++ )
+        {
+          if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+            rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+            rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          {
+            nrDifferentialPsr++;
+          }
+        }
+
 #ifdef CONSTRAINPOS
       nrP = nrDifferentialPsr+3;
 #else
       nrP = nrDifferentialPsr;
 #endif
 
-      result = DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1(
-        rxData,
-        rxBaseData,
-        true,
-        nrDifferentialDoppler );
-      if( !result )
-        return false;
+      nrDifferentialDoppler = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+        {
+          nrDifferentialDoppler++;
+        }
+      }
 
 #ifdef CONSTRAINPOS
       nrD = nrDifferentialPsr+3;
@@ -3530,35 +3369,47 @@ namespace GNSS
 
 
       // When in differential mode, only differntial measurements will be used
-      result = DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1(
+      result = DetermineBetweenReceiverDifferentialIndex(
         rxData,
         rxBaseData,
-        true,
-        nrDifferentialPsr );
-      if( !result )
-      {
+        true 
+        );
+      if( !result )      
         return false;
+
+      nrDifferentialPsr = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+        {
+          nrDifferentialPsr++;
+        }
       }
+
+      
 #ifdef CONSTRAINPOS
       nrP = nrDifferentialPsr+3;
 #else
       nrP = nrDifferentialPsr;
 #endif
 
-      result = DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1(
-        rxData,
-        rxBaseData,
-        true,
-        nrDifferentialDoppler );
-      if( !result )
+      nrDifferentialDoppler = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
       {
-        return false;
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+        {
+          nrDifferentialDoppler++;
+        }
       }
 
 #ifdef CONSTRAINPOS
-      nrD = nrDifferentialPsr+3;
+      nrD = nrDifferentialDoppler+3;
 #else
-      nrD = nrDifferentialPsr;
+      nrD = nrDifferentialDoppler;
 #endif
     }
 
@@ -3989,29 +3840,40 @@ namespace GNSS
       }
 
       // When in differential mode, only differntial measurements will be used
-      result = DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1(
+      result = DetermineBetweenReceiverDifferentialIndex(
         rxData,
         rxBaseData,
-        true,
-        nrDifferentialPsr );
-      if( !result )
-      {
+        true
+        );
+      if( !result )      
         return false;
+
+      nrDifferentialPsr = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+        {
+          nrDifferentialPsr++;
+        }
       }
+      
 #ifdef CONSTRAINPOS
       nrP = nrDifferentialPsr+3;
 #else
       nrP = nrDifferentialPsr;
 #endif
 
-      result = DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1(
-        rxData,
-        rxBaseData,
-        true,
-        nrDifferentialDoppler );
-      if( !result )
+      nrDifferentialDoppler = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
       {
-        return false;
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+        {
+          nrDifferentialDoppler++;
+        }
       }
 
 #ifdef CONSTRAINPOS
@@ -4020,15 +3882,17 @@ namespace GNSS
       nrD = nrDifferentialDoppler;
 #endif
 
-      result = DetermineDifferentialAdrMeasurements_GPSL1(
-        rxData,
-        rxBaseData,
-        setToUseOnlyDifferential,
-        nrDifferentialAdr );
-      if( !result )
+      nrDifferentialAdr = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
       {
-        return false;
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+        {
+          nrDifferentialAdr++;
+        }
       }
+
     }
     else
     {
@@ -4119,7 +3983,7 @@ namespace GNSS
     {
       if( rxData->m_ObsArray[k].flags.isActive )
       {
-        if( rxData->m_ObsArray[k].flags.isUsedInPosSolution )
+        if( rxData->m_ObsArray[k].flags.isPsrUsedInSolution )
         {
           H[iP][0] = rxData->m_ObsArray[k].H_p[0];
           H[iP][1] = rxData->m_ObsArray[k].H_p[1];
@@ -4130,7 +3994,7 @@ namespace GNSS
           r[iP] = stdev*stdev;
           iP++;
         }
-        if( rxData->m_ObsArray[k].flags.isUsedInVelSolution )
+        if( rxData->m_ObsArray[k].flags.isDopplerUsedInSolution )
         {
           H[iD+nrP][3] = rxData->m_ObsArray[k].H_v[0];
           H[iD+nrP][4] = rxData->m_ObsArray[k].H_v[1];
@@ -4367,9 +4231,9 @@ namespace GNSS
 
     for( i = 0; i < rxData->m_nrValidObs; i++ )
     {
-      if( rxData->m_ObsArray[i].flags.isUsedInPosSolution )
+      if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
         rxData->m_pvt.nrPsrObsUsed++;
-      if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
+      if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
         rxData->m_pvt.nrDopplerObsUsed++;
       if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
         rxData->m_pvt.nrAdrObsUsed++;
@@ -4593,11 +4457,11 @@ namespace GNSS
 
               // Initialize the ambiguity state [m].
               // Compute the single difference adr measurement [m].
-              double sd_adr_measured = rxData->m_ObsArray[i].adr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].adr;
+              double sd_adr_measured = rxData->m_ObsArray[i].adr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential].adr;
               sd_adr_measured *= GPS_WAVELENGTHL1;
 
               // Compute the single difference psr measurement.
-              double sd_psr_measured = rxData->m_ObsArray[i].psr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential_adr].psr;
+              double sd_psr_measured = rxData->m_ObsArray[i].psr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential].psr;
 
               // Initialize the ambiguity to the difference between the single difference adr
               // and the single difference pseudorange.

@@ -133,6 +133,33 @@ namespace GNSS
       {}
     };
 
+    struct stKalmanOptions
+    {
+      double alphaVn;
+      double alphaVe;
+      double alphaVup;
+      double alphaClkDrift;
+      double sigmaVn;
+      double sigmaVe;
+      double sigmaVup;
+      double sigmaClkDrift;
+
+      // default constructor
+      stKalmanOptions()
+        : alphaVn(100.0), 
+        alphaVe(100.0), 
+        alphaVup(100.0), 
+        alphaClkDrift(100.0),
+        sigmaVn(0.01),
+        sigmaVe(0.01),
+        sigmaVup(0.01),
+        sigmaClkDrift(0.01)
+      {}
+    };
+
+    /// The Kalman filtering options.
+    stKalmanOptions m_KalmanOptions;
+
     /// The path to the option file.
     std::string m_OptionFilePath;
 

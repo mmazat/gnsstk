@@ -1,0 +1,183 @@
+\documentclass[11pt,letterpaper]{article}
+
+%\setlength{\columnsep}{1.0cm}
+\setlength{\topmargin}{-0.20in} \setlength{\headheight}{0.0in} \setlength{\headsep}{0.0in} \setlength{\topskip}{0.0in} \setlength{\topmargin}{0.0in} \setlength{\textheight}{9.0in}
+\setlength{\oddsidemargin}{-0.1in} \setlength{\evensidemargin}{-0.1in} \setlength{\textwidth}{6.8in} \setlength{\parindent}{0mm} \setlength{\parskip}{3mm}
+
+\usepackage{epsfig}
+\usepackage{amsmath}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%TITLE and AUTHOR (date) of the article:
+\title{\Huge {Estimation Design Document}}
+\author{\copyright 2007 \textbf{Glenn D. MacGougan}}
+\date{}
+
+\maketitle
+
+\pagebreak
+
+\section{Pseudorange Measurements}
+
+\subsection{Physical Model}
+
+Let a single pseudorange be described by Equation \ref{eq:pseudorange}.
+\begin{equation} \label{eq:pseudorange}
+\begin{array}{l}
+p = \sqrt{(x_s-x)^2 + (y_s-y)^2 + (z_s-z)^2} + ct_u \\
+p = \rho + ct_u \\
+\end{array}
+\end{equation}
+where: \\
+$p$ is the pseudorange observation [m] \\
+$(x,y,z)$ are user unknown coordinates [m] \\
+$t_u$ is unknown user clock bias [s], c is the speed of light, \\
+$(x_s,y_s,z_s)$ are satellite coordinates [m], and \\
+$\rho$ is the geometric range ($\sqrt{(x_s-x)^2 + (y_s-y)^2 + (z_s-z)^2}$). \\
+
+
+The partial derivatives of $p$ with respect to $(x,y,z,ct_u)$ evaluate in Equation \ref{eq:PsuedorangePartials}.
+\begin{equation} \label{eq:PsuedorangePartials}
+\begin{array}{l}
+\frac{\partial p}{\partial x} = -\frac{x_s - x}{\rho} = -a_x\\ \\
+\frac{\partial p}{\partial y} = -\frac{y_s - y}{\rho} = -a_y \\ \\
+\frac{\partial p}{\partial z} = -\frac{z_s - z}{\rho} = -a_z \\ \\
+\frac{\partial p}{\partial ct_u} = 1 \\ \\
+\end{array}
+\end{equation}
+The terms $a_x, a_y$, and $a_z$ are the direction cosines of the unit vector pointing from the user position to the satellite. The direction cosine vector is defined by Equation
+\ref{eq:DirectionCosine}.
+\begin{equation} \label{eq:DirectionCosine}
+\mathbf{a} = \left[
+\begin{array}{c}
+a_x \\
+a_y \\
+a_z \\
+\end{array}
+\right] = \left[
+\begin{array}{c}
+\frac{x_s-x}{\rho} \\
+\frac{y_s-y}{\rho} \\
+\frac{z_s-z}{\rho} \\
+\end{array}
+\right]
+\end{equation}
+
+Thus, the linearized measurement equation is defined by Equation \ref{eq:LinearPseudorangeEquation}.
+\begin{equation} \label{eq:LinearPseudorangeEquation}
+\begin{array}{l}
+p = p_0 - \frac{x_s - x}{\rho} \Delta x - \frac{y_s-y}{\rho} \Delta y - \frac{z_s-y}{\rho} \Delta z + \Delta ct_u \\
+p = p_0 - a_x \Delta x - a_y \Delta y - a_z \Delta z + \Delta ct_u
+\end{array}
+\end{equation}
+where: \\
+$p_0$ is the approximate pseudorange (based on the best estimate of the user position and user time bias), \\
+and $\Delta x, \Delta y, \Delta z, \Delta ct_u$ are the linearized unknowns. \\
+
+The pseudorange observation misclosure \footnote{misclosure convention, misclosure = measured - estimated} is defined by Equation \ref{eq:PseudorangeMisclosure}.
+\begin{equation} \label{eq:PseudorangeMisclosure}
+v = p - \hat{p} = -a_x \Delta x -a_y \Delta y -a_z \Delta z + \Delta ct_u \\
+\end{equation}
+
+\pagebreak
+
+For the case of four satellites, the equations for each satellite misclosure 'observation' can be put in the following matrix form.
+
+\begin{equation} \label{eq:PseudorangeMatrixFormExample}
+\begin{array}{cccc}
+\mathbf{v} = H \mathbf{\Delta x}, & \mathbf{v} = \left[
+\begin{array}{c}
+v_1 \\
+v_2 \\
+v_3 \\
+v_4 \\
+\end{array}
+\right], & H = \left[
+\begin{array}{cccc}
+-a_{x1} & -a_{y1} & -a_{z1} & 1 \\
+-a_{x2} & -a_{y2} & -a_{z2} & 1 \\
+-a_{x3} & -a_{y3} & -a_{z3} & 1 \\
+-a_{x4} & -a_{y4} & -a_{z4} & 1 \\
+\end{array}
+\right], & \mathbf{\Delta x} = \left[
+\begin{array}{c}
+\Delta x \\
+\Delta y \\
+\Delta z \\
+\Delta ct_u \\
+\end{array}
+\right]
+\end{array}
+\end{equation}
+
+\subsection{Error Model}
+
+Let a single pseudorange observation be described by Equation \ref{eq:PseudorangeErrorModel}.
+
+\begin{equation} \label{eq:PseudorangeErrorModel}
+p = \rho + d\rho + ct_u - ct_s + I + T + \varepsilon_{p}
+\end{equation}
+
+where: \\
+$p$, pseudorange measurement [m] \\
+$\rho$, geometric range [m] \\
+$d\rho$, geometric range error due to ephemeris error [m] \\
+$ct_u$, receiver clock bias [m] \\
+$ct_s$, satellite clock bias [m], (note that this correction is added to $p$, as defined in the GPS ICD) \\
+$I$, ionospheric delay [m] \\
+$T$, tropospheric delay [m] \\
+$\varepsilon_{p}$, noise and multipath [m].
+
+In practice, estimates of $d\rho$, $ct_u$, $ct_s$, $I$, and $T$ are computed. Thus, the corrected pseudorange misclosure are best defined by Equation
+\ref{eq:PseudorangeCorrectedMisclosure}.
+
+\begin{equation} \label{eq:PseudorangeCorrectedMisclosure}
+\begin{array}{l}
+v = p' - \hat{p} \\
+p' = p - d\rho + ct_s - I - T \\
+\hat{p} = \hat{\rho} + \hat{ct_u} \\
+\end{array}
+\end{equation}
+
+\pagebreak
+
+
+\section{Doppler Measurements}
+
+\subsection{Physical Model}
+
+The Doppler shift \footnote{sign convention may vary, $\Delta f = f_T - f_R$ (NovAtel convention, increasing pseudorange means negative Doppler) vs $\Delta f= f_R - f_T$} is
+defined by Equation \ref{eq:DopplerShift}.
+
+\begin{equation} \label{eq:DopplerShift}
+\Delta f = f_T - f_R = f_t (\frac{\mathbf{v_s-u_s}\cdot\mathbf{a}}{c})
+\end{equation}
+
+where: \\
+$f_T$ is the transmitted frequency [Hz], \\
+$f_R$ is the received frequency [Hz], \\
+$\mathbf{v_s}$ is the velocity of the satellite (ECEF [m/s]), \\\
+$\mathbf{v_u}$ is the user velocity (ECEF [m/s]), \\
+$\mathbf{a}$ is the direction cosine vector (the unit vector pointing from the user to the satellite), \\
+and $c$ is the speed of light [m/s].
+
+The user to satellite range rate is represented by the dot product of the direction cosine unit vector (along the line of sight from the user to the satellite) and the relative
+velocity vector defined by Equation \ref{eq:RangeRate}
+
+\begin{equation} \label{eq:RangeRate}
+\begin{array}{l}
+\dot{\rho} = \mathbf{v_r} \cdot \mathbf{a} \\
+\mathbf{v_r} = \mathbf{v_s} - \mathbf{v_u} \\
+\end{array}
+\end{equation}
+where: \\
+$\dot{\rho}$ is the geometric range rate [m/s], and \\
+$\mathbf{v_r}$ is the relative velocity vector. \\
+
+
+Let a single Doppler observation be described by Equation \ref{eq:Doppler}.
+
+To be completed...
+
+\end{document}

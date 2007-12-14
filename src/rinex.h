@@ -1,12 +1,12 @@
 /**
 \file    rinex.h
-\brief   GNSS core 'c' function library: RINEX related functions.
+\brief   GNSS core 'c' function library: RINEX VERSION 2.11 related functions.
 \author  Glenn D. MacGougan (GDM)
 \date    2007-12-02
 \since   2007-12-02
 
 \b REFERENCES \n
-- 
+- - http://www.aiub-download.unibe.ch/rinex/rinex211.txt
 
 \b "LICENSE INFORMATION" \n
 Copyright (c) 2007, refer to 'author' doxygen tags \n
@@ -50,7 +50,9 @@ extern "C" {
 
 
 /**
-\brief  A container for RINEX observation file header data. Each parameter is the string (multiline is some cases) of columns 1-60 that corresponds to a record descriptor from columns 61-80.
+\brief  NOT USED - A container for RINEX observation file header data. 
+Each parameter is the string (multiline is some cases) of columns 
+1-60 that corresponds to a record descriptor from columns 61-80.
 */
 typedef struct
 {
@@ -88,7 +90,7 @@ typedef struct
 
 
 
-/// An enumeration for RINEX file types.
+/// RINEX VERSION 2.11: An enumeration for RINEX file types.
 typedef enum
 {
   RINEX_FILE_TYPE_OBS       = 'O', //!< 'O' - Observation file.
@@ -105,36 +107,60 @@ typedef enum
 
 } RINEX_enumFileType;
 
-/// An enumeration for the letter denoting the GPS satellite system. Used when determining which satellite observations are present.
+/// RINEX VERSION 2.11: An enumeration for the letter denoting the GPS satellite system. Used when determining which satellite observations are present.
 typedef enum
 {
-  RINEX_SATELLITE_SYSTEM_GPS   = 'G', //!< 'G' denotes a GPS satellite.
-  RINEX_SATELLITE_SYSTEM_GLO   = 'R', //!< 'R' denotes a GLONASS satellite.
+  RINEX_SATELLITE_SYSTEM_GPS   = 'G', //!< 'G' GPS satellite.
+  RINEX_SATELLITE_SYSTEM_GLO   = 'R', //!< 'R' GLONASS satellite.
   RINEX_SATELLITE_SYSTEM_GEO   = 'S', //!< 'S' Geostationary satellite (SBAS).
+  RINEX_SATELLITE_SYSTEM_GAL   = 'E', //!< 'E' Galileo satellite
   RINEX_SATELLITE_SYSTEM_NSS   = 'T', //!< 'T' NNSS Transit.
-  RINEX_SATELLITE_SYSTEM_MIXED = 'M', //!< 'M': Mixed.
+  RINEX_SATELLITE_SYSTEM_MIXED = 'M', //!< 'M' Mixed.
   RINEX_SATELLITE_SYSTEM_UNKNOWN
 
 } RINEX_enumSatelliteSystemType;
 
-/// An enumeration for the various types of obsevations allowed by RINEX_v_2.1.
+/// RINEX VERSION 2.11: An enumeration for the various types of obsevations allowed.
 typedef enum
 {
-  RINEX_OBS_TYPE_L1,       //!< L1 phase (ADR) measurement [cycles].
-  RINEX_OBS_TYPE_L2,       //!< L2 phase (ADR) measurement [cycles].
-  RINEX_OBS_TYPE_C1,       //!< Pseudorange using C/A-Code on L1 [m].
+  RINEX_OBS_TYPE_L1,       //!< Phase on L1 [cycles].
+  RINEX_OBS_TYPE_L2,       //!< Phase on L2 [cycles].
+  RINEX_OBS_TYPE_L5,       //!< Phase on L5 [cycles].
+  RINEX_OBS_TYPE_L6,       //!< Phase on L6 [cycles].
+  RINEX_OBS_TYPE_L7,       //!< Phase on L7 [cycles].
+  RINEX_OBS_TYPE_L8,       //!< Phase on L8 [cycles].
+  RINEX_OBS_TYPE_C1,       //!< Pseudorange using Civil code on L1 [m].
+  RINEX_OBS_TYPE_C2,       //!< Pseudorange using Civil code on L2 [m].
+  RINEX_OBS_TYPE_C5,       //!< Pseudorange using Civil code on L5 [m].
+  RINEX_OBS_TYPE_C6,       //!< Pseudorange using Civil code on L6 [m].
+  RINEX_OBS_TYPE_C7,       //!< Pseudorange using Civil code on L7 [m].
+  RINEX_OBS_TYPE_C8,       //!< Pseudorange using Civil code on L8 [m].
   RINEX_OBS_TYPE_P1,       //!< Pseudorange using P-Code on L1 [m].
   RINEX_OBS_TYPE_P2,       //!< Pseudorange using P-Code on L2 [m].
+  RINEX_OBS_TYPE_P5,       //!< Pseudorange using P-Code on L5 [m].
+  RINEX_OBS_TYPE_P6,       //!< Pseudorange using P-Code on L6 [m].
+  RINEX_OBS_TYPE_P7,       //!< Pseudorange using P-Code on L7 [m].
+  RINEX_OBS_TYPE_P8,       //!< Pseudorange using P-Code on L8 [m].
   RINEX_OBS_TYPE_D1,       //!< Doppler frequency on L1 [Hz].
   RINEX_OBS_TYPE_D2,       //!< Doppler frequency on L2 [Hz].
+  RINEX_OBS_TYPE_D5,       //!< Doppler frequency on L5 [Hz].
+  RINEX_OBS_TYPE_D6,       //!< Doppler frequency on L6 [Hz].
+  RINEX_OBS_TYPE_D7,       //!< Doppler frequency on L7 [Hz].
+  RINEX_OBS_TYPE_D8,       //!< Doppler frequency on L8 [Hz].    
   RINEX_OBS_TYPE_T1,       //!< Transit Integrated Doppler on 150 (T1) [cycles].
   RINEX_OBS_TYPE_T2,       //!< Transit Integrated Doppler on 400 MHz (T2) [cycles].
   RINEX_OBS_TYPE_S1,       //!< Raw signal strengths or SNR values as given by the receiver for the L1 phase observations [receiver-dependent].
   RINEX_OBS_TYPE_S2,       //!< Raw signal strengths or SNR values as given by the receiver for the L2 phase observations [receiver-dependent].
+  RINEX_OBS_TYPE_S5,       //!< Raw signal strengths or SNR values as given by the receiver for the L1 phase observations [receiver-dependent].
+  RINEX_OBS_TYPE_S6,       //!< Raw signal strengths or SNR values as given by the receiver for the L2 phase observations [receiver-dependent].
+  RINEX_OBS_TYPE_S7,       //!< Raw signal strengths or SNR values as given by the receiver for the L1 phase observations [receiver-dependent].
+  RINEX_OBS_TYPE_S8,       //!< Raw signal strengths or SNR values as given by the receiver for the L2 phase observations [receiver-dependent].  
+  
   RINEX_OBS_TYPE_UNKNOWN
 
 } RINEX_enumObservationType;
 
+/// RINEX VERSION 2.11: An enumeration for wavelength factors.
 typedef enum
 {
   RINEX_WAVELENTH_FACTOR_SINGLE_FREQ = 0,
@@ -144,16 +170,18 @@ typedef enum
   
 } RINEX_enumWavelenthFactorL1_L2;
 
+/// RINEX VERSION 2.11: An enumeration for the GNSS time system.
 typedef enum
 {
   RINEX_TIME_SYSTEM_GPS = 0, //!< GPS time system.
   RINEX_TIME_SYSTEM_GLO = 1, //!< GLONASS time system.
+  RINEX_TIME_SYSTEM_GAL = 1, //!< GALILEO time system.
   RINEX_TIME_SYSTEM_UNKNOWN
 
 } RINEX_enumTimeSystem;
   
 
-
+/// RINEX VERSION 2.11: A container for a RINEX time.
 typedef struct
 {
   unsigned short year;
@@ -167,6 +195,7 @@ typedef struct
 } RINEX_TIME;
 
 
+/// RINEX VERSION 2.11: An enumeration for the epoch flag.
 typedef enum
 {
   RINEX_EPOCH_FLAG_OK             = 0, //!< OK
@@ -181,6 +210,7 @@ typedef enum
 } RINEX_enumEpochFlag;
 
 
+/// RINEX VERSION 2.11: A container required information from a decode RINEX header.
 typedef struct
 {
   double              version;          //!< RINEX version.
@@ -210,7 +240,8 @@ typedef struct
 
 
 /**
-\brief  Get the RINEX header, as a buffer, from the specified file path. Determine the RINEX version and file type.
+\brief  RINEX VERSION 2.11: Get the RINEX header, as a buffer, 
+        from the specified file path. Determine the RINEX version and file type.
 
 \author Glenn D. MacGougan
 \date   2007-12-03
@@ -233,7 +264,8 @@ BOOL RINEX_GetHeader(
 
 
 /**
-\brief  Decode the parts of the RINEX Observation file header that are essential to
+\brief  RINEX VERSION 2.11: Decode the parts of the RINEX Observation 
+        file header that are essential to
 
 \author Glenn D. MacGougan
 \date   2007-12-03
@@ -249,8 +281,9 @@ BOOL RINEX_DecodeHeader_ObservationFile(
 
 
 /**
-\brief  Decode the next set of observations from the RINEX Observation file.
-Deal with any header information changes that arise from special records.
+\brief  RINEX VERSION 2.11: Decode the next set of observations 
+        from the RINEX Observation file. Deal with any header 
+        information changes that arise from special records.
 
 \author Glenn D. MacGougan
 \date   2007-12-06
@@ -274,7 +307,8 @@ BOOL RINEX_GetNextObservationSet(
 
 
 /**
-\brief  Completely decode a RINEX GPS Navigation file into an array of GPS ephemeris structs.
+\brief  RINEX VERSION 2.11: Completely decode a RINEX GPS 
+        Navigation file into an array of GPS ephemeris structs.
 
 \author Glenn D. MacGougan
 \date   2007-12-06
@@ -292,7 +326,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
            
 
 /**
-\brief  Decode a RINEX file name.
+\brief  RINEX VERSION 2.11: Decode a RINEX file name.
 
 \author Glenn D. MacGougan
 \date   2007-12-06
@@ -330,7 +364,8 @@ BOOL RINEX_DecodeFileName(
 
 
 /**
-\brief  Decode the ionospheric parameters from a RINEX GPS Navigation file.
+\brief  RINEX VERSION 2.11: Decode the ionospheric parameters 
+        from a RINEX GPS Navigation file.
 
 \author Glenn D. MacGougan
 \date   2007-12-07

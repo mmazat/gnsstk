@@ -53,13 +53,13 @@ namespace GNSS
   class GNSS_RxData;
 
 
-  //============================================================================
-  /// \brief   A class for estimating navigation information provided GNSS
-  ///          measurements.
-  /// 
-  /// \author  Glenn D. MacGougan (GDM)
-  /// \date    2006-11-16
-  /// 
+  /**
+  \brief   A class for estimating navigation information provided GNSS
+           measurements.
+
+  \author  Glenn D. MacGougan (GDM)
+  \date    2006-11-16
+  */
   class GNSS_Estimator
   { 
   public: 
@@ -171,7 +171,7 @@ namespace GNSS
     /// rxData.m_ObsArray[i].flags.isAboveElevationMask \n
     /// rxData.m_ObsArray[i].flags.isAboveCNoMask       \n
     /// rxData.m_ObsArray[i].flags.isAboveLockTimeMask  \n
-    /// rxData.m_ObsArray[i].flags.isUsedInPosSolution.    
+    /// rxData.m_ObsArray[i].flags.isPsrUsedInSolution.    
     ///
     /// \return   true if successful, false if error.    
     bool DetermineUsablePseudorangeMeasurementsForThePositionSolution_GPSL1( 
@@ -206,51 +206,31 @@ namespace GNSS
       GNSS_RxData &rxData,   //!< The receiver data.
       unsigned &nrUsableAdr  //!< The number of usable GPS L1 adr measurements.
       );
-  
 
 
-    /// \brief    Determine the differential GPS L1 pseudorange measurements.
-    ///
-    /// \pre      The following must be valid:              \n
-    /// rxData->m_ObsArray[i].flags.isUsedInPosSolution     \n
-    /// rxBaseData->m_ObsArray[i].flags.isUsedInPosSolution \n
-    ///
-    /// \post     The following are set:                           \n
-    /// rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable     \n
-    /// rxBaseData->m_ObsArray[i].flags.isDifferentialPsrAvailable \n
-    /// rxData->m_ObsArray[i].index_differential                   \n
-    /// rxBaseData->m_ObsArray[i].index_differential               \n
-    ///
-    /// \return   true if successful, false if error.        
-    bool DetermineDifferentialPseudorangeMeasurementsForThePositionSolution_GPSL1( 
-      GNSS_RxData *rxData,                  //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData,              //!< The pointer to the reference receiver data. 
-      const bool setToUseOnlyDifferntial,   //!< This indicates that only differential measurements should be used.
-      unsigned &nrDifferentialPseudoranges  //!< The number of usable GPS L1 pseudorange measurements.    
+    /**
+    \brief   Determine the corresponding indices for between receiver differencing.
+    \author  Glenn D. MacGougan
+    \date    2007-12-13
+
+    \pre     The following must be valid: for rxData and rxBaseData obsservations \n
+             flags.isPsrUsedInSolution      \n
+             flags.isDopplerUsedInSolution  \n
+             flags.isAdrUsedInSolution      \n
+             
+    \post    The following are set: for rxData and rxBaseData obsservations \n
+             flags.isDifferentialPsrAvailable     \n
+             flags.isDifferentialDopplerAvailable \n
+             flags.isDifferentialAdrAvailable     \n
+             index_differential                   \n
+
+    \return  true if successful, false if error.        
+    */
+    bool DetermineBetweenReceiverDifferentialIndex(
+      GNSS_RxData *rxData,                 //!< (input) The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData,             //!< (input) The pointer to the reference receiver data. NULL if not available.        
+      const bool setToUseOnlyDifferential  //!< (input) This indicates that only differential measurements should be used.    
       );
-
-
-    /// \brief    Determine the differential GPS L1 ADR measurements.
-    ///           Allow only differential ADR measurements.
-    ///
-    /// \pre      The following must be valid:              \n
-    /// rxData->m_ObsArray[i].flags.isAdrUsedInSolution     \n
-    /// rxBaseData->m_ObsArray[i].flags.isAdrUsedInSolution \n
-    ///
-    /// \post     The following are set:                           \n
-    /// rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable     \n
-    /// rxBaseData->m_ObsArray[i].flags.isDifferentialAdrAvailable \n
-    /// rxData->m_ObsArray[i].index_differential_adr               \n
-    /// rxBaseData->m_ObsArray[i].index_differential_adr           \n
-    ///
-    /// \return   true if successful, false if error.            
-    bool DetermineDifferentialAdrMeasurements_GPSL1( 
-      GNSS_RxData *rxData,                  //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData,              //!< The pointer to the reference receiver data. 
-      const bool setToUseOnlyDifferential,  //!< This indicates that only differential measurements should be used.
-      unsigned &nrDifferentialAdr           //!< The number of usable GPS L1 ADR measurements.    
-      );
-  
   
 
     /// \brief    Determine the design matrix for the GPS L1 
@@ -259,7 +239,7 @@ namespace GNSS
     /// \pre      The following must be valid:
     /// rxData.m_pvt
     /// rxData.m_ObsArray[i].satellite
-    /// rxData.m_ObsArray[i].flags.isUsedInPosSolution
+    /// rxData.m_ObsArray[i].flags.isPsrUsedInSolution
     /// 
     /// \return   true if successful, false if error.        
     bool DetermineDesignMatrixForThePositionSolution_GPSL1( 
@@ -275,7 +255,7 @@ namespace GNSS
     ///           rxData.m_ObsArray[i].stdev_psr.
     ///
     /// \pre      The following must be valid:         \n
-    /// rxData.m_ObsArray[i].flags.isUsedInPosSolution \n
+    /// rxData.m_ObsArray[i].flags.isPsrUsedInSolution \n
     /// rxData.m_ObsArray[i].stdev_psr (not zero)      \n
     /// 
     /// \return   true if successful, false if error.            
@@ -291,7 +271,7 @@ namespace GNSS
     ///           rxData.m_ObsArray[i].stdev_psr.
     ///
     /// \pre      The following must be valid:         \n
-    /// rxData.m_ObsArray[i].flags.isUsedInPosSolution \n
+    /// rxData.m_ObsArray[i].flags.isPsrUsedInSolution \n
     /// rxData.m_ObsArray[i].stdev_psr (not zero)      \n
     /// 
     /// \return   true if successful, false if error.                
@@ -305,7 +285,7 @@ namespace GNSS
     /// \brief    Compute the GPS L1 pseudroange misclosures.
     ///
     /// \pre      The following must be valid:           \n
-    /// rxData->m_ObsArray[i].flags.isUsedInPosSolution  \n
+    /// rxData->m_ObsArray[i].flags.isPsrUsedInSolution  \n
     /// rxData->m_ObsArray[i].satellite.clkdrift         \n
     /// rxData->m_ObsArray[i].corrections.prcTropoDry    \n
     /// rxData->m_ObsArray[i].corrections.prcTropoWet    \n
@@ -363,7 +343,7 @@ namespace GNSS
     /// rxData.m_ObsArray[i].flags.isNotDopplerRejected \n
     /// rxData.m_ObsArray[i].flags.isEphemerisValid     \n
     ///
-    /// \post     The rxData.m_ObsArray[i].flags.isUsedInVelSolution
+    /// \post     The rxData.m_ObsArray[i].flags.isDopplerUsedInSolution
     ///           will be set to 1(used) or 0(not used).
     /// \return   true if successful, false if error.        
     bool DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( 
@@ -372,31 +352,10 @@ namespace GNSS
       );
 
 
-    /// \brief    Determine the differential GPS L1 Doppler measurements.
-    ///
-    /// \pre      The following must be valid:              \n
-    /// rxData->m_ObsArray[i].flags.isUsedInVelSolution     \n
-    /// rxBaseData->m_ObsArray[i].flags.isUsedInVelSolution \n
-    ///
-    /// \post     The following are set:                               \n
-    /// rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable     \n
-    /// rxBaseData->m_ObsArray[i].flags.isDifferentialDopplerAvailable \n
-    /// rxData->m_ObsArray[i].index_differential                       \n
-    /// rxBaseData->m_ObsArray[i].index_differential                   \n
-    ///
-    /// \return   true if successful, false if error.            
-    bool DetermineDifferentialDopplerMeasurementsForTheVelocitySolution_GPSL1( 
-      GNSS_RxData *rxData,                  //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData,              //!< The pointer to the reference receiver data. 
-      const bool setToUseOnlyDifferential,  //!< This indicates that only differential measurements should be used.
-      unsigned &nrDifferentialDoppler       //!< The number of usable differential GPS L1 Doppler measurements.    
-      );
-  
-
     /// \brief    Compute the GPS L1 Doppler misclosures.
     ///
     /// \pre      The folloing must be valid:           \n
-    /// rxData.m_ObsArray[i].flags.isUsedInVelSolution  \n
+    /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution  \n
     /// rxData.m_ObsArray[i].satellite.clkdrift         \n
     /// rxData.m_ObsArray[i].rangerate                  \n
     /// rxData.m_pvt.clockDrift                         \n
@@ -420,7 +379,7 @@ namespace GNSS
     /// \pre      The following must be valid:
     /// rxData.m_pvt
     /// rxData.m_ObsArray[i].satellite
-    /// rxData.m_ObsArray[i].flags.isUsedInVelSolution
+    /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution
     /// 
     /// \return   true if successful, false if error.            
     bool DetermineDesignMatrixForTheVelocitySolution_GPSL1( 
@@ -435,7 +394,7 @@ namespace GNSS
     ///           rxData.m_ObsArray[i].stdev_doppler.
     ///
     /// \pre      The following must be valid:         \n
-    /// rxData.m_ObsArray[i].flags.isUsedInVelSolution \n
+    /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution \n
     /// rxData.m_ObsArray[i].stdev_doppler (not zero)  \n
     /// 
     /// \return   true if successful, false if error.                
@@ -451,7 +410,7 @@ namespace GNSS
     ///           rxData.m_ObsArray[i].stdev_doppler.
     ///
     /// \pre      The following must be valid:         \n
-    /// rxData.m_ObsArray[i].flags.isUsedInVelSolution \n
+    /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution \n
     /// rxData.m_ObsArray[i].stdev_doppler (not zero)  \n
     /// 
     /// \return   true if successful, false if error.                    
@@ -505,48 +464,24 @@ namespace GNSS
 
 
     bool ComputeTransitionMatrix_8StatePVGM(
-      const double dT,            //!< The change in time since the last update [s].
-      Matrix &T,                  //!< The transition matrix [8 x 8].
-      const double betaVn,        //!< The Gauss Markov beta for northing velocity [1/s].
-      const double betaVe,        //!< The Gauss Markov beta for easting velocity [1/s].
-      const double betaVup,       //!< The Gauss Markov beta for up velocity [1/s].
-      const double betaClkDrift   //!< The Gauss Markov beta for the clock bias [1/s].
+      const double dT, //!< The change in time since the last update [s].
+      Matrix &T        //!< The transition matrix [8 x 8].
       );
 
     bool ComputeTransitionMatrix_8StatePVGM_Float(
-      const double dT,            //!< The change in time since the last update [s].
-      Matrix &T,                  //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
-      const double betaVn,        //!< The Gauss Markov beta for northing velocity [1/s].
-      const double betaVe,        //!< The Gauss Markov beta for easting velocity [1/s].
-      const double betaVup,       //!< The Gauss Markov beta for up velocity [1/s].
-      const double betaClkDrift   //!< The Gauss Markov beta for the clock bias [1/s].
+      const double dT, //!< The change in time since the last update [s].
+      Matrix &T        //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
       );
   
 
     bool ComputeProcessNoiseMatrix_8StatePVGM(
-      const double dT,           //!< The change in time since the last update [s].
-      Matrix &Q,                 //!< The process noise matrix [8 x 8].
-      const double betaVn,       //!< The Gauss Markov beta for northing velocity [1/s].
-      const double betaVe,       //!< The Gauss Markov beta for easting velocity [1/s].
-      const double betaVup,      //!< The Gauss Markov beta for up velocity [1/s].
-      const double betaClkDrift, //!< The Gauss Markov beta for the clock bias [1/s].
-      const double qVn,          //!< The process noise value for northing velocity.
-      const double qVe,          //!< The process noise value for easting  velocity.
-      const double qVup,         //!< The process noise value for up       velocity.
-      const double qClkDrift     //!< The process noise value for clock drift.
+      const double dT, //!< The change in time since the last update [s].
+      Matrix &Q        //!< The process noise matrix [8 x 8].
       );
 
     bool ComputeProcessNoiseMatrix_8StatePVGM_Float(
-      const double dT,           //!< The change in time since the last update [s].
-      Matrix &Q,                 //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
-      const double betaVn,       //!< The Gauss Markov beta for northing velocity [1/s].
-      const double betaVe,       //!< The Gauss Markov beta for easting velocity [1/s].
-      const double betaVup,      //!< The Gauss Markov beta for up velocity [1/s].
-      const double betaClkDrift, //!< The Gauss Markov beta for the clock bias [1/s].
-      const double qVn,          //!< The process noise value for northing velocity.
-      const double qVe,          //!< The process noise value for easting  velocity.
-      const double qVup,         //!< The process noise value for up       velocity.
-      const double qClkDrift     //!< The process noise value for clock drift.
+      const double dT, //!< The change in time since the last update [s].
+      Matrix &Q        //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
       );
   
 
@@ -668,16 +603,36 @@ namespace GNSS
     
     Matrix m_T_prev;   //!< The previous transition matrix,                         [u x u].
     Matrix m_Q_prev;   //!< The previous process noise matrix,                      [u x u].
-    
-    double m_betaVn;
-    double m_betaVe;
-    double m_betaVup;
-    double m_betaClkDrift;
 
-    double m_qVn;
-    double m_qVe;
-    double m_qVup;
-    double m_qClkDrift;
+
+    struct stKalmanModel
+    {
+      double alphaVn;
+      double alphaVe;
+      double alphaVup;
+      double alphaClkDrift;
+      double sigmaVn;
+      double sigmaVe;
+      double sigmaVup;
+      double sigmaClkDrift;
+
+      // default constructor
+      stKalmanModel()
+        : alphaVn(100.0), 
+        alphaVe(100.0), 
+        alphaVup(100.0), 
+        alphaClkDrift(100.0),
+        sigmaVn(0.01),
+        sigmaVe(0.01),
+        sigmaVup(0.01),
+        sigmaClkDrift(0.01)
+      {}
+    };
+
+    /// Kalman filter model settings for 1st order Gauss Markov
+    /// Velocity/ClkDrift states. 8 state PVGM model.
+    stKalmanModel m_KF;
+
 
     struct stAmbiguityInfo
     {

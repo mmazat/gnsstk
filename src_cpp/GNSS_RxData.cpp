@@ -918,17 +918,18 @@ namespace GNSS
 
             m_ObsArray[i].flags.isEphemerisValid      = isAvailable;
 
-            m_ObsArray[i].flags.isAlmanacValid        = 0; // not yet known
-            m_ObsArray[i].flags.isAboveElevationMask  = 0; // not yet known
-            m_ObsArray[i].flags.isAboveCNoMask        = 0; // not yet known
-            m_ObsArray[i].flags.isAboveLockTimeMask   = 0; // not yet known
-            m_ObsArray[i].flags.isNotUserRejected     = 1; // assume not rejected
-            m_ObsArray[i].flags.isNotPsrRejected      = 1; // assume not rejected
-            m_ObsArray[i].flags.isNotAdrRejected      = 1; // assume not rejected
-            m_ObsArray[i].flags.isNotDopplerRejected  = 1; // assume not rejected
-            m_ObsArray[i].flags.isNoCycleSlipDetected = 1; // assume no slip
-            m_ObsArray[i].flags.isUsedInPosSolution   = 0; // not yet known
-            m_ObsArray[i].flags.isUsedInVelSolution   = 0; // not yet known
+            m_ObsArray[i].flags.isAlmanacValid          = 0; // not yet known
+            m_ObsArray[i].flags.isAboveElevationMask    = 0; // not yet known
+            m_ObsArray[i].flags.isAboveCNoMask          = 0; // not yet known
+            m_ObsArray[i].flags.isAboveLockTimeMask     = 0; // not yet known
+            m_ObsArray[i].flags.isNotUserRejected       = 1; // assume not rejected
+            m_ObsArray[i].flags.isNotPsrRejected        = 1; // assume not rejected
+            m_ObsArray[i].flags.isNotAdrRejected        = 1; // assume not rejected
+            m_ObsArray[i].flags.isNotDopplerRejected    = 1; // assume not rejected
+            m_ObsArray[i].flags.isNoCycleSlipDetected   = 1; // assume no slip
+            m_ObsArray[i].flags.isPsrUsedInSolution     = 0; // not yet known
+            m_ObsArray[i].flags.isDopplerUsedInSolution = 0; // not yet known
+            m_ObsArray[i].flags.isAdrUsedInSolution     = 0; // not yet known
 
             if( m_DisableTropoCorrection )
               m_ObsArray[i].flags.useTropoCorrection          = 0;
@@ -1323,8 +1324,8 @@ namespace GNSS
       X[j][i] = m_ObsArray[i].flags.isNotAdrRejected; j++;      //!< Indicates if the ADR was not rejetced (ie Fault Detection and Exclusion).
       X[j][i] = m_ObsArray[i].flags.isNotDopplerRejected; j++;  //!< Indicates if the Doppler was not rejected (ie Fault Detection and Exclusion).
       X[j][i] = m_ObsArray[i].flags.isNoCycleSlipDetected; j++; //!< Indicates that no cycle slip has occurred at this epoch.
-      X[j][i] = m_ObsArray[i].flags.isUsedInPosSolution; j++;   //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
-      X[j][i] = m_ObsArray[i].flags.isUsedInVelSolution; j++;   //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
+      X[j][i] = m_ObsArray[i].flags.isPsrUsedInSolution; j++;   //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
+      X[j][i] = m_ObsArray[i].flags.isDopplerUsedInSolution; j++;   //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
       X[j][i] = m_ObsArray[i].flags.isAdrUsedInSolution; j++;   //!< Indicates if the the ADR is used in the solution.
       X[j][i] = m_ObsArray[i].flags.isDifferentialPsrAvailable; j++;     //!< Indicates if a matching pseudrange observation is available from another receiver.
       X[j][i] = m_ObsArray[i].flags.isDifferentialDopplerAvailable; j++; //!< Indicates if a matching Doppler observation is available from another receiver.
@@ -1365,7 +1366,6 @@ namespace GNSS
       X[j][i] = m_ObsArray[i].index_differential; j++;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
       X[j][i] = m_ObsArray[i].index_time_differential; j++; //!< The channel index of a matching time differential observation. -1 means there is no matching channel.
 
-      X[j][i] = m_ObsArray[i].index_differential_adr; j++;  //!< The channel index of a matching differential observation. -1 means there is no matching channel.
       X[j][i] = m_ObsArray[i].index_ambiguity_state; j++;   //!< The index into the state vector for this ambiguity state. -1 not estimated.
       X[j][i] = m_ObsArray[i].adr_misclosure; j++;          //!< The measured ADR minus the computed ADR estimate [m]. This is likely a differential quantity.
 
@@ -1556,10 +1556,10 @@ namespace GNSS
           scount += sprintf( buffer+scount, "%3s", "--" );
         }
         scount += sprintf( buffer+scount, "%13.1lf", m_ObsArray[i].psr );
-        scount += sprintf( buffer+scount, "%2d", m_ObsArray[i].flags.isUsedInPosSolution );
+        scount += sprintf( buffer+scount, "%2d", m_ObsArray[i].flags.isPsrUsedInSolution );
 
         scount += sprintf( buffer+scount, "%9.1lf", m_ObsArray[i].doppler );
-        scount += sprintf( buffer+scount, "%2d", m_ObsArray[i].flags.isUsedInVelSolution );
+        scount += sprintf( buffer+scount, "%2d", m_ObsArray[i].flags.isDopplerUsedInSolution );
         
         scount += sprintf( buffer+scount, "%13.1lf", m_ObsArray[i].adr );    
         scount += sprintf( buffer+scount, "%2d", m_ObsArray[i].flags.isAdrUsedInSolution );
