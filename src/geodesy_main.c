@@ -39,7 +39,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #include "geodesy.h"
 #include "constants.h"
 
-
+/// \brief  A  main() for a geodesy application.
 int main( int argc, char* argv[] )
 {
   const int min_nr_args = 3;

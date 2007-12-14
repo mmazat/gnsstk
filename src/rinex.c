@@ -1,5 +1,5 @@
 /**
-\file    rinex.h
+\file    rinex.c
 \brief   GNSS core 'c' function library: RINEX VERSION 2.11 related functions.
 \author  Glenn D. MacGougan (GDM)
 \date    2007-12-03

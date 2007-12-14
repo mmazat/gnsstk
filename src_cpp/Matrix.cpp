@@ -1,49 +1,49 @@
-//============================================================================
-/// \file     Matrix.cpp
-/// \brief    The matrix class
-/// \author   Glenn D. MacGougan (GDM)
-/// \date     2007-03-19
-/// \version  1.04
-///
-/// \b LICENSE \b INFORMATION \n
-/// Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
-///
-/// Redistribution pertains only to the following files and their contents. \n
-/// - Matrix.h\n
-/// - Matrix.cpp\n
-/// - cmatrix.h\n
-/// - cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)\n
-///
-/// Redistribution and use in source and binary forms, with or without
-/// modification, of the specified files is permitted provided the following 
-/// conditions are met: \n
-///
-/// - Redistributions of source code must retain the above copyright
-///   notice, this list of conditions and the following disclaimer. \n
-/// - Redistributions in binary form must reproduce the above copyright
-///   notice, this list of conditions and the following disclaimer in the
-///   documentation and/or other materials provided with the distribution. \n
-/// - The name(s) of the contributor(s) may not be used to endorse or promote 
-///   products derived from this software without specific prior written 
-///   permission. \n
-///
-/// THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
-/// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-/// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-/// DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-/// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-/// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-/// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-/// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-/// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
-/// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
-/// SUCH DAMAGE.
-///
-/// \b NOTES: \n
-/// This code was developed using rigourous unit testing for every function 
-/// and operation. Despite any rigorous development process, bugs are
-/// inevitable. Please report bugs and suggested fixes to glenn_at_zenautics.com.\n
-//============================================================================
+/**
+\file     Matrix.cpp
+\brief    The Zenautics Matrix Class
+\author   Glenn D. MacGougan (GDM)
+\date     2007-12-13
+\version  1.10
+
+\b LICENSE \b INFORMATION \n
+Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
+
+Redistribution pertains only to the following files and their contents. \n
+- Matrix.h\n
+- Matrix.cpp\n
+- cmatrix.h\n
+- cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)\n
+
+Redistribution and use in source and binary forms, with or without
+modification, of the specified files is permitted provided the following 
+conditions are met: \n
+
+- Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer. \n
+- Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution. \n
+- The name(s) of the contributor(s) may not be used to endorse or promote 
+  products derived from this software without specific prior written 
+  permission. \n
+
+THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
+SUCH DAMAGE.
+
+\b NOTES: \n
+This code was developed using rigourous unit testing for every function 
+and operation. Despite any rigorous development process, bugs are
+inevitable. Please report bugs and suggested fixes to glenn@zenautics.com.\n
+*/
 
 
 #include <stdlib.h>
@@ -655,6 +655,13 @@ namespace Zenautics
       return false;
   }
 
+
+  bool Matrix::ReadFromFile( std::string path )
+  {
+    return ReadFromFile( path.c_str() );
+  }
+
+
   bool Matrix::Copy( Matrix& src )
   {
     if( MTX_Copy( &src.m_Matrix, &m_Matrix ) )
@@ -693,12 +700,22 @@ namespace Zenautics
       return false;
   }
 
+  bool Matrix::Save( std::string path )
+  {
+    return Save( path.c_str() );
+  }
+
   bool Matrix::Print( const char *path, const unsigned precision, bool append )
   {
     if( MTX_PrintAutoWidth( &m_Matrix, path, precision, append ) )
       return true;
     else 
       return false;
+  }
+
+  bool Matrix::Print( std::string path, const unsigned precision, bool append ) 
+  {
+    return Print( path.c_str(), precision );
   }
 
   bool Matrix::PrintStdout( const unsigned precision )
@@ -725,6 +742,11 @@ namespace Zenautics
       return false;
   }
 
+  bool Matrix::PrintFixedWidth( std::string path, const unsigned width, const unsigned precision, bool append )
+  {
+    return PrintFixedWidth( path.c_str(), width, precision, append );
+  }
+
   bool Matrix::PrintFixedWidthToBuffer( char* buffer, const unsigned maxlength, const unsigned width, const unsigned precision )
   {
     if( MTX_Print_ToBuffer( &m_Matrix, buffer, maxlength, width, precision ) )
@@ -740,6 +762,12 @@ namespace Zenautics
     else 
       return false;
   }
+
+  bool Matrix::PrintDelimited( std::string path, const unsigned precision, const char delimiter, bool append )
+  {
+    return PrintDelimited( path.c_str(), precision, delimiter, append );
+  }
+    
 
   bool Matrix::PrintDelimitedToBuffer( char *buffer, const unsigned maxlength, const unsigned precision, const char delimiter )
   {

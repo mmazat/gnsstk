@@ -1,1 +1,1 @@
-win32_doxygen doxyfile
+doxygen doxyfile
