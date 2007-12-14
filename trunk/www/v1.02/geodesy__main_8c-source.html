@@ -63,9 +63,9 @@
 <a name="l00038"></a>00038 <span class="preprocessor">#include &lt;stdlib.h&gt;</span>
 <a name="l00039"></a>00039 <span class="preprocessor">#include "<a class="code" href="geodesy_8h.html" title="GNSS core &amp;#39;c&amp;#39; function library: geodesy related functions.">geodesy.h</a>"</span>
 <a name="l00040"></a>00040 <span class="preprocessor">#include "<a class="code" href="constants_8h.html" title="GNSS core &amp;#39;c&amp;#39; function library: Contains constants.">constants.h</a>"</span>
-<a name="l00041"></a>00041 
-<a name="l00042"></a>00042 
-<a name="l00043"></a><a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97">00043</a> <span class="keywordtype">int</span> <a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97">main</a>( <span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>* argv[] )
+<a name="l00041"></a>00041 <span class="comment"></span>
+<a name="l00042"></a>00042 <span class="comment">/// \brief  A  main() for a geodesy application.</span>
+<a name="l00043"></a><a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97">00043</a> <span class="comment"></span><span class="keywordtype">int</span> <a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97" title="A main() for a geodesy application.">main</a>( <span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>* argv[] )
 <a name="l00044"></a>00044 {
 <a name="l00045"></a>00045   <span class="keyword">const</span> <span class="keywordtype">int</span> min_nr_args = 3;
 <a name="l00046"></a>00046   <span class="keywordtype">int</span> ellipse=0;
@@ -149,7 +149,7 @@
 <a name="l00124"></a>00124 <span class="comment"></span>      <span class="keywordtype">double</span> f_inv;  <span class="comment">//!&lt; inverse of the flattening of the reference ellipse           []</span>
 <a name="l00125"></a>00125 <span class="comment"></span>      <span class="keywordtype">double</span> e2;     <span class="comment">//!&lt; eccentricity of the reference ellipse (e2 = (a*a-b*b)/(a*a)) [] </span>
 <a name="l00126"></a>00126 <span class="comment"></span>
-<a name="l00127"></a>00127       result = <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a">GEODESY_GetReferenceEllipseParameters</a>( referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated    []</span>
+<a name="l00127"></a>00127       result = <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a" title="This is a look up table function to get reference ellipse parameters.">GEODESY_GetReferenceEllipseParameters</a>( referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated    []</span>
 <a name="l00128"></a>00128 <span class="comment"></span>        &amp;a,      <span class="comment">//!&lt; semi-major axis of the reference ellipse                     [m]</span>
 <a name="l00129"></a>00129 <span class="comment"></span>        &amp;b,      <span class="comment">//!&lt; semi-minor axis of the reference ellipse (b = a - a*f_inv)   [m] </span>
 <a name="l00130"></a>00130 <span class="comment"></span>        &amp;f_inv,  <span class="comment">//!&lt; inverse of the flattening of the reference ellipse           []</span>
@@ -182,7 +182,7 @@
 <a name="l00157"></a>00157       longitude = atof( argv[4] )*<a class="code" href="constants_8h.html#f7e8592d0a634bd3642e9fd508ea8022" title="PI/180.0.">DEG2RAD</a>;
 <a name="l00158"></a>00158       height    = atof( argv[5] );
 <a name="l00159"></a>00159 
-<a name="l00160"></a>00160       result = <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
+<a name="l00160"></a>00160       result = <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16" title="This function converts curvilinear geodetic coordinates from latitude, longitude...">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
 <a name="l00161"></a>00161         referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00162"></a>00162 <span class="comment"></span>        latitude,   <span class="comment">//!&lt; geodetic latitude                [rad]</span>
 <a name="l00163"></a>00163 <span class="comment"></span>        longitude,  <span class="comment">//!&lt; geodetic longitude               [rad]</span>
@@ -219,7 +219,7 @@
 <a name="l00194"></a>00194       y = atof( argv[4] );
 <a name="l00195"></a>00195       z = atof( argv[5] );
 <a name="l00196"></a>00196 
-<a name="l00197"></a>00197       result = <a class="code" href="geodesy_8c.html#2152ba1417b781454e13130804bb2b27">GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates</a>(
+<a name="l00197"></a>00197       result = <a class="code" href="geodesy_8c.html#2152ba1417b781454e13130804bb2b27" title="This function converts cartesian geodetic coordinates from x, y, and z to curvilinear...">GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates</a>(
 <a name="l00198"></a>00198         referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []     </span>
 <a name="l00199"></a>00199 <span class="comment"></span>        x,              <span class="comment">// earth fixed cartesian coordinate [m]</span>
 <a name="l00200"></a>00200         y,              <span class="comment">// earth fixed cartesian coordinate [m]</span>
@@ -264,7 +264,7 @@
 <a name="l00239"></a>00239       longitude= atof(argv[7])*<a class="code" href="constants_8h.html#f7e8592d0a634bd3642e9fd508ea8022" title="PI/180.0.">DEG2RAD</a>;
 <a name="l00240"></a>00240       height   = atof(argv[8]);
 <a name="l00241"></a>00241   
-<a name="l00242"></a>00242       result = <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9">GEODESY_ComputeNorthingEastingVertical</a>(
+<a name="l00242"></a>00242       result = <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9" title="Given a reference point (datum) for a local geodetic coordinate system compute northing...">GEODESY_ComputeNorthingEastingVertical</a>(
 <a name="l00243"></a>00243         referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00244"></a>00244 <span class="comment"></span>        referenceLatitude,  <span class="comment">//!&lt; datum geodetic latitude  [rad]</span>
 <a name="l00245"></a>00245 <span class="comment"></span>        referenceLongitude, <span class="comment">//!&lt; datum geodetic longitude [rad]</span>
@@ -306,7 +306,7 @@
 <a name="l00281"></a>00281       <span class="keywordtype">double</span> toY = atof( argv[7] );
 <a name="l00282"></a>00282       <span class="keywordtype">double</span> toZ = atof( argv[8] );
 <a name="l00283"></a>00283 
-<a name="l00284"></a>00284       result = <a class="code" href="geodesy_8c.html#2ccf18e568745ffcbf83092c30fbefd1">GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame</a>(
+<a name="l00284"></a>00284       result = <a class="code" href="geodesy_8c.html#2ccf18e568745ffcbf83092c30fbefd1" title="Computes the azimuth and elevation angles in the local geodetic (LG) frame between...">GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame</a>(
 <a name="l00285"></a>00285         referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00286"></a>00286 <span class="comment"></span>        fromX, <span class="comment">//!&lt; earth centered earth fixed vector from point X component [m]</span>
 <a name="l00287"></a>00287 <span class="comment"></span>        fromY, <span class="comment">//!&lt; earth centered earth fixed vector from point Y component [m]</span>
@@ -355,7 +355,7 @@
 <a name="l00330"></a>00330       longitude= atof(argv[7])*<a class="code" href="constants_8h.html#f7e8592d0a634bd3642e9fd508ea8022" title="PI/180.0.">DEG2RAD</a>;
 <a name="l00331"></a>00331       height   = atof(argv[8]);
 <a name="l00332"></a>00332   
-<a name="l00333"></a>00333       result = <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9">GEODESY_ComputeNorthingEastingVertical</a>(
+<a name="l00333"></a>00333       result = <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9" title="Given a reference point (datum) for a local geodetic coordinate system compute northing...">GEODESY_ComputeNorthingEastingVertical</a>(
 <a name="l00334"></a>00334         referenceEllipse,   <span class="comment">// reference ellipse enumerated []</span>
 <a name="l00335"></a>00335         referenceLatitude,  <span class="comment">// datum geodetic latitude  [rad]</span>
 <a name="l00336"></a>00336         referenceLongitude, <span class="comment">// datum geodetic longitude [rad]</span>
@@ -394,7 +394,7 @@
 <a name="l00369"></a>00369 
 <a name="l00370"></a>00370   <span class="keywordflow">return</span> 0;
 <a name="l00371"></a>00371 }
-</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:42 2007 for The Essential GNSS Project by&nbsp;
+</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:54 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

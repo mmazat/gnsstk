@@ -101,6 +101,7 @@ A class for handling option files. ';' delimits a comment to follow. <br>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the comment for the field specified.  <a href="#08e41022cc27902f7f9fe26e2459ce52"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_option_file.html#8a2c2006c39851e4dee6657af7407d26">GetPostValueComment</a> (const std::string Field, std::string &amp;PostValueComment)</td></tr>
 
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the comment for the field specified present after the VALUE field. i.e. FIELD, COMMENT = VALUE ; POST-VALUE-COMMENT.  <a href="#8a2c2006c39851e4dee6657af7407d26"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">unsigned&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_option_file.html#d8e439c42b4b8a9af066e13d3e5580b8">GetNumberOfOptions</a> ()</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the number of options available.  <a href="#d8e439c42b4b8a9af066e13d3e5580b8"></a><br></td></tr>
@@ -703,8 +704,9 @@ Get the comment for the field specified.
 <div class="memdoc">
 
 <p>
-Get the comment for the field specified present after the <p>
-field. i.e. &lt;field&gt;, &lt;comment&gt; = &lt;valud&gt; ; &lt;post-value-comment&gt; <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false otherwise. </dd></dl>
+Get the comment for the field specified present after the VALUE field. i.e. FIELD, COMMENT = VALUE ; POST-VALUE-COMMENT. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false otherwise. </dd></dl>
 
 <p>Definition at line <a class="el" href="_option_file_8cpp-source.html#l00610">610</a> of file <a class="el" href="_option_file_8cpp-source.html">OptionFile.cpp</a>.</p>
 
@@ -889,7 +891,7 @@ The path to the option file.
 </div><p>
 <hr>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="_option_file_8h-source.html">OptionFile.h</a><li><a class="el" href="_option_file_8cpp-source.html">OptionFile.cpp</a></ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:47 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:58 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

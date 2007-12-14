@@ -69,247 +69,266 @@
 <a name="l00044"></a>00044 <span class="preprocessor">#include "<a class="code" href="test__novatel_8h.html" title="unit tests for novatel.c/.h">test_novatel.h</a>"</span>
 <a name="l00045"></a>00045 <span class="preprocessor">#include "<a class="code" href="test__yuma_8h.html" title="unit tests for yuma.c/.h">test_yuma.h</a>"</span>
 <a name="l00046"></a>00046 <span class="preprocessor">#include "<a class="code" href="test__ionosphere_8h.html" title="unit tests for ionosphere.c/.h">test_ionosphere.h</a>"</span>
-<a name="l00047"></a>00047 
-<a name="l00048"></a>00048 <span class="comment"></span>
-<a name="l00049"></a>00049 <span class="comment">/** \brief The function where all suites and tests are added. */</span>
-<a name="l00050"></a>00050 <span class="keywordtype">int</span> <a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10" title="The function where all suites and tests are added.">AddTests</a>();
-<a name="l00051"></a>00051 <span class="comment"></span>
-<a name="l00052"></a>00052 <span class="comment">/** \brief Print the time the test occurred to stdout. */</span>
-<a name="l00053"></a>00053 <span class="keyword">static</span> <span class="keywordtype">void</span> print_system_time(<span class="keywordtype">void</span>);
-<a name="l00054"></a>00054 
-<a name="l00055"></a>00055 <span class="keywordtype">int</span> <a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97">main</a>(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>* argv[])
-<a name="l00056"></a>00056 {
-<a name="l00057"></a>00057   CU_BasicRunMode mode = CU_BRM_VERBOSE;
-<a name="l00058"></a>00058   CU_ErrorAction error_action = CUEA_IGNORE;
-<a name="l00059"></a>00059   <span class="keywordtype">int</span> i;
-<a name="l00060"></a>00060 
-<a name="l00061"></a>00061   setvbuf(stdout, NULL, _IONBF, 0);
-<a name="l00062"></a>00062 
-<a name="l00063"></a>00063   <span class="keywordflow">for</span> (i=1 ; i&lt;argc ; i++) 
-<a name="l00064"></a>00064   {
-<a name="l00065"></a>00065     <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-i"</span>, argv[i])) 
-<a name="l00066"></a>00066     {
-<a name="l00067"></a>00067       error_action = CUEA_IGNORE;
-<a name="l00068"></a>00068     }
-<a name="l00069"></a>00069     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-f"</span>, argv[i])) 
-<a name="l00070"></a>00070     {
-<a name="l00071"></a>00071       error_action = CUEA_FAIL;
-<a name="l00072"></a>00072     }
-<a name="l00073"></a>00073     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-A"</span>, argv[i])) 
-<a name="l00074"></a>00074     {
-<a name="l00075"></a>00075       error_action = CUEA_ABORT;
-<a name="l00076"></a>00076     }
-<a name="l00077"></a>00077     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-s"</span>, argv[i])) 
-<a name="l00078"></a>00078     {
-<a name="l00079"></a>00079       mode = CU_BRM_SILENT;
-<a name="l00080"></a>00080     }
-<a name="l00081"></a>00081     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-n"</span>, argv[i])) 
-<a name="l00082"></a>00082     {
-<a name="l00083"></a>00083       mode = CU_BRM_NORMAL;
-<a name="l00084"></a>00084     }
-<a name="l00085"></a>00085     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-v"</span>, argv[i])) 
-<a name="l00086"></a>00086     {
-<a name="l00087"></a>00087       mode = CU_BRM_VERBOSE;
-<a name="l00088"></a>00088     }
-<a name="l00089"></a>00089     <span class="comment">/*</span>
-<a name="l00090"></a>00090 <span class="comment">    else if (!strcmp("-e", argv[i])) </span>
-<a name="l00091"></a>00091 <span class="comment">    {</span>
-<a name="l00092"></a>00092 <span class="comment">      print_example_results();</span>
-<a name="l00093"></a>00093 <span class="comment">      return 0;</span>
-<a name="l00094"></a>00094 <span class="comment">    }</span>
-<a name="l00095"></a>00095 <span class="comment">    */</span>
-<a name="l00096"></a>00096     <span class="keywordflow">else</span> 
-<a name="l00097"></a>00097     {
-<a name="l00098"></a>00098       printf(<span class="stringliteral">"\nUsage:  eGNSS_Test [options]\n\n"</span>
-<a name="l00099"></a>00099                <span class="stringliteral">"Options:   -i   ignore framework errors [default].\n"</span>
-<a name="l00100"></a>00100                <span class="stringliteral">"           -f   fail on framework error.\n"</span>
-<a name="l00101"></a>00101                <span class="stringliteral">"           -A   abort on framework error.\n\n"</span>
-<a name="l00102"></a>00102                <span class="stringliteral">"           -s   silent mode - no output to screen.\n"</span>
-<a name="l00103"></a>00103                <span class="stringliteral">"           -n   normal mode - standard output to screen.\n"</span>
-<a name="l00104"></a>00104                <span class="stringliteral">"           -v   verbose mode - max output to screen [default].\n\n"</span>
-<a name="l00105"></a>00105              <span class="comment">/*"           -e   print expected test results and exit.\n"*/</span>
-<a name="l00106"></a>00106                <span class="stringliteral">"           -h   print this message and exit.\n\n"</span>);
-<a name="l00107"></a>00107       <span class="keywordflow">return</span> 0;
-<a name="l00108"></a>00108     }
-<a name="l00109"></a>00109   }
-<a name="l00110"></a>00110 
-<a name="l00111"></a>00111   <span class="comment">// Output system time and date.</span>
-<a name="l00112"></a>00112   print_system_time();
-<a name="l00113"></a>00113 
-<a name="l00114"></a>00114   <span class="keywordflow">if</span> (CU_initialize_registry()) 
-<a name="l00115"></a>00115   {
-<a name="l00116"></a>00116     printf(<span class="stringliteral">"\nInitialization of Test Registry failed."</span>);
-<a name="l00117"></a>00117   }
-<a name="l00118"></a>00118   <span class="keywordflow">else</span> 
-<a name="l00119"></a>00119   {
-<a name="l00120"></a>00120     <span class="keywordflow">if</span>( <a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10" title="The function where all suites and tests are added.">AddTests</a>() == CUE_SUCCESS )
-<a name="l00121"></a>00121     {
-<a name="l00122"></a>00122       CU_basic_set_mode(mode);
-<a name="l00123"></a>00123       CU_set_error_action(error_action);
-<a name="l00124"></a>00124       printf(<span class="stringliteral">"\nTests completed with return value %d.\n"</span>, CU_basic_run_tests());
-<a name="l00125"></a>00125     }
-<a name="l00126"></a>00126     CU_cleanup_registry();
-<a name="l00127"></a>00127   }
-<a name="l00128"></a>00128 
-<a name="l00129"></a>00129   <span class="keywordflow">return</span> 0;
-<a name="l00130"></a>00130 }
-<a name="l00131"></a>00131 
+<a name="l00047"></a>00047 <span class="preprocessor">#include "<a class="code" href="test__rinex_8h.html" title="unit tests for test_rinex.c/.h">test_rinex.h</a>"</span>
+<a name="l00048"></a>00048 
+<a name="l00049"></a>00049 <span class="comment"></span>
+<a name="l00050"></a>00050 <span class="comment">/** \brief The function where all suites and tests are added. */</span>
+<a name="l00051"></a>00051 <span class="keywordtype">int</span> <a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10" title="The function where all suites and tests are added.">AddTests</a>();
+<a name="l00052"></a>00052 <span class="comment"></span>
+<a name="l00053"></a>00053 <span class="comment">/** \brief Print the time the test occurred to stdout. */</span>
+<a name="l00054"></a>00054 <span class="keyword">static</span> <span class="keywordtype">void</span> print_system_time(<span class="keywordtype">void</span>);
+<a name="l00055"></a>00055 
+<a name="l00056"></a>00056 <span class="keywordtype">int</span> <a class="code" href="geodesy__main_8c.html#0ddf1224851353fc92bfbff6f499fa97" title="A main() for a geodesy application.">main</a>(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>* argv[])
+<a name="l00057"></a>00057 {
+<a name="l00058"></a>00058   CU_BasicRunMode mode = CU_BRM_VERBOSE;
+<a name="l00059"></a>00059   CU_ErrorAction error_action = CUEA_IGNORE;
+<a name="l00060"></a>00060   <span class="keywordtype">int</span> i;
+<a name="l00061"></a>00061 
+<a name="l00062"></a>00062   setvbuf(stdout, NULL, _IONBF, 0);
+<a name="l00063"></a>00063 
+<a name="l00064"></a>00064   <span class="keywordflow">for</span> (i=1 ; i&lt;argc ; i++) 
+<a name="l00065"></a>00065   {
+<a name="l00066"></a>00066     <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-i"</span>, argv[i])) 
+<a name="l00067"></a>00067     {
+<a name="l00068"></a>00068       error_action = CUEA_IGNORE;
+<a name="l00069"></a>00069     }
+<a name="l00070"></a>00070     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-f"</span>, argv[i])) 
+<a name="l00071"></a>00071     {
+<a name="l00072"></a>00072       error_action = CUEA_FAIL;
+<a name="l00073"></a>00073     }
+<a name="l00074"></a>00074     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-A"</span>, argv[i])) 
+<a name="l00075"></a>00075     {
+<a name="l00076"></a>00076       error_action = CUEA_ABORT;
+<a name="l00077"></a>00077     }
+<a name="l00078"></a>00078     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-s"</span>, argv[i])) 
+<a name="l00079"></a>00079     {
+<a name="l00080"></a>00080       mode = CU_BRM_SILENT;
+<a name="l00081"></a>00081     }
+<a name="l00082"></a>00082     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-n"</span>, argv[i])) 
+<a name="l00083"></a>00083     {
+<a name="l00084"></a>00084       mode = CU_BRM_NORMAL;
+<a name="l00085"></a>00085     }
+<a name="l00086"></a>00086     <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!strcmp(<span class="stringliteral">"-v"</span>, argv[i])) 
+<a name="l00087"></a>00087     {
+<a name="l00088"></a>00088       mode = CU_BRM_VERBOSE;
+<a name="l00089"></a>00089     }
+<a name="l00090"></a>00090     <span class="comment">/*</span>
+<a name="l00091"></a>00091 <span class="comment">    else if (!strcmp("-e", argv[i])) </span>
+<a name="l00092"></a>00092 <span class="comment">    {</span>
+<a name="l00093"></a>00093 <span class="comment">      print_example_results();</span>
+<a name="l00094"></a>00094 <span class="comment">      return 0;</span>
+<a name="l00095"></a>00095 <span class="comment">    }</span>
+<a name="l00096"></a>00096 <span class="comment">    */</span>
+<a name="l00097"></a>00097     <span class="keywordflow">else</span> 
+<a name="l00098"></a>00098     {
+<a name="l00099"></a>00099       printf(<span class="stringliteral">"\nUsage:  eGNSS_Test [options]\n\n"</span>
+<a name="l00100"></a>00100                <span class="stringliteral">"Options:   -i   ignore framework errors [default].\n"</span>
+<a name="l00101"></a>00101                <span class="stringliteral">"           -f   fail on framework error.\n"</span>
+<a name="l00102"></a>00102                <span class="stringliteral">"           -A   abort on framework error.\n\n"</span>
+<a name="l00103"></a>00103                <span class="stringliteral">"           -s   silent mode - no output to screen.\n"</span>
+<a name="l00104"></a>00104                <span class="stringliteral">"           -n   normal mode - standard output to screen.\n"</span>
+<a name="l00105"></a>00105                <span class="stringliteral">"           -v   verbose mode - max output to screen [default].\n\n"</span>
+<a name="l00106"></a>00106              <span class="comment">/*"           -e   print expected test results and exit.\n"*/</span>
+<a name="l00107"></a>00107                <span class="stringliteral">"           -h   print this message and exit.\n\n"</span>);
+<a name="l00108"></a>00108       <span class="keywordflow">return</span> 0;
+<a name="l00109"></a>00109     }
+<a name="l00110"></a>00110   }
+<a name="l00111"></a>00111 
+<a name="l00112"></a>00112   <span class="comment">// Output system time and date.</span>
+<a name="l00113"></a>00113   print_system_time();
+<a name="l00114"></a>00114 
+<a name="l00115"></a>00115   <span class="keywordflow">if</span> (CU_initialize_registry()) 
+<a name="l00116"></a>00116   {
+<a name="l00117"></a>00117     printf(<span class="stringliteral">"\nInitialization of Test Registry failed."</span>);
+<a name="l00118"></a>00118   }
+<a name="l00119"></a>00119   <span class="keywordflow">else</span> 
+<a name="l00120"></a>00120   {
+<a name="l00121"></a>00121     <span class="keywordflow">if</span>( <a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10" title="The function where all suites and tests are added.">AddTests</a>() == CUE_SUCCESS )
+<a name="l00122"></a>00122     {
+<a name="l00123"></a>00123       CU_basic_set_mode(mode);
+<a name="l00124"></a>00124       CU_set_error_action(error_action);
+<a name="l00125"></a>00125       printf(<span class="stringliteral">"\nTests completed with return value %d.\n"</span>, CU_basic_run_tests());
+<a name="l00126"></a>00126     }
+<a name="l00127"></a>00127     CU_cleanup_registry();
+<a name="l00128"></a>00128   }
+<a name="l00129"></a>00129 
+<a name="l00130"></a>00130   <span class="keywordflow">return</span> 0;
+<a name="l00131"></a>00131 }
 <a name="l00132"></a>00132 
-<a name="l00133"></a>00133 <span class="comment"></span>
-<a name="l00134"></a>00134 <span class="comment">/** </span>
-<a name="l00135"></a>00135 <span class="comment">The AddTests() function for setting up the tests. </span>
-<a name="l00136"></a>00136 <span class="comment">*/</span>
-<a name="l00137"></a><a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10">00137</a> <span class="keywordtype">int</span> <a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10" title="The function where all suites and tests are added.">AddTests</a>()
-<a name="l00138"></a>00138 {
-<a name="l00139"></a>00139   CU_pSuite pSuite = NULL;
-<a name="l00140"></a>00140 
+<a name="l00133"></a>00133 
+<a name="l00134"></a>00134 <span class="comment"></span>
+<a name="l00135"></a>00135 <span class="comment">/** </span>
+<a name="l00136"></a>00136 <span class="comment">The AddTests() function for setting up the tests. </span>
+<a name="l00137"></a>00137 <span class="comment">*/</span>
+<a name="l00138"></a><a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10">00138</a> <span class="keywordtype">int</span> <a class="code" href="unit__testing__main_8c.html#a82dee35098a712ec1c4461c1a77eb10" title="The function where all suites and tests are added.">AddTests</a>()
+<a name="l00139"></a>00139 {
+<a name="l00140"></a>00140   CU_pSuite pSuite = NULL;
 <a name="l00141"></a>00141 
 <a name="l00142"></a>00142 
-<a name="l00143"></a>00143   <span class="comment">/* add a suite to the registry */</span>
-<a name="l00144"></a>00144   pSuite = CU_add_suite(<span class="stringliteral">"GEODESY"</span>, <a class="code" href="test__geodesy_8c.html#dfbf5a22baf5199bb85d298d2013919c" title="The suite initialization function.">init_suite_GEODESY</a>, <a class="code" href="test__geodesy_8c.html#4dec3552907192d507565600dda96651" title="The suite cleanup function.">clean_suite_GEODESY</a>);
-<a name="l00145"></a>00145   <span class="keywordflow">if</span> (NULL == pSuite)   
-<a name="l00146"></a>00146     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00147"></a>00147   
-<a name="l00148"></a>00148   <span class="comment">/* add the tests to the suite */</span>
-<a name="l00149"></a>00149   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_GetReferenceEllipseParameters()"</span>, <a class="code" href="test__geodesy_8c.html#aeab04a5d3b70be8b7824ec189586472" title="Test GEODESY_GetReferenceEllipseParameters().">test_GEODESY_GetReferenceEllipseParameters</a>) == NULL )
-<a name="l00150"></a>00150     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00151"></a>00151   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"test_GEODESY_ConvertCoordinates()"</span>, <a class="code" href="test__geodesy_8c.html#0217af88b97067e8ad89c82dff5f917c" title="Test GEODESY coordinate conversions.">test_GEODESY_ConvertCoordinates</a>) == NULL )
-<a name="l00152"></a>00152     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00153"></a>00153   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeNorthingEastingVertical()"</span>, <a class="code" href="test__geodesy_8c.html#09a3f69213ff75787ad46dafe7fd4e8b" title="Test GEODESY_ComputeNorthingEastingVertical().">test_GEODESY_ComputeNorthingEastingVertical</a>) == NULL )
-<a name="l00154"></a>00154     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00155"></a>00155   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputePositionDifference()"</span>, <a class="code" href="test__geodesy_8c.html#901880ef675af8170b5fe9837049ce01" title="Test GEODESY_ComputePositionDifference().">test_GEODESY_ComputePositionDifference</a>) == NULL )
-<a name="l00156"></a>00156     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00157"></a>00157   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeMeridianRadiusOfCurvature()"</span>, <a class="code" href="test__geodesy_8c.html#b275ee5f5fecca74dbb2a74b6e6d59b2" title="Test GEODESY_ComputeMeridianRadiusOfCurvature().">test_GEODESY_ComputeMeridianRadiusOfCurvature</a>) == NULL )
-<a name="l00158"></a>00158     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00159"></a>00159   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputePrimeVerticalRadiusOfCurvature()"</span>, <a class="code" href="test__geodesy_8c.html#9c87ab3ba91b03c776029afcee223c83" title="Test GEODESY_ComputePrimeVerticalRadiusOfCurvature().">test_GEODESY_ComputePrimeVerticalRadiusOfCurvature</a>) == NULL )
-<a name="l00160"></a>00160     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00161"></a>00161   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeMeridianArcBetweenTwoLatitudes()"</span>, <a class="code" href="test__geodesy_8c.html#838264f231e5b1aa0320293858be311b" title="Test GEODESY_ComputeMeridianArcBetweenTwoLatitudes().">test_GEODESY_ComputeMeridianArcBetweenTwoLatitudes</a>) == NULL )
-<a name="l00162"></a>00162     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00163"></a>00163   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeParallelArcBetweenTwoLongitudes()"</span>, <a class="code" href="test__geodesy_8c.html#1bd5d48440367f38c3b45b1f094df79e" title="Test GEODESY_ComputeParallelArcBetweenTwoLongitudes().">test_GEODESY_ComputeParallelArcBetweenTwoLongitudes</a>) == NULL )
-<a name="l00164"></a>00164     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00165"></a>00165   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame()"</span>, <a class="code" href="test__geodesy_8c.html#e9d243219d79d4f1950eb4f1875b4b54" title="Test GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame().">test_GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame</a>) == NULL )
-<a name="l00166"></a>00166     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00167"></a>00167   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame()"</span>, <a class="code" href="test__geodesy_8c.html#d90dd832cfef0627ec967e58b938aec6" title="Test GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame().">test_GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame</a>) == NULL )
-<a name="l00168"></a>00168     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00169"></a>00169   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame()"</span>, <a class="code" href="test__geodesy_8c.html#e67a094530afce0b04d9b7e7857b7180" title="Test GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame()...">test_GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame</a>) == NULL )
-<a name="l00170"></a>00170     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00171"></a>00171 
+<a name="l00143"></a>00143 
+<a name="l00144"></a>00144   <span class="comment">/* add a suite to the registry */</span>
+<a name="l00145"></a>00145   pSuite = CU_add_suite(<span class="stringliteral">"GEODESY"</span>, <a class="code" href="test__geodesy_8c.html#dfbf5a22baf5199bb85d298d2013919c" title="The suite initialization function.">init_suite_GEODESY</a>, <a class="code" href="test__geodesy_8c.html#4dec3552907192d507565600dda96651" title="The suite cleanup function.">clean_suite_GEODESY</a>);
+<a name="l00146"></a>00146   <span class="keywordflow">if</span> (NULL == pSuite)   
+<a name="l00147"></a>00147     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00148"></a>00148   
+<a name="l00149"></a>00149   <span class="comment">/* add the tests to the suite */</span>
+<a name="l00150"></a>00150   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_GetReferenceEllipseParameters()"</span>, <a class="code" href="test__geodesy_8c.html#aeab04a5d3b70be8b7824ec189586472" title="Test GEODESY_GetReferenceEllipseParameters().">test_GEODESY_GetReferenceEllipseParameters</a>) == NULL )
+<a name="l00151"></a>00151     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00152"></a>00152   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"test_GEODESY_ConvertCoordinates()"</span>, <a class="code" href="test__geodesy_8c.html#0217af88b97067e8ad89c82dff5f917c" title="Test GEODESY coordinate conversions.">test_GEODESY_ConvertCoordinates</a>) == NULL )
+<a name="l00153"></a>00153     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00154"></a>00154   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeNorthingEastingVertical()"</span>, <a class="code" href="test__geodesy_8c.html#09a3f69213ff75787ad46dafe7fd4e8b" title="Test GEODESY_ComputeNorthingEastingVertical().">test_GEODESY_ComputeNorthingEastingVertical</a>) == NULL )
+<a name="l00155"></a>00155     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00156"></a>00156   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputePositionDifference()"</span>, <a class="code" href="test__geodesy_8c.html#901880ef675af8170b5fe9837049ce01" title="Test GEODESY_ComputePositionDifference().">test_GEODESY_ComputePositionDifference</a>) == NULL )
+<a name="l00157"></a>00157     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00158"></a>00158   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeMeridianRadiusOfCurvature()"</span>, <a class="code" href="test__geodesy_8c.html#b275ee5f5fecca74dbb2a74b6e6d59b2" title="Test GEODESY_ComputeMeridianRadiusOfCurvature().">test_GEODESY_ComputeMeridianRadiusOfCurvature</a>) == NULL )
+<a name="l00159"></a>00159     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00160"></a>00160   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputePrimeVerticalRadiusOfCurvature()"</span>, <a class="code" href="test__geodesy_8c.html#9c87ab3ba91b03c776029afcee223c83" title="Test GEODESY_ComputePrimeVerticalRadiusOfCurvature().">test_GEODESY_ComputePrimeVerticalRadiusOfCurvature</a>) == NULL )
+<a name="l00161"></a>00161     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00162"></a>00162   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeMeridianArcBetweenTwoLatitudes()"</span>, <a class="code" href="test__geodesy_8c.html#838264f231e5b1aa0320293858be311b" title="Test GEODESY_ComputeMeridianArcBetweenTwoLatitudes().">test_GEODESY_ComputeMeridianArcBetweenTwoLatitudes</a>) == NULL )
+<a name="l00163"></a>00163     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00164"></a>00164   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeParallelArcBetweenTwoLongitudes()"</span>, <a class="code" href="test__geodesy_8c.html#1bd5d48440367f38c3b45b1f094df79e" title="Test GEODESY_ComputeParallelArcBetweenTwoLongitudes().">test_GEODESY_ComputeParallelArcBetweenTwoLongitudes</a>) == NULL )
+<a name="l00165"></a>00165     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00166"></a>00166   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame()"</span>, <a class="code" href="test__geodesy_8c.html#e9d243219d79d4f1950eb4f1875b4b54" title="Test GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame().">test_GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame</a>) == NULL )
+<a name="l00167"></a>00167     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00168"></a>00168   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame()"</span>, <a class="code" href="test__geodesy_8c.html#d90dd832cfef0627ec967e58b938aec6" title="Test GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame().">test_GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame</a>) == NULL )
+<a name="l00169"></a>00169     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00170"></a>00170   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame()"</span>, <a class="code" href="test__geodesy_8c.html#e67a094530afce0b04d9b7e7857b7180" title="Test GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame()...">test_GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame</a>) == NULL )
+<a name="l00171"></a>00171     <span class="keywordflow">return</span> CU_get_error();
 <a name="l00172"></a>00172 
 <a name="l00173"></a>00173 
 <a name="l00174"></a>00174 
-<a name="l00175"></a>00175   <span class="comment">/* add a suite to the registry */</span>
-<a name="l00176"></a>00176   pSuite = CU_add_suite(<span class="stringliteral">"TIMECONV"</span>, <a class="code" href="test__geodesy_8c.html#dfbf5a22baf5199bb85d298d2013919c" title="The suite initialization function.">init_suite_GEODESY</a>, <a class="code" href="test__geodesy_8c.html#4dec3552907192d507565600dda96651" title="The suite cleanup function.">clean_suite_GEODESY</a>);
-<a name="l00177"></a>00177   <span class="keywordflow">if</span> (NULL == pSuite)   
-<a name="l00178"></a>00178     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00179"></a>00179   
-<a name="l00180"></a>00180   <span class="comment">/* add the tests to the suite */</span>
-<a name="l00181"></a>00181   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetJulianDateFromGPSTime()"</span>, <a class="code" href="test__time__conversion_8c.html#f5f4f7624b37a59464f7f386ef04b5d6" title="Test TIMECONV_GetJulianDateFromGPSTime().">test_TIMECONV_GetJulianDateFromGPSTime</a>) == NULL )
-<a name="l00182"></a>00182     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00183"></a>00183   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetJulianDateFromUTCTime()"</span>, <a class="code" href="test__time__conversion_8c.html#f2f6d446c33314fc5a29fbaf787d5d19" title="Test TIMECONV_GetJulianDateFromUTCTime().">test_TIMECONV_GetJulianDateFromUTCTime</a>) == NULL )
-<a name="l00184"></a>00184     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00185"></a>00185   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetGPSTimeFromJulianDate()"</span>, <a class="code" href="test__time__conversion_8c.html#41a225bcbf363c9c14de639ca616711c" title="Test TIMECONV_GetGPSTimeFromJulianDate().">test_TIMECONV_GetGPSTimeFromJulianDate</a>) == NULL )
-<a name="l00186"></a>00186     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00187"></a>00187   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetUTCTimeFromJulianDate()"</span>, <a class="code" href="test__time__conversion_8c.html#9db899c2b90fba3acc750b6dd923614c" title="Test TIMECONV_GetUTCTimeFromJulianDate().">test_TIMECONV_GetUTCTimeFromJulianDate</a>) == NULL )
-<a name="l00188"></a>00188     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00189"></a>00189   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetGPSTimeFromUTCTime()"</span>, <a class="code" href="test__time__conversion_8c.html#77c219418750353d872d73f01d6f2309" title="Test TIMECONV_GetGPSTimeFromUTCTime().">test_TIMECONV_GetGPSTimeFromUTCTime</a>) == NULL )
-<a name="l00190"></a>00190     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00191"></a>00191   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetUTCTimeFromGPSTime()"</span>, <a class="code" href="test__time__conversion_8c.html#6df5c44ce72d23048b434df48eb4d855" title="Test TIMECONV_GetUTCTimeFromGPSTime().">test_TIMECONV_GetUTCTimeFromGPSTime</a>) == NULL )
-<a name="l00192"></a>00192     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00193"></a>00193   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_DetermineUTCOffset()"</span>, <a class="code" href="test__time__conversion_8c.html#dceab5aaf5ef6e1b8cf6429b7034ab90" title="Test TIMECONV_DetermineUTCOffset().">test_TIMECONV_DetermineUTCOffset</a>) == NULL )
-<a name="l00194"></a>00194     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00195"></a>00195   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetNumberOfDaysInMonth()"</span>, <a class="code" href="test__time__conversion_8c.html#4c230b84f75104e8b7ee452ed2096ba3" title="Test TIMECONV_GetNumberOfDaysInMonth().">test_TIMECONV_GetNumberOfDaysInMonth</a>) == NULL )
-<a name="l00196"></a>00196     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00197"></a>00197   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_IsALeapYear()"</span>, <a class="code" href="test__time__conversion_8c.html#916858e980e00d8db9aec05e9b7d56d8" title="Test TIMECONV_IsALeapYear().">test_TIMECONV_IsALeapYear</a>) == NULL )
-<a name="l00198"></a>00198     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00199"></a>00199   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetDayOfYear()"</span>, <a class="code" href="test__time__conversion_8c.html#f6f0d79ed7d5534e959d29f4cebadb4a" title="Test TIMECONV_GetDayOfYear().">test_TIMECONV_GetDayOfYear</a>) == NULL )
-<a name="l00200"></a>00200     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00201"></a>00201 
-<a name="l00202"></a>00202 
-<a name="l00203"></a>00203   <span class="comment">/* add a suite to the registry */</span>
-<a name="l00204"></a>00204   pSuite = CU_add_suite(<span class="stringliteral">"NOVATELOEM4"</span>, <a class="code" href="test__geodesy_8c.html#dfbf5a22baf5199bb85d298d2013919c" title="The suite initialization function.">init_suite_GEODESY</a>, <a class="code" href="test__geodesy_8c.html#4dec3552907192d507565600dda96651" title="The suite cleanup function.">clean_suite_GEODESY</a>);
-<a name="l00205"></a>00205   <span class="keywordflow">if</span> (NULL == pSuite)   
-<a name="l00206"></a>00206     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00207"></a>00207 
-<a name="l00208"></a>00208   <span class="comment">/* add the tests to the suite */</span>
-<a name="l00209"></a>00209   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_FindNextMessageInFile()"</span>, <a class="code" href="test__novatel_8c.html#e39923849938e53193cd4772bb0c6bf4" title="Test NOVATELOEM4_FindNextMessageInFile().">test_NOVATELOEM4_FindNextMessageInFile</a>) == NULL )
-<a name="l00210"></a>00210     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00211"></a>00211   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_DecodeRANGEB()"</span>, <a class="code" href="test__novatel_8c.html#6267e2a3549b28c4cbe9a232aaeb4c84" title="Test NOVATELOEM4_DecodeRANGEB().">test_NOVATELOEM4_DecodeRANGEB</a>) == NULL )
+<a name="l00175"></a>00175 
+<a name="l00176"></a>00176   <span class="comment">/* add a suite to the registry */</span>
+<a name="l00177"></a>00177   pSuite = CU_add_suite(<span class="stringliteral">"TIMECONV"</span>, <a class="code" href="test__geodesy_8c.html#dfbf5a22baf5199bb85d298d2013919c" title="The suite initialization function.">init_suite_GEODESY</a>, <a class="code" href="test__geodesy_8c.html#4dec3552907192d507565600dda96651" title="The suite cleanup function.">clean_suite_GEODESY</a>);
+<a name="l00178"></a>00178   <span class="keywordflow">if</span> (NULL == pSuite)   
+<a name="l00179"></a>00179     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00180"></a>00180   
+<a name="l00181"></a>00181   <span class="comment">/* add the tests to the suite */</span>
+<a name="l00182"></a>00182   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetJulianDateFromGPSTime()"</span>, <a class="code" href="test__time__conversion_8c.html#f5f4f7624b37a59464f7f386ef04b5d6" title="Test TIMECONV_GetJulianDateFromGPSTime().">test_TIMECONV_GetJulianDateFromGPSTime</a>) == NULL )
+<a name="l00183"></a>00183     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00184"></a>00184   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetJulianDateFromUTCTime()"</span>, <a class="code" href="test__time__conversion_8c.html#f2f6d446c33314fc5a29fbaf787d5d19" title="Test TIMECONV_GetJulianDateFromUTCTime().">test_TIMECONV_GetJulianDateFromUTCTime</a>) == NULL )
+<a name="l00185"></a>00185     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00186"></a>00186   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetGPSTimeFromJulianDate()"</span>, <a class="code" href="test__time__conversion_8c.html#41a225bcbf363c9c14de639ca616711c" title="Test TIMECONV_GetGPSTimeFromJulianDate().">test_TIMECONV_GetGPSTimeFromJulianDate</a>) == NULL )
+<a name="l00187"></a>00187     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00188"></a>00188   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetUTCTimeFromJulianDate()"</span>, <a class="code" href="test__time__conversion_8c.html#9db899c2b90fba3acc750b6dd923614c" title="Test TIMECONV_GetUTCTimeFromJulianDate().">test_TIMECONV_GetUTCTimeFromJulianDate</a>) == NULL )
+<a name="l00189"></a>00189     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00190"></a>00190   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetGPSTimeFromUTCTime()"</span>, <a class="code" href="test__time__conversion_8c.html#77c219418750353d872d73f01d6f2309" title="Test TIMECONV_GetGPSTimeFromUTCTime().">test_TIMECONV_GetGPSTimeFromUTCTime</a>) == NULL )
+<a name="l00191"></a>00191     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00192"></a>00192   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetUTCTimeFromGPSTime()"</span>, <a class="code" href="test__time__conversion_8c.html#6df5c44ce72d23048b434df48eb4d855" title="Test TIMECONV_GetUTCTimeFromGPSTime().">test_TIMECONV_GetUTCTimeFromGPSTime</a>) == NULL )
+<a name="l00193"></a>00193     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00194"></a>00194   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_DetermineUTCOffset()"</span>, <a class="code" href="test__time__conversion_8c.html#dceab5aaf5ef6e1b8cf6429b7034ab90" title="Test TIMECONV_DetermineUTCOffset().">test_TIMECONV_DetermineUTCOffset</a>) == NULL )
+<a name="l00195"></a>00195     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00196"></a>00196   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetNumberOfDaysInMonth()"</span>, <a class="code" href="test__time__conversion_8c.html#4c230b84f75104e8b7ee452ed2096ba3" title="Test TIMECONV_GetNumberOfDaysInMonth().">test_TIMECONV_GetNumberOfDaysInMonth</a>) == NULL )
+<a name="l00197"></a>00197     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00198"></a>00198   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_IsALeapYear()"</span>, <a class="code" href="test__time__conversion_8c.html#916858e980e00d8db9aec05e9b7d56d8" title="Test TIMECONV_IsALeapYear().">test_TIMECONV_IsALeapYear</a>) == NULL )
+<a name="l00199"></a>00199     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00200"></a>00200   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetDayOfYear()"</span>, <a class="code" href="test__time__conversion_8c.html#f6f0d79ed7d5534e959d29f4cebadb4a" title="Test TIMECONV_GetDayOfYear().">test_TIMECONV_GetDayOfYear</a>) == NULL )
+<a name="l00201"></a>00201     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00202"></a>00202   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"TIMECONV_GetGPSTimeFromYearAndDayOfYear()"</span>, <a class="code" href="test__time__conversion_8c.html#77b9ae13b90daab02ba354ebf33143bf" title="Test TIMECONV_GetGPSTimeFromYearAndDayOfYear().">test_TIMECONV_GetGPSTimeFromYearAndDayOfYear</a>) == NULL )
+<a name="l00203"></a>00203     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00204"></a>00204   
+<a name="l00205"></a>00205   <span class="comment">/* add a suite to the registry */</span>
+<a name="l00206"></a>00206   pSuite = CU_add_suite(<span class="stringliteral">"NOVATELOEM4"</span>, <a class="code" href="test__geodesy_8c.html#dfbf5a22baf5199bb85d298d2013919c" title="The suite initialization function.">init_suite_GEODESY</a>, <a class="code" href="test__geodesy_8c.html#4dec3552907192d507565600dda96651" title="The suite cleanup function.">clean_suite_GEODESY</a>);
+<a name="l00207"></a>00207   <span class="keywordflow">if</span> (NULL == pSuite)   
+<a name="l00208"></a>00208     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00209"></a>00209 
+<a name="l00210"></a>00210   <span class="comment">/* add the tests to the suite */</span>
+<a name="l00211"></a>00211   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_FindNextMessageInFile()"</span>, <a class="code" href="test__novatel_8c.html#e39923849938e53193cd4772bb0c6bf4" title="Test NOVATELOEM4_FindNextMessageInFile().">test_NOVATELOEM4_FindNextMessageInFile</a>) == NULL )
 <a name="l00212"></a>00212     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00213"></a>00213   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_DecodeRANGECMPB()"</span>, <a class="code" href="test__novatel_8c.html#4c7191df1a22ab6ded89e301899a978e" title="Test NOVATELOEM4_DecodeRANGECMPB().">test_NOVATELOEM4_DecodeRANGECMPB</a>) == NULL )
+<a name="l00213"></a>00213   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_DecodeRANGEB()"</span>, <a class="code" href="test__novatel_8c.html#6267e2a3549b28c4cbe9a232aaeb4c84" title="Test NOVATELOEM4_DecodeRANGEB().">test_NOVATELOEM4_DecodeRANGEB</a>) == NULL )
 <a name="l00214"></a>00214     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00215"></a>00215   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_DecodeRAWEPHEMB()"</span>, <a class="code" href="test__novatel_8c.html#7abec21158c6a20ce7df939167d563d1" title="Test NOVATELOEM4_DecodeRAWEPHEMB().">test_NOVATELOEM4_DecodeRAWEPHEMB</a>) == NULL )
+<a name="l00215"></a>00215   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_DecodeRANGECMPB()"</span>, <a class="code" href="test__novatel_8c.html#4c7191df1a22ab6ded89e301899a978e" title="Test NOVATELOEM4_DecodeRANGECMPB().">test_NOVATELOEM4_DecodeRANGECMPB</a>) == NULL )
 <a name="l00216"></a>00216     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00217"></a>00217 
-<a name="l00218"></a>00218 
+<a name="l00217"></a>00217   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"NOVATELOEM4_DecodeRAWEPHEMB()"</span>, <a class="code" href="test__novatel_8c.html#7abec21158c6a20ce7df939167d563d1" title="Test NOVATELOEM4_DecodeRAWEPHEMB().">test_NOVATELOEM4_DecodeRAWEPHEMB</a>) == NULL )
+<a name="l00218"></a>00218     <span class="keywordflow">return</span> CU_get_error();
 <a name="l00219"></a>00219 
-<a name="l00220"></a>00220   <span class="comment">/* add a suite to the registry */</span>
-<a name="l00221"></a>00221   pSuite = CU_add_suite(<span class="stringliteral">"YUMA"</span>, <a class="code" href="test__yuma_8c.html#3d0f0bc43e3da160500bab4a85fa3fab" title="The suite initialization function.">init_suite_YUMA</a>, <a class="code" href="test__yuma_8c.html#eda786f8789701be9545cc51abac4a8c" title="The suite cleanup function.">clean_suite_YUMA</a>);
-<a name="l00222"></a>00222   <span class="keywordflow">if</span> (NULL == pSuite)   
-<a name="l00223"></a>00223     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00224"></a>00224 
-<a name="l00225"></a>00225   <span class="comment">/* add the tests to the suite */</span>
-<a name="l00226"></a>00226   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"YUMA_ReadAlmanacDataFromFile()"</span>, <a class="code" href="test__yuma_8c.html#2be0497bed2125ebc19cd9479bca69ef" title="Test YUMA_ReadAlmanacDataFromFile().">test_YUMA_ReadAlmanacDataFromFile</a>) == NULL )
-<a name="l00227"></a>00227     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00228"></a>00228   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"YUMA_WriteAlmanacDataToFile()"</span>, <a class="code" href="test__yuma_8c.html#990e054dda7f963e7bf6da20b0bc2408" title="Test YUMA_WriteAlmanacDataToFile().">test_YUMA_WriteAlmanacDataToFile</a>) == NULL )
+<a name="l00220"></a>00220 
+<a name="l00221"></a>00221 
+<a name="l00222"></a>00222   <span class="comment">/* add a suite to the registry */</span>
+<a name="l00223"></a>00223   pSuite = CU_add_suite(<span class="stringliteral">"YUMA"</span>, <a class="code" href="test__yuma_8c.html#3d0f0bc43e3da160500bab4a85fa3fab" title="The suite initialization function.">init_suite_YUMA</a>, <a class="code" href="test__yuma_8c.html#eda786f8789701be9545cc51abac4a8c" title="The suite cleanup function.">clean_suite_YUMA</a>);
+<a name="l00224"></a>00224   <span class="keywordflow">if</span> (NULL == pSuite)   
+<a name="l00225"></a>00225     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00226"></a>00226 
+<a name="l00227"></a>00227   <span class="comment">/* add the tests to the suite */</span>
+<a name="l00228"></a>00228   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"YUMA_ReadAlmanacDataFromFile()"</span>, <a class="code" href="test__yuma_8c.html#2be0497bed2125ebc19cd9479bca69ef" title="Test YUMA_ReadAlmanacDataFromFile().">test_YUMA_ReadAlmanacDataFromFile</a>) == NULL )
 <a name="l00229"></a>00229     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00230"></a>00230   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"YUMA_WriteSingleAlmanacElementToBuffer()"</span>, <a class="code" href="test__yuma_8c.html#85f330a2e4f2563299fcff47e04c13f9" title="Test YUMA_WriteSingleAlmanacElementToBuffer().">test_YUMA_WriteSingleAlmanacElementToBuffer</a>) == NULL )
+<a name="l00230"></a>00230   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"YUMA_WriteAlmanacDataToFile()"</span>, <a class="code" href="test__yuma_8c.html#990e054dda7f963e7bf6da20b0bc2408" title="Test YUMA_WriteAlmanacDataToFile().">test_YUMA_WriteAlmanacDataToFile</a>) == NULL )
 <a name="l00231"></a>00231     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00232"></a>00232 
-<a name="l00233"></a>00233   <span class="comment">/* add a suite to the registry */</span>
-<a name="l00234"></a>00234   pSuite = CU_add_suite(<span class="stringliteral">"IONOSPHERE"</span>, <a class="code" href="test__yuma_8c.html#3d0f0bc43e3da160500bab4a85fa3fab" title="The suite initialization function.">init_suite_YUMA</a>, <a class="code" href="test__yuma_8c.html#eda786f8789701be9545cc51abac4a8c" title="The suite cleanup function.">clean_suite_YUMA</a>);
-<a name="l00235"></a>00235   <span class="keywordflow">if</span> (NULL == pSuite)   
-<a name="l00236"></a>00236     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00237"></a>00237 
-<a name="l00238"></a>00238   <span class="comment">/* add the tests to the suite */</span>
-<a name="l00239"></a>00239   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"IONOSPHERE_GetL1KlobucharCorrection()"</span>, <a class="code" href="test__ionosphere_8c.html#0addf469a770c106bfe7f67d7a684166" title="Test IONOSPHERE_GetL1KlobucharCorrection().">test_IONOSPHERE_GetL1KlobucharCorrection</a>) == NULL )
-<a name="l00240"></a>00240     <span class="keywordflow">return</span> CU_get_error();
-<a name="l00241"></a>00241 
-<a name="l00242"></a>00242   <span class="keywordflow">return</span> CUE_SUCCESS;
-<a name="l00243"></a>00243 }
-<a name="l00244"></a>00244 
-<a name="l00245"></a>00245 
-<a name="l00246"></a>00246 
-<a name="l00247"></a>00247 <span class="keywordtype">void</span> print_system_time(<span class="keywordtype">void</span>)
-<a name="l00248"></a>00248 {
-<a name="l00249"></a>00249   <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> result;
-<a name="l00250"></a>00250   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span>     utc_year;     <span class="comment">// Universal Time Coordinated    [year]</span>
-<a name="l00251"></a>00251   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_month;    <span class="comment">// Universal Time Coordinated    [1-12 months] </span>
-<a name="l00252"></a>00252   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_day;      <span class="comment">// Universal Time Coordinated    [1-31 days]</span>
-<a name="l00253"></a>00253   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_hour;     <span class="comment">// Universal Time Coordinated    [hours]</span>
-<a name="l00254"></a>00254   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_minute;   <span class="comment">// Universal Time Coordinated    [minutes]</span>
-<a name="l00255"></a>00255   <span class="keywordtype">float</span>              utc_seconds;  <span class="comment">// Universal Time Coordinated    [s]</span>
-<a name="l00256"></a>00256   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_offset;   <span class="comment">// Integer seconds that GPS is ahead of UTC time, always positive             [s], obtained from a look up table</span>
-<a name="l00257"></a>00257   <span class="keywordtype">double</span>             julian_date;  <span class="comment">// Number of days since noon Universal Time Jan 1, 4713 BCE (Julian calendar) [days]</span>
-<a name="l00258"></a>00258   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span>     gps_week;     <span class="comment">// GPS week (0-1024+)            [week]</span>
-<a name="l00259"></a>00259   <span class="keywordtype">double</span>             gps_tow;      <span class="comment">// GPS time of week (0-604800.0) [s]</span>
+<a name="l00232"></a>00232   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"YUMA_WriteSingleAlmanacElementToBuffer()"</span>, <a class="code" href="test__yuma_8c.html#85f330a2e4f2563299fcff47e04c13f9" title="Test YUMA_WriteSingleAlmanacElementToBuffer().">test_YUMA_WriteSingleAlmanacElementToBuffer</a>) == NULL )
+<a name="l00233"></a>00233     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00234"></a>00234 
+<a name="l00235"></a>00235   <span class="comment">/* add a suite to the registry */</span>
+<a name="l00236"></a>00236   pSuite = CU_add_suite(<span class="stringliteral">"IONOSPHERE"</span>, <a class="code" href="test__yuma_8c.html#3d0f0bc43e3da160500bab4a85fa3fab" title="The suite initialization function.">init_suite_YUMA</a>, <a class="code" href="test__yuma_8c.html#eda786f8789701be9545cc51abac4a8c" title="The suite cleanup function.">clean_suite_YUMA</a>);
+<a name="l00237"></a>00237   <span class="keywordflow">if</span> (NULL == pSuite)   
+<a name="l00238"></a>00238     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00239"></a>00239 
+<a name="l00240"></a>00240   <span class="comment">/* add the tests to the suite */</span>
+<a name="l00241"></a>00241   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"IONOSPHERE_GetL1KlobucharCorrection()"</span>, <a class="code" href="test__ionosphere_8c.html#0addf469a770c106bfe7f67d7a684166" title="Test IONOSPHERE_GetL1KlobucharCorrection().">test_IONOSPHERE_GetL1KlobucharCorrection</a>) == NULL )
+<a name="l00242"></a>00242     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00243"></a>00243 
+<a name="l00244"></a>00244   <span class="comment">/* add a suite to the registry */</span>
+<a name="l00245"></a>00245   pSuite = CU_add_suite(<span class="stringliteral">"RINEX"</span>, <a class="code" href="test__rinex_8c.html#bb2c24ef8acf7627acfbb9e9fa4a5c91" title="The suite initialization function.">init_suite_RINEX</a>, <a class="code" href="test__rinex_8c.html#ff6d5bd289ce5a26f42d2be3342be047" title="The suite cleanup function.">clean_suite_RINEX</a>);
+<a name="l00246"></a>00246   <span class="keywordflow">if</span> (NULL == pSuite)   
+<a name="l00247"></a>00247     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00248"></a>00248 
+<a name="l00249"></a>00249   <span class="comment">/* add the tests to the suite */</span>
+<a name="l00250"></a>00250   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"RINEX_GetHeader()"</span>, <a class="code" href="test__rinex_8c.html#e5eb628878529dfb938e282b2fbb35ab" title="Test RINEX_GetHeader().">test_RINEX_GetHeader</a>) == NULL )
+<a name="l00251"></a>00251     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00252"></a>00252   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"RINEX_DecodeHeader_ObservationFile()"</span>, <a class="code" href="test__rinex_8c.html#2bf89952a9d21ebbcec523d62dc2485f" title="Test RINEX_DecodeRinexHeader().">test_RINEX_DecodeHeader_ObservationFile</a>) == NULL )
+<a name="l00253"></a>00253     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00254"></a>00254   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"RINEX_GetNextObservationSet()"</span>, <a class="code" href="test__rinex_8c.html#94ebd158f20c5b921cb55e88366c4c43" title="Test RINEX_GetNextObservationSet().">test_RINEX_GetNextObservationSet</a>) == NULL )
+<a name="l00255"></a>00255     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00256"></a>00256   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"RINEX_DecodeGPSNavigationFile()"</span>, <a class="code" href="test__rinex_8c.html#05e994986d9027b8b13b834fe3dfcb87" title="Test RINEX_DecodeGPSNavigationFile(void).">test_RINEX_DecodeGPSNavigationFile</a>) == NULL )
+<a name="l00257"></a>00257     <span class="keywordflow">return</span> CU_get_error();
+<a name="l00258"></a>00258   <span class="keywordflow">if</span>( CU_add_test(pSuite, <span class="stringliteral">"RINEX_GetKlobucharIonoParametersFromNavFile()"</span>, <a class="code" href="test__rinex_8c.html#af17d8ebca8ec7f120fcb9503a505b7c" title="Test RINEX_GetKlobucharIonoParametersFromNavFile(void).">test_RINEX_GetKlobucharIonoParametersFromNavFile</a>) == NULL )
+<a name="l00259"></a>00259     <span class="keywordflow">return</span> CU_get_error();
 <a name="l00260"></a>00260   
-<a name="l00261"></a>00261   result = <a class="code" href="time__conversion_8c.html#177a7add914921477ec1a8c3af46a413" title="Obtains the UTC time, GPS time, and Julian date from PC system time.">TIMECONV_GetSystemTime</a>(
-<a name="l00262"></a>00262     &amp;utc_year,   
-<a name="l00263"></a>00263     &amp;utc_month,  
-<a name="l00264"></a>00264     &amp;utc_day,    
-<a name="l00265"></a>00265     &amp;utc_hour,   
-<a name="l00266"></a>00266     &amp;utc_minute,  
-<a name="l00267"></a>00267     &amp;utc_seconds, 
-<a name="l00268"></a>00268     &amp;utc_offset,  
-<a name="l00269"></a>00269     &amp;julian_date, 
-<a name="l00270"></a>00270     &amp;gps_week,    
-<a name="l00271"></a>00271     &amp;gps_tow          
-<a name="l00272"></a>00272     );
-<a name="l00273"></a>00273 
-<a name="l00274"></a>00274   <span class="keywordflow">if</span>( result == 0 )
-<a name="l00275"></a>00275     <span class="keywordflow">return</span>;
-<a name="l00276"></a>00276 
-<a name="l00277"></a>00277   printf( <span class="stringliteral">"\nDate YYYY-MM-DD, Time HH:MM:SS, of test (UTC).\n"</span>);
-<a name="l00278"></a>00278   printf( <span class="stringliteral">"     %4d-%02d-%02d,      %02d:%02d:%02.0f\n"</span>, 
-<a name="l00279"></a>00279     utc_year,
-<a name="l00280"></a>00280     utc_month,
-<a name="l00281"></a>00281     utc_day,
-<a name="l00282"></a>00282     utc_hour,
-<a name="l00283"></a>00283     utc_minute,
-<a name="l00284"></a>00284     utc_seconds );
-<a name="l00285"></a>00285   <span class="keywordflow">return</span>;
-<a name="l00286"></a>00286 }
-</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:44 2007 for The Essential GNSS Project by&nbsp;
+<a name="l00261"></a>00261   <span class="keywordflow">return</span> CUE_SUCCESS;
+<a name="l00262"></a>00262 }
+<a name="l00263"></a>00263 
+<a name="l00264"></a>00264 
+<a name="l00265"></a>00265 
+<a name="l00266"></a>00266 <span class="keywordtype">void</span> print_system_time(<span class="keywordtype">void</span>)
+<a name="l00267"></a>00267 {
+<a name="l00268"></a>00268   <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> result;
+<a name="l00269"></a>00269   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span>     utc_year;     <span class="comment">// Universal Time Coordinated    [year]</span>
+<a name="l00270"></a>00270   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_month;    <span class="comment">// Universal Time Coordinated    [1-12 months] </span>
+<a name="l00271"></a>00271   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_day;      <span class="comment">// Universal Time Coordinated    [1-31 days]</span>
+<a name="l00272"></a>00272   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_hour;     <span class="comment">// Universal Time Coordinated    [hours]</span>
+<a name="l00273"></a>00273   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_minute;   <span class="comment">// Universal Time Coordinated    [minutes]</span>
+<a name="l00274"></a>00274   <span class="keywordtype">float</span>              utc_seconds;  <span class="comment">// Universal Time Coordinated    [s]</span>
+<a name="l00275"></a>00275   <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>      utc_offset;   <span class="comment">// Integer seconds that GPS is ahead of UTC time, always positive             [s], obtained from a look up table</span>
+<a name="l00276"></a>00276   <span class="keywordtype">double</span>             julian_date;  <span class="comment">// Number of days since noon Universal Time Jan 1, 4713 BCE (Julian calendar) [days]</span>
+<a name="l00277"></a>00277   <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span>     gps_week;     <span class="comment">// GPS week (0-1024+)            [week]</span>
+<a name="l00278"></a>00278   <span class="keywordtype">double</span>             gps_tow;      <span class="comment">// GPS time of week (0-604800.0) [s]</span>
+<a name="l00279"></a>00279   
+<a name="l00280"></a>00280   result = <a class="code" href="time__conversion_8c.html#177a7add914921477ec1a8c3af46a413" title="Obtains the UTC time, GPS time, and Julian date from PC system time.">TIMECONV_GetSystemTime</a>(
+<a name="l00281"></a>00281     &amp;utc_year,   
+<a name="l00282"></a>00282     &amp;utc_month,  
+<a name="l00283"></a>00283     &amp;utc_day,    
+<a name="l00284"></a>00284     &amp;utc_hour,   
+<a name="l00285"></a>00285     &amp;utc_minute,  
+<a name="l00286"></a>00286     &amp;utc_seconds, 
+<a name="l00287"></a>00287     &amp;utc_offset,  
+<a name="l00288"></a>00288     &amp;julian_date, 
+<a name="l00289"></a>00289     &amp;gps_week,    
+<a name="l00290"></a>00290     &amp;gps_tow          
+<a name="l00291"></a>00291     );
+<a name="l00292"></a>00292 
+<a name="l00293"></a>00293   <span class="keywordflow">if</span>( result == 0 )
+<a name="l00294"></a>00294     <span class="keywordflow">return</span>;
+<a name="l00295"></a>00295 
+<a name="l00296"></a>00296   printf( <span class="stringliteral">"\nDate YYYY-MM-DD, Time HH:MM:SS, of test (UTC).\n"</span>);
+<a name="l00297"></a>00297   printf( <span class="stringliteral">"     %4d-%02d-%02d,      %02d:%02d:%02.0f\n"</span>, 
+<a name="l00298"></a>00298     utc_year,
+<a name="l00299"></a>00299     utc_month,
+<a name="l00300"></a>00300     utc_day,
+<a name="l00301"></a>00301     utc_hour,
+<a name="l00302"></a>00302     utc_minute,
+<a name="l00303"></a>00303     utc_seconds );
+<a name="l00304"></a>00304   <span class="keywordflow">return</span>;
+<a name="l00305"></a>00305 }
+</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:56 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

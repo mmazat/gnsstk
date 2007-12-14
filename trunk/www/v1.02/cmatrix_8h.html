@@ -27,15 +27,15 @@
 'c' functions for vector and matrix operations. 
 <p>
 <dl class="author" compact><dt><b>Author:</b></dt><dd>Glenn D. MacGougan (GDM) </dd></dl>
-<dl class="date" compact><dt><b>Date:</b></dt><dd>2007-03-19 </dd></dl>
-<dl class="version" compact><dt><b>Version:</b></dt><dd>1.04</dd></dl>
+<dl class="date" compact><dt><b>Date:</b></dt><dd>2007-12-13 </dd></dl>
+<dl class="version" compact><dt><b>Version:</b></dt><dd>1.10</dd></dl>
 <b>LICENSE</b> <b>INFORMATION</b> <br>
  Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. <br>
 <p>
 Redistribution pertains only to the following files and their contents. <br>
 <ul>
-<li><a class="el" href="_matrix_8h.html" title="The matrix class.">Matrix.h</a><br>
-</li><li><a class="el" href="_matrix_8cpp.html" title="The matrix class.">Matrix.cpp</a><br>
+<li><a class="el" href="_matrix_8h.html" title="The Zenautics Matrix Class.">Matrix.h</a><br>
+</li><li><a class="el" href="_matrix_8cpp.html" title="The Zenautics Matrix Class.">Matrix.cpp</a><br>
 </li><li><a class="el" href="cmatrix_8h.html" title="&#39;c&#39; functions for vector and matrix operations.">cmatrix.h</a><br>
 </li><li>cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)<br>
 </li></ul>
@@ -50,7 +50,7 @@ Redistribution and use in source and binary forms, with or without modification,
 <p>
 THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.<p>
 <b>NOTES:</b> <br>
- This code was developed using rigourous unit testing for every function and operation. Despite any rigorous development process, bugs are inevitable. Please report bugs and suggested fixes to glenn_at_zenautics.com.<br>
+ This code was developed using rigourous unit testing for every function and operation. Despite any rigorous development process, bugs are inevitable. Please report bugs and suggested fixes to <a href="mailto:glenn@zenautics.com">glenn@zenautics.com</a>.<br>
  
 <p>Definition in file <a class="el" href="cmatrix_8h-source.html">cmatrix.h</a>.</p>
 
@@ -127,6 +127,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#b833a251fc8357281d00bf53bdb4fe1f">MTX_Real</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, <a class="el" href="struct_m_t_x.html">MTX</a> *Re)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Extract the real component of matrix M.  <a href="#b833a251fc8357281d00bf53bdb4fe1f"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#9b0813ec713b9e4a773ba043c64c9fff">MTX_isReal</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M, BOOL *isReal)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Check if the matrix contains only real values. Alter the matrix if it is stored as complex and only has real values.  <a href="#9b0813ec713b9e4a773ba043c64c9fff"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#79c5d6c0a69860807652c170718c90c7">MTX_RealColumn</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned col, <a class="el" href="struct_m_t_x.html">MTX</a> *Re)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Extract the real component of column col of matrix M.  <a href="#79c5d6c0a69860807652c170718c90c7"></a><br></td></tr>
@@ -236,7 +239,7 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
  e.g. precision = 1, 1.45 -&gt; 1.5<br>
  e.g. precision = 2 1.456 -&gt; 1.46<br>
  e.g. precision = 3, 1.4566 -&gt; 1.457<br>
-.  <a href="#cb94314d49118919c8893008ddabd84e"></a><br></td></tr>
+ precision has a maximum of 32. After which no rounding occurs.  <a href="#cb94314d49118919c8893008ddabd84e"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#698185a8c08797a8ed89d573a017a3bf">MTX_Floor</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Round the matrix elements to the nearest integers towards minus infinity.  <a href="#698185a8c08797a8ed89d573a017a3bf"></a><br></td></tr>
@@ -321,6 +324,15 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#ef9448a648cc5dc20ed86430e1f75fca">MTX_Abs</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the absolute value of each element in the matrix.  <a href="#ef9448a648cc5dc20ed86430e1f75fca"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#370b7cbba5c4f9677f0389b9f2a54bbe">MTX_acos</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the arc-cosine of each element of the matrix inplace. Complex results are obtained if elements are greater than abs(1).  <a href="#370b7cbba5c4f9677f0389b9f2a54bbe"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#21f92ff84e0c258cc499923f68288c49">MTX_angle</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the phase angle in radians of the elements in the matrix. If all elements are real, the results are 0. If complex.  <a href="#21f92ff84e0c258cc499923f68288c49"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#454efda419a367c4ca74de178cde0483">MTX_asin</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the arc-sine of each element of the matrix inplace. Complex results are obtained if elements are greater than abs(1).  <a href="#454efda419a367c4ca74de178cde0483"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#8c0a73e5670cffc4b824b5abf249f273">MTX_Sqr</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the value^2 of each element in the matrix.  <a href="#8c0a73e5670cffc4b824b5abf249f273"></a><br></td></tr>
@@ -330,6 +342,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#2e3c2abe491dd922c5442482068d0ccf">MTX_Exp</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">If real, computes the exp(value) of each element in the matrix. If complex, computes exp(M) = exp(real)*(cos(imag)+i*sin(imag)).  <a href="#2e3c2abe491dd922c5442482068d0ccf"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#25761e61e34731cefc26f694659a5eb9">MTX_Eye</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned nrows, const unsigned ncols)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an indentity matrix with nrows and ncols.  <a href="#25761e61e34731cefc26f694659a5eb9"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#a6c590e5318f16990164f4364f8248c2">MTX_Ln</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the natural logarithm, ln(value) of each element in the matrix.  <a href="#a6c590e5318f16990164f4364f8248c2"></a><br></td></tr>
@@ -339,9 +354,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#9d281c72f9ad9b27683682e0ac37ff6b">MTX_PowInplace</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src, const double power_re, const double power_im)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Raise all elements in src^(power_re + power_im*i). If power is just real, power_im = 0.0.  <a href="#9d281c72f9ad9b27683682e0ac37ff6b"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#f3c372bf5b556f75d810f8e3f87ad5c3">MTX_Arctan</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#cd1a44a78730213bfcfa6644d90d870a">MTX_atan</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the arctan, atan(value) of each element in the matrix.  <a href="#f3c372bf5b556f75d810f8e3f87ad5c3"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the arctan, atan(value) of each element in the matrix.  <a href="#cd1a44a78730213bfcfa6644d90d870a"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#a4180894f10dd78b873194d82d1f32be">MTX_Increment</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Add +1.0 to all elements, e.g. M++.  <a href="#a4180894f10dd78b873194d82d1f32be"></a><br></td></tr>
@@ -468,6 +483,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#8b9330a67f86ede94c604b8972462e99">MTX_ColumnSum</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned col, double *re, double *im)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sum for the specified column. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set.  <a href="#8b9330a67f86ede94c604b8972462e99"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#37a6b5e31ec363b40f7fede92811b127">MTX_ColumnSumAbs</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned col, double *value)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sum of the absolute values for the specified column.  <a href="#37a6b5e31ec363b40f7fede92811b127"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#88b1800f07fae16fb3dba3f6a09e5542">MTX_RowSum</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned row, double *re, double *im)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sum for the specified row. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set.  <a href="#88b1800f07fae16fb3dba3f6a09e5542"></a><br></td></tr>
@@ -530,13 +548,13 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample skewness value for the matrix. The skewness is the third central moment divided by the cube of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set.  <a href="#62216f8e8893f6bfbe2551862c0c2293"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#3bcbfa4dce285387bef662fda152d48d">MTX_ColumnKurtosis</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned col, double *re, double *im)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample kurtosis value for the specified column. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). g_2 = {m_4}{m_{2}^2} = {n\,{i=1}^n (x_i - {x})^4}{({i=1}^n (x_i - {x})^2)^2}.  <a href="#3bcbfa4dce285387bef662fda152d48d"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample kurtosis value for the specified column. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed).  <a href="#3bcbfa4dce285387bef662fda152d48d"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#7d51cbb229e346903cc11ea90d08cc4a">MTX_RowKurtosis</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, const unsigned row, double *re, double *im)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample kurtosis value for the specified row. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). g_2 = {m_4}{m_{2}^2} = {n\,{i=1}^n (x_i - {x})^4}{({i=1}^n (x_i - {x})^2)^2}.  <a href="#7d51cbb229e346903cc11ea90d08cc4a"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample kurtosis value for the specified row. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed).  <a href="#7d51cbb229e346903cc11ea90d08cc4a"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#1b075018d430350e70d6886f4a41543b">MTX_Kurtosis</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, double *re, double *im)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample kurtosis value for the matrix. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). g_2 = {m_4}{m_{2}^2} = {n\,{i=1}^n (x_i - {x})^4}{({i=1}^n (x_i - {x})^2)^2}.  <a href="#1b075018d430350e70d6886f4a41543b"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the sample kurtosis value for the matrix. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed).  <a href="#1b075018d430350e70d6886f4a41543b"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#db5070149dd5e61a7458c9e3149ebbd5">MTX_Trace</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *M, double *re, double *im)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes the trace of M where M is a square matrix. Trace = Sum of diagonal elements. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set.  <a href="#db5070149dd5e61a7458c9e3149ebbd5"></a><br></td></tr>
@@ -588,6 +606,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#72531a92fa9dae2f68f6d281d03b281b">MTX_Interpolate</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *A, const unsigned timeColumnA, <a class="el" href="struct_m_t_x.html">MTX</a> *B, const unsigned timeColumnB, const double maxInterpolationInterval, const double rolloverTime)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">This function interpolates Matrix B values by the times defined in the column in Matrix A. Time must be increasing but times can rollover with the specified rolloverTime.  <a href="#72531a92fa9dae2f68f6d281d03b281b"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#1ea8b06bfd47699b7a7ad0bfd6be4d4c">MTX_Inv</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the inverse, 1.0/x, inplace for each element of the matrix.  <a href="#1ea8b06bfd47699b7a7ad0bfd6be4d4c"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#bb23a99c6ed44a80832da948215a0a39">MTX_InvertInPlaceClosedForm</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *M)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the inplace inverse of the matrix. Uses fast closed form solutions for: Only for: 1x1, 2x2, 3x3.  <a href="#bb23a99c6ed44a80832da948215a0a39"></a><br></td></tr>
@@ -625,6 +646,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#0982abfcf817c6be84dc7aa6cbb153b3">MTX_IndexedValues</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *src, const <a class="el" href="struct_m_t_x.html">MTX</a> *row_index, const <a class="el" href="struct_m_t_x.html">MTX</a> *col_index, <a class="el" href="struct_m_t_x.html">MTX</a> *dst)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Retrieve the elements of the matrix specified by the index vectors. The index vectors must be nx1 real vectors.  <a href="#0982abfcf817c6be84dc7aa6cbb153b3"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#eb92f623a9efd034f93306e046778395">MTX_SetIndexedValues</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *dst, const <a class="el" href="struct_m_t_x.html">MTX</a> *row_index, const <a class="el" href="struct_m_t_x.html">MTX</a> *col_index, const <a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set the elements of the matrix specified by the index vectors. The index vectors must be nx1 real vectors.  <a href="#eb92f623a9efd034f93306e046778395"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#76e14e7373a6ae07a97f9cb196623ce5">MTX_FFT</a> (const <a class="el" href="struct_m_t_x.html">MTX</a> *src, <a class="el" href="struct_m_t_x.html">MTX</a> *dst)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the Fast Fourier Transform of each columns in the src matrix and store it in the dst matrix.  <a href="#76e14e7373a6ae07a97f9cb196623ce5"></a><br></td></tr>
@@ -637,18 +661,51 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#c40cdb589f853e19709988d97cd4a067">MTX_IFFT_Inplace</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the inplace inverse Fast Fourier Transform of each column of the matrix.  <a href="#c40cdb589f853e19709988d97cd4a067"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#63b7a1171f19ac324dc1387dd67f9846">MTX_Sin</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#8db4c94fa3af460bdace5a4f2c7ac377">MTX_sin</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the sine of each element in the matrix. Assumes elements are radians.  <a href="#63b7a1171f19ac324dc1387dd67f9846"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#581d7291112c1646a5691b2649e3e0b1">MTX_Cos</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the sine of each element in the matrix. Assumes elements are radians.  <a href="#8db4c94fa3af460bdace5a4f2c7ac377"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#001303b8f0be1bcb94adf5eb9f919eda">MTX_sinc</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the cosine of each element in the matrix. Assumes elements are radians.  <a href="#581d7291112c1646a5691b2649e3e0b1"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the sin(pi*x)/(pi*) of each element in the matrix.  <a href="#001303b8f0be1bcb94adf5eb9f919eda"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#39802aab8e068f6cb0e2193cea5bb4ce">MTX_sinh</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the hyperbolic sine of each element in the matrix. Assumes elements are radians.  <a href="#39802aab8e068f6cb0e2193cea5bb4ce"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#6012b99a538397417f2d43edb081cd1e">MTX_asinh</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the inverse hyperbolic sine of each element in the matrix. Results in radians.  <a href="#6012b99a538397417f2d43edb081cd1e"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#39f1be375c3dd6110599bb3ace8c54ef">MTX_cos</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the cosine of each element in the matrix. Assumes elements are radians.  <a href="#39f1be375c3dd6110599bb3ace8c54ef"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#bc3f3c51287d9054bbebff0448938cc4">MTX_cosh</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the hyperbolic cosine of each element in the matrix. Assumes elements are radians.  <a href="#bc3f3c51287d9054bbebff0448938cc4"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#9d31ab430ae2283652c55f9a5d52100d">MTX_acosh</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the inverse hyperbolic cosine of each element in the matrix. Results in radians.  <a href="#9d31ab430ae2283652c55f9a5d52100d"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#cdc93821de79c91735c183a8385176ee">MTX_tan</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the tangent of each element in the matrix. Assumes elements are radians.  <a href="#cdc93821de79c91735c183a8385176ee"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#fc0fc81e68d1c8ed849b2616a6750e36">MTX_tanh</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the hyperbolic tangent of each element in the matrix. Assumes elements are radians.  <a href="#fc0fc81e68d1c8ed849b2616a6750e36"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#d0550ca5150c189bc6cd87baa08eddb9">MTX_atanh</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the inverse hyperbolic tangent of each element in the matrix. Results in radians.  <a href="#d0550ca5150c189bc6cd87baa08eddb9"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#08bdbe29a072fd01e58deb881187d3ab">MTX_cot</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the cotangent of each element in the matrix. Assumes elements are radians.  <a href="#08bdbe29a072fd01e58deb881187d3ab"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#636663279a3156934639caf522a77aae">MTX_coth</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Compute the hyperbolic cotangent of each element in the matrix. Assumes elements are radians.  <a href="#636663279a3156934639caf522a77aae"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#a1d3c21d32a67a69a3496578d905ad35">MTX_Colon</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *dst, const double start, const double increment, const double end)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a column vector [start:increment:end) beginning at start with step size of increment until less than or equal to end. Note that arguments must be real scalars. <br>
  e.g. a = 2:2:9 = [2; 4; 6; 8;] <br>
  e.g. b = 2:-2:-9 = [2; 0; -2; -4; -6; -9;] <br>
 .  <a href="#a1d3c21d32a67a69a3496578d905ad35"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmatrix_8h.html#641481fcfa579ebea2a0eb8a2e55f17b">MTX_RemoveRowsAndColumns</a> (<a class="el" href="struct_m_t_x.html">MTX</a> *src, const unsigned nrows, const unsigned rows[], const unsigned ncols, const unsigned cols[])</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">A very efficient method to remove rows and columns from the matrix.  <a href="#641481fcfa579ebea2a0eb8a2e55f17b"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="ef9448a648cc5dc20ed86430e1f75fca"></a><!-- doxytag: member="cmatrix.h::MTX_Abs" ref="ef9448a648cc5dc20ed86430e1f75fca" args="(MTX *M)" -->
@@ -669,6 +726,52 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 
 <p>
 Computes the absolute value of each element in the matrix. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="370b7cbba5c4f9677f0389b9f2a54bbe"></a><!-- doxytag: member="cmatrix.h::MTX_acos" ref="370b7cbba5c4f9677f0389b9f2a54bbe" args="(MTX *M)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_acos           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>M</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the arc-cosine of each element of the matrix inplace. Complex results are obtained if elements are greater than abs(1). 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="9d31ab430ae2283652c55f9a5d52100d"></a><!-- doxytag: member="cmatrix.h::MTX_acosh" ref="9d31ab430ae2283652c55f9a5d52100d" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_acosh           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the inverse hyperbolic cosine of each element in the matrix. Results in radians. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -852,12 +955,12 @@ Add a column to the Matrix.
 
 </div>
 </div><p>
-<a class="anchor" name="f3c372bf5b556f75d810f8e3f87ad5c3"></a><!-- doxytag: member="cmatrix.h::MTX_Arctan" ref="f3c372bf5b556f75d810f8e3f87ad5c3" args="(MTX *M)" -->
+<a class="anchor" name="21f92ff84e0c258cc499923f68288c49"></a><!-- doxytag: member="cmatrix.h::MTX_angle" ref="21f92ff84e0c258cc499923f68288c49" args="(MTX *M)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">BOOL MTX_Arctan           </td>
+          <td class="memname">BOOL MTX_angle           </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
           <td class="paramname"> <em>M</em>          </td>
@@ -869,7 +972,53 @@ Add a column to the Matrix.
 <div class="memdoc">
 
 <p>
-Computes the arctan, atan(value) of each element in the matrix. 
+Compute the phase angle in radians of the elements in the matrix. If all elements are real, the results are 0. If complex. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="454efda419a367c4ca74de178cde0483"></a><!-- doxytag: member="cmatrix.h::MTX_asin" ref="454efda419a367c4ca74de178cde0483" args="(MTX *M)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_asin           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>M</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the arc-sine of each element of the matrix inplace. Complex results are obtained if elements are greater than abs(1). 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="6012b99a538397417f2d43edb081cd1e"></a><!-- doxytag: member="cmatrix.h::MTX_asinh" ref="6012b99a538397417f2d43edb081cd1e" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_asinh           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the inverse hyperbolic sine of each element in the matrix. Results in radians. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -902,6 +1051,52 @@ Computes the arctan, atan(value) of each element in the matrix.
 
 <p>
 Computes: InvATA = inverse( transpose(A) * A ). 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="cd1a44a78730213bfcfa6644d90d870a"></a><!-- doxytag: member="cmatrix.h::MTX_atan" ref="cd1a44a78730213bfcfa6644d90d870a" args="(MTX *M)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_atan           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>M</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Computes the arctan, atan(value) of each element in the matrix. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="d0550ca5150c189bc6cd87baa08eddb9"></a><!-- doxytag: member="cmatrix.h::MTX_atanh" ref="d0550ca5150c189bc6cd87baa08eddb9" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_atanh           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the inverse hyperbolic tangent of each element in the matrix. Results in radians. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -1097,7 +1292,7 @@ Difference and approximte derivative for column col. The Diff is the column diff
 <div class="memdoc">
 
 <p>
-Computes the sample kurtosis value for the specified column. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). g_2 = {m_4}{m_{2}^2} = {n\,{i=1}^n (x_i - {x})^4}{({i=1}^n (x_i - {x})^2)^2}. 
+Computes the sample kurtosis value for the specified column. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -1438,6 +1633,44 @@ Computes the sample standard deviation for the specified column.
 
 <p>
 Computes the sum for the specified column. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="37a6b5e31ec363b40f7fede92811b127"></a><!-- doxytag: member="cmatrix.h::MTX_ColumnSumAbs" ref="37a6b5e31ec363b40f7fede92811b127" args="(const MTX *M, const unsigned col, double *value)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_ColumnSumAbs           </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>M</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>col</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&nbsp;</td>
+          <td class="paramname"> <em>value</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Computes the sum of the absolute values for the specified column. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -1821,12 +2054,12 @@ Copy the src data in row 'row' (1xn) to dst matrix (nx1), resize dst if possible
 
 </div>
 </div><p>
-<a class="anchor" name="581d7291112c1646a5691b2649e3e0b1"></a><!-- doxytag: member="cmatrix.h::MTX_Cos" ref="581d7291112c1646a5691b2649e3e0b1" args="(MTX *src)" -->
+<a class="anchor" name="39f1be375c3dd6110599bb3ace8c54ef"></a><!-- doxytag: member="cmatrix.h::MTX_cos" ref="39f1be375c3dd6110599bb3ace8c54ef" args="(MTX *src)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">BOOL MTX_Cos           </td>
+          <td class="memname">BOOL MTX_cos           </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
           <td class="paramname"> <em>src</em>          </td>
@@ -1839,6 +2072,75 @@ Copy the src data in row 'row' (1xn) to dst matrix (nx1), resize dst if possible
 
 <p>
 Compute the cosine of each element in the matrix. Assumes elements are radians. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="bc3f3c51287d9054bbebff0448938cc4"></a><!-- doxytag: member="cmatrix.h::MTX_cosh" ref="bc3f3c51287d9054bbebff0448938cc4" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_cosh           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the hyperbolic cosine of each element in the matrix. Assumes elements are radians. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="08bdbe29a072fd01e58deb881187d3ab"></a><!-- doxytag: member="cmatrix.h::MTX_cot" ref="08bdbe29a072fd01e58deb881187d3ab" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_cot           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the cotangent of each element in the matrix. Assumes elements are radians. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="636663279a3156934639caf522a77aae"></a><!-- doxytag: member="cmatrix.h::MTX_coth" ref="636663279a3156934639caf522a77aae" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_coth           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the hyperbolic cotangent of each element in the matrix. Assumes elements are radians. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -2301,6 +2603,44 @@ This function is used to set if matrices that are single elements (1x1) are trea
 
 <p>
 If real, computes the exp(value) of each element in the matrix. If complex, computes exp(M) = exp(real)*(cos(imag)+i*sin(imag)). 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="25761e61e34731cefc26f694659a5eb9"></a><!-- doxytag: member="cmatrix.h::MTX_Eye" ref="25761e61e34731cefc26f694659a5eb9" args="(MTX *M, const unsigned nrows, const unsigned ncols)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_Eye           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>M</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>nrows</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>ncols</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Create an indentity matrix with nrows and ncols. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -3195,6 +3535,29 @@ The rollover time, e.g. 60 s for minute based timing, 0.0 means rollovers not al
 </dl>
 </div>
 </div><p>
+<a class="anchor" name="1ea8b06bfd47699b7a7ad0bfd6be4d4c"></a><!-- doxytag: member="cmatrix.h::MTX_Inv" ref="1ea8b06bfd47699b7a7ad0bfd6be4d4c" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_Inv           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the inverse, 1.0/x, inplace for each element of the matrix. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
 <a class="anchor" name="adaa01af1f8df39cc0f53eb7dd4b53da"></a><!-- doxytag: member="cmatrix.h::MTX_InvertInPlace" ref="adaa01af1f8df39cc0f53eb7dd4b53da" args="(MTX *M)" -->
 <div class="memitem">
 <div class="memproto">
@@ -3399,6 +3762,38 @@ Is this a null matrix?
 
 </div>
 </div><p>
+<a class="anchor" name="9b0813ec713b9e4a773ba043c64c9fff"></a><!-- doxytag: member="cmatrix.h::MTX_isReal" ref="9b0813ec713b9e4a773ba043c64c9fff" args="(MTX *M, BOOL *isReal)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_isReal           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>M</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BOOL *&nbsp;</td>
+          <td class="paramname"> <em>isReal</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Check if the matrix contains only real values. Alter the matrix if it is stored as complex and only has real values. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
 <a class="anchor" name="9455faec647442c0c3b4259cf9c57325"></a><!-- doxytag: member="cmatrix.h::MTX_isSameSize" ref="9455faec647442c0c3b4259cf9c57325" args="(const MTX *A, const MTX *B)" -->
 <div class="memitem">
 <div class="memproto">
@@ -3486,7 +3881,7 @@ Is this a square matrix?
 <div class="memdoc">
 
 <p>
-Computes the sample kurtosis value for the matrix. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). g_2 = {m_4}{m_{2}^2} = {n\,{i=1}^n (x_i - {x})^4}{({i=1}^n (x_i - {x})^2)^2}. 
+Computes the sample kurtosis value for the matrix. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -5840,6 +6235,84 @@ remove all the columns 'after' the column index given.
 
 </div>
 </div><p>
+<a class="anchor" name="641481fcfa579ebea2a0eb8a2e55f17b"></a><!-- doxytag: member="cmatrix.h::MTX_RemoveRowsAndColumns" ref="641481fcfa579ebea2a0eb8a2e55f17b" args="(MTX *src, const unsigned nrows, const unsigned rows[], const unsigned ncols, const unsigned cols[])" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_RemoveRowsAndColumns           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>nrows</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>rows</em>[], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>ncols</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned&nbsp;</td>
+          <td class="paramname"> <em>cols</em>[]</td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+A very efficient method to remove rows and columns from the matrix. 
+<p>
+<div class="fragment"><pre class="fragment">  <a class="code" href="struct_m_t_x.html" title="The deep level matrix struct. The matrix is either real or complex.">MTX</a> A;
+  <span class="keywordtype">unsigned</span> rows[2];
+  <span class="keywordtype">unsigned</span> cols[2];
+  <a class="code" href="cmatrix_8h.html#3857f486478bd797e93902df492ecf7f" title="Initialize a MTX matrix struct to appropriate zero values. This must always be called...">MTX_Init</a>(&amp;A);
+  <a class="code" href="cmatrix_8h.html#8c0e28fe06fa9cd39ef04753053b3dc5" title="Allocate matrix data (set to zero).">MTX_Calloc</a>( &amp;A, 4, 4 );
+  <a class="code" href="cmatrix_8h.html#0a872a42ca5383a6dcf243335c4feaae" title="Set the matrix to an identity.">MTX_Identity</a>( &amp;A );
+  A.<a class="code" href="struct_m_t_x.html#98713d15a9af9535a1db011f5f82b205" title="This is a pointer to an array of double column vectors.">data</a>[0][0] = 100.0;
+  A.<a class="code" href="struct_m_t_x.html#98713d15a9af9535a1db011f5f82b205" title="This is a pointer to an array of double column vectors.">data</a>[2][1] = 10.0;
+  A.<a class="code" href="struct_m_t_x.html#98713d15a9af9535a1db011f5f82b205" title="This is a pointer to an array of double column vectors.">data</a>[1][2] = 20.0;
+  <span class="comment">// remove the first row and column and the third row and column.</span>
+  rows[0] = 0;
+  rows[1] = 2;
+  cols[0] = 0;
+  cols[1] = 2;
+  <a class="code" href="cmatrix_8h.html#641481fcfa579ebea2a0eb8a2e55f17b" title="A very efficient method to remove rows and columns from the matrix.">MTX_RemoveRowsAndColumns</a>( &amp;A, 2, (<span class="keywordtype">unsigned</span>*)rows, 2 (<span class="keywordtype">unsigned</span>*)cols );
+  <span class="comment">// A is now a 2x2 identity matrix.</span>
+</pre></div><p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+<dl compact><dt><b>Parameters: </b></dt><dd>
+<table border="0" cellspacing="2" cellpadding="0">
+<tr><td valign="top"><em>src</em>&nbsp;</td><td>
+The pointer to the matrix object. </td></tr>
+<tr><td valign="top"><em>nrows</em>&nbsp;</td><td>
+The number of rows to remove (the length of the rows array). </td></tr>
+<tr><td valign="top"><em>rows</em>&nbsp;</td><td>
+The array of row indices to remove. </td></tr>
+<tr><td valign="top"><em>ncols</em>&nbsp;</td><td>
+The number of columns to remove (the length of hte cols array). </td></tr>
+</table>
+</dl>
+</div>
+</div><p>
 <a class="anchor" name="01277701346e92df67a9b163396b4e42"></a><!-- doxytag: member="cmatrix.h::MTX_Resize" ref="01277701346e92df67a9b163396b4e42" args="(MTX *dst, const unsigned nrows, const unsigned ncols, const BOOL isReal)" -->
 <div class="memitem">
 <div class="memproto">
@@ -5947,7 +6420,7 @@ Round the matrix elements to the specified precision.<br>
  e.g. precision = 1, 1.45 -&gt; 1.5<br>
  e.g. precision = 2 1.456 -&gt; 1.46<br>
  e.g. precision = 3, 1.4566 -&gt; 1.457<br>
-. 
+ precision has a maximum of 32. After which no rounding occurs. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -5991,7 +6464,7 @@ Round the matrix elements to the specified precision.<br>
 <div class="memdoc">
 
 <p>
-Computes the sample kurtosis value for the specified row. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). g_2 = {m_4}{m_{2}^2} = {n\,{i=1}^n (x_i - {x})^4}{({i=1}^n (x_i - {x})^2)^2}. 
+Computes the sample kurtosis value for the specified row. The kurtosis is the fourth central moment divided by fourth power of the standard deviation. If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. To adjust the computed kurtosis value for bias, subtract 3 from the real component. Reference: <a href="http://en.wikipedia.org/wiki/Kurtosis.">http://en.wikipedia.org/wiki/Kurtosis.</a> Reference: <a href="http://mathworld.wolfram.com/Kurtosis.html">http://mathworld.wolfram.com/Kurtosis.html</a> (kurtosis proper is computed). 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -6559,6 +7032,50 @@ Set the dst matrix from the static 'c' style matrix indexed by mat[i*ncols + j].
 
 </div>
 </div><p>
+<a class="anchor" name="eb92f623a9efd034f93306e046778395"></a><!-- doxytag: member="cmatrix.h::MTX_SetIndexedValues" ref="eb92f623a9efd034f93306e046778395" args="(MTX *dst, const MTX *row_index, const MTX *col_index, const MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_SetIndexedValues           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>row_index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>col_index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Set the elements of the matrix specified by the index vectors. The index vectors must be nx1 real vectors. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
 <a class="anchor" name="8b0f9acaf54cf4979cd5eeeeded96a7d"></a><!-- doxytag: member="cmatrix.h::MTX_SetValue" ref="8b0f9acaf54cf4979cd5eeeeded96a7d" args="(MTX *M, const unsigned row, const unsigned col, const double value)" -->
 <div class="memitem">
 <div class="memproto">
@@ -6603,12 +7120,12 @@ Set a scalar value in the matrix.
 
 </div>
 </div><p>
-<a class="anchor" name="63b7a1171f19ac324dc1387dd67f9846"></a><!-- doxytag: member="cmatrix.h::MTX_Sin" ref="63b7a1171f19ac324dc1387dd67f9846" args="(MTX *src)" -->
+<a class="anchor" name="8db4c94fa3af460bdace5a4f2c7ac377"></a><!-- doxytag: member="cmatrix.h::MTX_sin" ref="8db4c94fa3af460bdace5a4f2c7ac377" args="(MTX *src)" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">BOOL MTX_Sin           </td>
+          <td class="memname">BOOL MTX_sin           </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
           <td class="paramname"> <em>src</em>          </td>
@@ -6621,6 +7138,52 @@ Set a scalar value in the matrix.
 
 <p>
 Compute the sine of each element in the matrix. Assumes elements are radians. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="001303b8f0be1bcb94adf5eb9f919eda"></a><!-- doxytag: member="cmatrix.h::MTX_sinc" ref="001303b8f0be1bcb94adf5eb9f919eda" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_sinc           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the sin(pi*x)/(pi*) of each element in the matrix. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="39802aab8e068f6cb0e2193cea5bb4ce"></a><!-- doxytag: member="cmatrix.h::MTX_sinh" ref="39802aab8e068f6cb0e2193cea5bb4ce" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_sinh           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the hyperbolic sine of each element in the matrix. Assumes elements are radians. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -7095,6 +7658,52 @@ Subtracts a scaler complex from matrix M, ie: M -= (5+3i).
 
 <p>
 Computes the sum of the data in the matrix . If the matrix is real, only the real value, re is set, im = 0. If the matrix is complex, both re and im are set. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="cdc93821de79c91735c183a8385176ee"></a><!-- doxytag: member="cmatrix.h::MTX_tan" ref="cdc93821de79c91735c183a8385176ee" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_tan           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the tangent of each element in the matrix. Assumes elements are radians. 
+<p>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
+
+</div>
+</div><p>
+<a class="anchor" name="fc0fc81e68d1c8ed849b2616a6750e36"></a><!-- doxytag: member="cmatrix.h::MTX_tanh" ref="fc0fc81e68d1c8ed849b2616a6750e36" args="(MTX *src)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL MTX_tanh           </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_m_t_x.html">MTX</a> *&nbsp;</td>
+          <td class="paramname"> <em>src</em>          </td>
+          <td>&nbsp;)&nbsp;</td>
+          <td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Compute the hyperbolic tangent of each element in the matrix. Assumes elements are radians. 
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE if successful, FALSE otherwise. </dd></dl>
 
@@ -7588,7 +8197,7 @@ Zero all elements in a specified row.
 
 </div>
 </div><p>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:45 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:56 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

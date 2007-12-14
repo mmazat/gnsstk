@@ -46,7 +46,7 @@ Inheritance diagram for GNSS::GNSS_OptionFile:</div>
 </div>
 <hr><a name="_details"></a><h2>Detailed Description</h2>
 A derived option file class for the program. 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00048">48</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00049">49</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Public Member Functions</h2></td></tr>
@@ -60,6 +60,9 @@ A derived option file class for the program.
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Read and interpret the option file.  <a href="#a872d43e66f90bc18ff400a5ed194de4"></a><br></td></tr>
 <tr><td colspan="2"><br><h2>Data Fields</h2></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">stKalmanOptions&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#8ffc4b47364ece29a564e35efab5deec">m_KalmanOptions</a></td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The Kalman filtering options.  <a href="#8ffc4b47364ece29a564e35efab5deec"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">std::string&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#5d38de853126755eb086d23099addda8">m_OptionFilePath</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The path to the option file.  <a href="#5d38de853126755eb086d23099addda8"></a><br></td></tr>
@@ -69,8 +72,9 @@ A derived option file class for the program.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">std::string&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#049bbe720b2cb65fa2ca9dcd99516a26">m_ProcessingMethod</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">A string is used to indicate the processing method.  <a href="#049bbe720b2cb65fa2ca9dcd99516a26"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#726cf19cd21fae9903e67c7550ed45c4">processDGPSOnly</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#f78093cbbe0386a4060edfd604d043aa">m_processDGPSOnly</a></td></tr>
 
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The path to the navigation datafile (ephemeris), if applicable.  <a href="#f78093cbbe0386a4060edfd604d043aa"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">stStationInformation&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#0654e2415f792e5f2f06b5e686a0e0cf">m_Reference</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The reference station information.  <a href="#0654e2415f792e5f2f06b5e686a0e0cf"></a><br></td></tr>
@@ -83,7 +87,7 @@ A derived option file class for the program.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">stGPSTime&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#d829899060bb4f6cd7b9b0d3b825e4ff">m_EndTime</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The end time for processing.  <a href="#d829899060bb4f6cd7b9b0d3b825e4ff"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top"><a class="el" href="struct_g_n_s_s_1_1_g_n_s_s__struct_klobuchar.html">GNSS_structKlobuchar</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#3541286d1ca8c8b98ec464f78d33cc12">m_klobuchar</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top"><a class="el" href="struct_g_n_s_s__struct_klobuchar.html">GNSS_structKlobuchar</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#3541286d1ca8c8b98ec464f78d33cc12">m_klobuchar</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The klobuchar ionospheric parameters.  <a href="#3541286d1ca8c8b98ec464f78d33cc12"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">double&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#4d1f59673a6448cb7d0b831508f1c8b7">m_elevationMask</a></td></tr>
@@ -116,7 +120,7 @@ A derived option file class for the program.
 The default constructor (no data allocated yet). 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8cpp-source.html#l00050">50</a> of file <a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8cpp-source.html#l00052">52</a> of file <a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -139,7 +143,7 @@ The default constructor (no data allocated yet).
 The destructor. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8cpp-source.html#l00045">45</a> of file <a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8cpp-source.html#l00047">47</a> of file <a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a>.</p>
 
 </div>
 </div><p>
@@ -165,11 +169,30 @@ Read and interpret the option file.
 <p>
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>true if successful, false if error. </dd></dl>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8cpp-source.html#l00060">60</a> of file <a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8cpp-source.html#l00062">62</a> of file <a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a>.</p>
 
 </div>
 </div><p>
 <hr><h2>Field Documentation</h2>
+<a class="anchor" name="8ffc4b47364ece29a564e35efab5deec"></a><!-- doxytag: member="GNSS::GNSS_OptionFile::m_KalmanOptions" ref="8ffc4b47364ece29a564e35efab5deec" args="" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">stKalmanOptions <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#8ffc4b47364ece29a564e35efab5deec">GNSS::GNSS_OptionFile::m_KalmanOptions</a>          </td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+The Kalman filtering options. 
+<p>
+
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00161">161</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+
+</div>
+</div><p>
 <a class="anchor" name="5d38de853126755eb086d23099addda8"></a><!-- doxytag: member="GNSS::GNSS_OptionFile::m_OptionFilePath" ref="5d38de853126755eb086d23099addda8" args="" -->
 <div class="memitem">
 <div class="memproto">
@@ -185,7 +208,7 @@ Read and interpret the option file.
 The path to the option file. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00128">128</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00164">164</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -204,7 +227,7 @@ The path to the option file.
 The path to the output file. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00131">131</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00167">167</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -223,24 +246,26 @@ The path to the output file.
 A string is used to indicate the processing method. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00134">134</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00170">170</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="726cf19cd21fae9903e67c7550ed45c4"></a><!-- doxytag: member="GNSS::GNSS_OptionFile::processDGPSOnly" ref="726cf19cd21fae9903e67c7550ed45c4" args="" -->
+<a class="anchor" name="f78093cbbe0386a4060edfd604d043aa"></a><!-- doxytag: member="GNSS::GNSS_OptionFile::m_processDGPSOnly" ref="f78093cbbe0386a4060edfd604d043aa" args="" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#726cf19cd21fae9903e67c7550ed45c4">GNSS::GNSS_OptionFile::processDGPSOnly</a>          </td>
+          <td class="memname">bool <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#f78093cbbe0386a4060edfd604d043aa">GNSS::GNSS_OptionFile::m_processDGPSOnly</a>          </td>
         </tr>
       </table>
 </div>
 <div class="memdoc">
 
 <p>
+The path to the navigation datafile (ephemeris), if applicable. 
+<p>
 A boolean to indicate if only single difference measurements between the reference and rover station will be used. 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00138">138</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00176">176</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -259,7 +284,7 @@ A boolean to indicate if only single difference measurements between the referen
 The reference station information. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00141">141</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00180">180</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -278,7 +303,7 @@ The reference station information.
 The rover station information. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00144">144</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00183">183</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -297,7 +322,7 @@ The rover station information.
 The start time for processing. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00147">147</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00186">186</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -316,7 +341,7 @@ The start time for processing.
 The end time for processing. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00150">150</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00189">189</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -325,7 +350,7 @@ The end time for processing.
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="struct_g_n_s_s_1_1_g_n_s_s__struct_klobuchar.html">GNSS_structKlobuchar</a> <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#3541286d1ca8c8b98ec464f78d33cc12">GNSS::GNSS_OptionFile::m_klobuchar</a>          </td>
+          <td class="memname"><a class="el" href="struct_g_n_s_s__struct_klobuchar.html">GNSS_structKlobuchar</a> <a class="el" href="class_g_n_s_s_1_1_g_n_s_s___option_file.html#3541286d1ca8c8b98ec464f78d33cc12">GNSS::GNSS_OptionFile::m_klobuchar</a>          </td>
         </tr>
       </table>
 </div>
@@ -335,7 +360,7 @@ The end time for processing.
 The klobuchar ionospheric parameters. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00153">153</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00192">192</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -354,7 +379,7 @@ The klobuchar ionospheric parameters.
 The elevation mask [degrees]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00156">156</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00195">195</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -373,7 +398,7 @@ The elevation mask [degrees].
 The C/N0 mask [dB-Hz]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00159">159</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00198">198</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
@@ -392,13 +417,13 @@ The C/N0 mask [dB-Hz].
 The locktime mask [s]. 
 <p>
 
-<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00162">162</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
+<p>Definition at line <a class="el" href="_g_n_s_s___option_file_8h-source.html#l00201">201</a> of file <a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a>.</p>
 
 </div>
 </div><p>
 <hr>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="_g_n_s_s___option_file_8h-source.html">GNSS_OptionFile.h</a><li><a class="el" href="_g_n_s_s___option_file_8cpp-source.html">GNSS_OptionFile.cpp</a></ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:47 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:58 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

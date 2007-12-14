@@ -92,7 +92,7 @@
 <a name="l00067"></a>00067 
 <a name="l00068"></a>00068 
 <a name="l00069"></a>00069 
-<a name="l00070"></a><a class="code" href="geodesy_8h.html#8a57888ca01b8304cd61d9c07c1b948a">00070</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a">GEODESY_GetReferenceEllipseParameters</a>( 
+<a name="l00070"></a><a class="code" href="geodesy_8h.html#8a57888ca01b8304cd61d9c07c1b948a">00070</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a" title="This is a look up table function to get reference ellipse parameters.">GEODESY_GetReferenceEllipseParameters</a>( 
 <a name="l00071"></a>00071   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a> ellipse, <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00072"></a>00072 <span class="comment"></span>  <span class="keywordtype">double</span>* a,      <span class="comment">//!&lt; semi-major axis of the reference ellipse                     [m]</span>
 <a name="l00073"></a>00073 <span class="comment"></span>  <span class="keywordtype">double</span>* b,      <span class="comment">//!&lt; semi-minor axis of the reference ellipse (b = a - a*f_inv)   [m] </span>
@@ -233,7 +233,7 @@
 <a name="l00208"></a>00208   <span class="keywordtype">double</span> f_inv;  
 <a name="l00209"></a>00209   <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> result;
 <a name="l00210"></a>00210 
-<a name="l00211"></a>00211   result = <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a">GEODESY_GetReferenceEllipseParameters</a>( 
+<a name="l00211"></a>00211   result = <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a" title="This is a look up table function to get reference ellipse parameters.">GEODESY_GetReferenceEllipseParameters</a>( 
 <a name="l00212"></a>00212     ellipse,
 <a name="l00213"></a>00213     a,
 <a name="l00214"></a>00214     &amp;b,
@@ -255,7 +255,7 @@
 <a name="l00230"></a>00230   <span class="keywordtype">double</span> f_inv;  
 <a name="l00231"></a>00231   <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> result;
 <a name="l00232"></a>00232 
-<a name="l00233"></a>00233   result = <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a">GEODESY_GetReferenceEllipseParameters</a>( 
+<a name="l00233"></a>00233   result = <a class="code" href="geodesy_8c.html#8a57888ca01b8304cd61d9c07c1b948a" title="This is a look up table function to get reference ellipse parameters.">GEODESY_GetReferenceEllipseParameters</a>( 
 <a name="l00234"></a>00234     ellipse,
 <a name="l00235"></a>00235     a,
 <a name="l00236"></a>00236     b,
@@ -283,7 +283,7 @@
 <a name="l00258"></a>00258 
 <a name="l00259"></a>00259 
 <a name="l00260"></a>00260 
-<a name="l00261"></a><a class="code" href="geodesy_8h.html#47075d6d68ed508277c77605d052dc16">00261</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
+<a name="l00261"></a><a class="code" href="geodesy_8h.html#47075d6d68ed508277c77605d052dc16">00261</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16" title="This function converts curvilinear geodetic coordinates from latitude, longitude...">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
 <a name="l00262"></a>00262   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00263"></a>00263 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> latitude,   <span class="comment">//!&lt; geodetic latitude                [rad]</span>
 <a name="l00264"></a>00264 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> longitude,  <span class="comment">//!&lt; geodetic longitude               [rad]</span>
@@ -334,7 +334,7 @@
 <a name="l00309"></a>00309 
 <a name="l00310"></a>00310 
 <a name="l00311"></a>00311 
-<a name="l00312"></a><a class="code" href="geodesy_8h.html#2152ba1417b781454e13130804bb2b27">00312</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#2152ba1417b781454e13130804bb2b27">GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates</a>(
+<a name="l00312"></a><a class="code" href="geodesy_8h.html#2152ba1417b781454e13130804bb2b27">00312</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#2152ba1417b781454e13130804bb2b27" title="This function converts cartesian geodetic coordinates from x, y, and z to curvilinear...">GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates</a>(
 <a name="l00313"></a>00313   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00314"></a>00314 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> x,              <span class="comment">// earth fixed cartesian coordinate [m]</span>
 <a name="l00315"></a>00315   <span class="keyword">const</span> <span class="keywordtype">double</span> y,              <span class="comment">// earth fixed cartesian coordinate [m]</span>
@@ -415,7 +415,7 @@
 <a name="l00390"></a>00390 }
 <a name="l00391"></a>00391 
 <a name="l00392"></a>00392 
-<a name="l00393"></a><a class="code" href="geodesy_8h.html#6262e34e4c2f719f1786201b784177d9">00393</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9">GEODESY_ComputeNorthingEastingVertical</a>(
+<a name="l00393"></a><a class="code" href="geodesy_8h.html#6262e34e4c2f719f1786201b784177d9">00393</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9" title="Given a reference point (datum) for a local geodetic coordinate system compute northing...">GEODESY_ComputeNorthingEastingVertical</a>(
 <a name="l00394"></a>00394   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00395"></a>00395 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLatitude,  <span class="comment">//!&lt; datum geodetic latitude  [rad]</span>
 <a name="l00396"></a>00396 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLongitude, <span class="comment">//!&lt; datum geodetic longitude [rad]</span>
@@ -456,7 +456,7 @@
 <a name="l00431"></a>00431   <span class="keywordflow">if</span>( result == FALSE )
 <a name="l00432"></a>00432     <span class="keywordflow">return</span> FALSE;  
 <a name="l00433"></a>00433   
-<a name="l00434"></a>00434   result = <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
+<a name="l00434"></a>00434   result = <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16" title="This function converts curvilinear geodetic coordinates from latitude, longitude...">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
 <a name="l00435"></a>00435     referenceEllipse,
 <a name="l00436"></a>00436     referenceLatitude,
 <a name="l00437"></a>00437     referenceLongitude,
@@ -467,7 +467,7 @@
 <a name="l00442"></a>00442   <span class="keywordflow">if</span>( result == FALSE )
 <a name="l00443"></a>00443     <span class="keywordflow">return</span> FALSE;
 <a name="l00444"></a>00444   
-<a name="l00445"></a>00445   result = <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
+<a name="l00445"></a>00445   result = <a class="code" href="geodesy_8c.html#47075d6d68ed508277c77605d052dc16" title="This function converts curvilinear geodetic coordinates from latitude, longitude...">GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates</a>(
 <a name="l00446"></a>00446     referenceEllipse,
 <a name="l00447"></a>00447     latitude,
 <a name="l00448"></a>00448     longitude,
@@ -500,7 +500,7 @@
 <a name="l00475"></a>00475 }
 <a name="l00476"></a>00476 
 <a name="l00477"></a>00477 
-<a name="l00478"></a><a class="code" href="geodesy_8h.html#b664109cc9edd99427ec9c141a42b6d9">00478</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#b664109cc9edd99427ec9c141a42b6d9">GEODESY_ComputePositionDifference</a>(
+<a name="l00478"></a><a class="code" href="geodesy_8h.html#b664109cc9edd99427ec9c141a42b6d9">00478</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#b664109cc9edd99427ec9c141a42b6d9" title="Compute the difference between two points in a local geodetic frame using one point...">GEODESY_ComputePositionDifference</a>(
 <a name="l00479"></a>00479   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse,  <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00480"></a>00480 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLatitude,  <span class="comment">//!&lt; reference point geodetic latitude  [rad]</span>
 <a name="l00481"></a>00481 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLongitude, <span class="comment">//!&lt; reference point geodetic longitude [rad]</span>
@@ -514,7 +514,7 @@
 <a name="l00489"></a>00489 <span class="comment"></span>  )
 <a name="l00490"></a>00490 {
 <a name="l00491"></a>00491   <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> result;
-<a name="l00492"></a>00492   result = <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9">GEODESY_ComputeNorthingEastingVertical</a>(
+<a name="l00492"></a>00492   result = <a class="code" href="geodesy_8c.html#6262e34e4c2f719f1786201b784177d9" title="Given a reference point (datum) for a local geodetic coordinate system compute northing...">GEODESY_ComputeNorthingEastingVertical</a>(
 <a name="l00493"></a>00493     referenceEllipse,
 <a name="l00494"></a>00494     referenceLatitude, 
 <a name="l00495"></a>00495     referenceLongitude,
@@ -531,7 +531,7 @@
 <a name="l00506"></a>00506 
 <a name="l00507"></a>00507 
 <a name="l00508"></a>00508 
-<a name="l00509"></a><a class="code" href="geodesy_8h.html#05e9c8e97047bcae8f1208b87f57b51a">00509</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#05e9c8e97047bcae8f1208b87f57b51a">GEODESY_ComputeMeridianRadiusOfCurvature</a>(
+<a name="l00509"></a><a class="code" href="geodesy_8h.html#05e9c8e97047bcae8f1208b87f57b51a">00509</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#05e9c8e97047bcae8f1208b87f57b51a" title="Computes meridian radius of curvature for the reference ellipse specified. (e.g....">GEODESY_ComputeMeridianRadiusOfCurvature</a>(
 <a name="l00510"></a>00510   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00511"></a>00511 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> latitude,  <span class="comment">//!&lt; geodetic latitude                     [rad]</span>
 <a name="l00512"></a>00512 <span class="comment"></span>  <span class="keywordtype">double</span>*  M              <span class="comment">//!&lt; computed meridian radius of curvature [m]</span>
@@ -562,7 +562,7 @@
 <a name="l00537"></a>00537 
 <a name="l00538"></a>00538 
 <a name="l00539"></a>00539 
-<a name="l00540"></a><a class="code" href="geodesy_8h.html#789fe510e07792c062937771558527a8">00540</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#789fe510e07792c062937771558527a8">GEODESY_ComputePrimeVerticalRadiusOfCurvature</a>(
+<a name="l00540"></a><a class="code" href="geodesy_8h.html#789fe510e07792c062937771558527a8">00540</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#789fe510e07792c062937771558527a8" title="Computes the prime vertical radius of curvature for the reference ellipse specified...">GEODESY_ComputePrimeVerticalRadiusOfCurvature</a>(
 <a name="l00541"></a>00541   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00542"></a>00542 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> latitude,  <span class="comment">//!&lt; geodetic latitude                           [rad]</span>
 <a name="l00543"></a>00543 <span class="comment"></span>  <span class="keywordtype">double</span>*  N              <span class="comment">//!&lt; computed prime vertical radius of curvature [m]</span>
@@ -589,7 +589,7 @@
 <a name="l00564"></a>00564 }
 <a name="l00565"></a>00565 
 <a name="l00566"></a>00566 
-<a name="l00567"></a><a class="code" href="geodesy_8h.html#2a2a09b71505da75053d32394639b780">00567</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#2a2a09b71505da75053d32394639b780">GEODESY_ComputeMeridianArcBetweenTwoLatitudes</a>(
+<a name="l00567"></a><a class="code" href="geodesy_8h.html#2a2a09b71505da75053d32394639b780">00567</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#2a2a09b71505da75053d32394639b780" title="Compute the meridian arc between two latitudes for the reference ellipse specified...">GEODESY_ComputeMeridianArcBetweenTwoLatitudes</a>(
 <a name="l00568"></a>00568   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00569"></a>00569 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLatitude,  <span class="comment">//!&lt; datum geodetic latitude  [rad]</span>
 <a name="l00570"></a>00570 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> latitude,           <span class="comment">//!&lt; geodetic latitude        [rad]</span>
@@ -643,7 +643,7 @@
 <a name="l00618"></a>00618 
 <a name="l00619"></a>00619 
 <a name="l00620"></a>00620 
-<a name="l00621"></a><a class="code" href="geodesy_8h.html#c7bacc1680136c75e859753f1b3fbd58">00621</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#c7bacc1680136c75e859753f1b3fbd58">GEODESY_ComputeParallelArcBetweenTwoLongitudes</a>(
+<a name="l00621"></a><a class="code" href="geodesy_8h.html#c7bacc1680136c75e859753f1b3fbd58">00621</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#c7bacc1680136c75e859753f1b3fbd58" title="Compute the parallel arc between two longitudes for the reference ellipse specified...">GEODESY_ComputeParallelArcBetweenTwoLongitudes</a>(
 <a name="l00622"></a>00622   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00623"></a>00623 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLatitude,  <span class="comment">//!&lt; reference geodetic latitude  [rad]</span>
 <a name="l00624"></a>00624 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLongitude, <span class="comment">//!&lt; reference geodetic longitude [rad]</span>
@@ -677,7 +677,7 @@
 <a name="l00652"></a>00652 
 <a name="l00653"></a>00653 
 <a name="l00654"></a>00654 
-<a name="l00655"></a><a class="code" href="geodesy_8h.html#e23cfebded66ee36e7c5c0f206052035">00655</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#e23cfebded66ee36e7c5c0f206052035">GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame</a>(
+<a name="l00655"></a><a class="code" href="geodesy_8h.html#e23cfebded66ee36e7c5c0f206052035">00655</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#e23cfebded66ee36e7c5c0f206052035" title="Rotates a vector from a Local Geodetic Frame (LG) to and Earth Centered Earth Fixed...">GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame</a>(
 <a name="l00656"></a>00656   <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLatitude,  <span class="comment">//!&lt; reference geodetic latitude                 [rad]</span>
 <a name="l00657"></a>00657 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLongitude, <span class="comment">//!&lt; reference geodetic longitude                [rad]</span>
 <a name="l00658"></a>00658 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> dN,                 <span class="comment">//!&lt; local geodetic northing vector component    [m]</span>
@@ -717,7 +717,7 @@
 <a name="l00692"></a>00692 
 <a name="l00693"></a>00693 
 <a name="l00694"></a>00694 
-<a name="l00695"></a><a class="code" href="geodesy_8h.html#6f342fc41391f8fece77d5beddb85ee7">00695</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#6f342fc41391f8fece77d5beddb85ee7">GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame</a>(
+<a name="l00695"></a><a class="code" href="geodesy_8h.html#6f342fc41391f8fece77d5beddb85ee7">00695</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#6f342fc41391f8fece77d5beddb85ee7" title="Rotates a vector from a Earth Centered Earth Fixed Frame (ECEF) to a Local Geodetic...">GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame</a>(
 <a name="l00696"></a>00696   <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLatitude,  <span class="comment">//!&lt; reference geodetic latitude                 [rad]</span>
 <a name="l00697"></a>00697 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> referenceLongitude, <span class="comment">//!&lt; reference geodetic longitude                [rad]</span>
 <a name="l00698"></a>00698 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> dX,                 <span class="comment">//!&lt; earth centered earth fixed vector component [m]</span>
@@ -757,7 +757,7 @@
 <a name="l00732"></a>00732 
 <a name="l00733"></a>00733 
 <a name="l00734"></a>00734 
-<a name="l00735"></a><a class="code" href="geodesy_8h.html#2ccf18e568745ffcbf83092c30fbefd1">00735</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#2ccf18e568745ffcbf83092c30fbefd1">GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame</a>(
+<a name="l00735"></a><a class="code" href="geodesy_8h.html#2ccf18e568745ffcbf83092c30fbefd1">00735</a> <a class="code" href="basictypes_8h.html#050c65e107f0c828f856a231f4b4e788" title="The &amp;#39;c&amp;#39; boolean type is a define for (int). TRUE(0), FALSE(1).">BOOL</a> <a class="code" href="geodesy_8c.html#2ccf18e568745ffcbf83092c30fbefd1" title="Computes the azimuth and elevation angles in the local geodetic (LG) frame between...">GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame</a>(
 <a name="l00736"></a>00736   <span class="keyword">const</span> <a class="code" href="geodesy_8h.html#85892358ee81c1db6c2bdafffa2d282c" title="Enumerated for various reference ellipsoids.">GEODESY_enumReferenceEllipse</a>  referenceEllipse, <span class="comment">//!&lt; reference ellipse enumerated []</span>
 <a name="l00737"></a>00737 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> fromX, <span class="comment">//!&lt; earth centered earth fixed vector from point X component [m]</span>
 <a name="l00738"></a>00738 <span class="comment"></span>  <span class="keyword">const</span> <span class="keywordtype">double</span> fromY, <span class="comment">//!&lt; earth centered earth fixed vector from point Y component [m]</span>
@@ -784,7 +784,7 @@
 <a name="l00759"></a>00759   *azimuth = 0; 
 <a name="l00760"></a>00760 
 <a name="l00761"></a>00761   <span class="comment">// get the reference geodetic curvilinear coordinates from the 'from' point</span>
-<a name="l00762"></a>00762   result = <a class="code" href="geodesy_8c.html#2152ba1417b781454e13130804bb2b27">GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates</a>(
+<a name="l00762"></a>00762   result = <a class="code" href="geodesy_8c.html#2152ba1417b781454e13130804bb2b27" title="This function converts cartesian geodetic coordinates from x, y, and z to curvilinear...">GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates</a>(
 <a name="l00763"></a>00763     referenceEllipse,
 <a name="l00764"></a>00764     fromX,
 <a name="l00765"></a>00765     fromY,
@@ -801,7 +801,7 @@
 <a name="l00776"></a>00776   dZ = toZ - fromZ;
 <a name="l00777"></a>00777 
 <a name="l00778"></a>00778   <span class="comment">// rotate the vector to the local geodetic frame</span>
-<a name="l00779"></a>00779   result = <a class="code" href="geodesy_8c.html#6f342fc41391f8fece77d5beddb85ee7">GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame</a>(
+<a name="l00779"></a>00779   result = <a class="code" href="geodesy_8c.html#6f342fc41391f8fece77d5beddb85ee7" title="Rotates a vector from a Earth Centered Earth Fixed Frame (ECEF) to a Local Geodetic...">GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame</a>(
 <a name="l00780"></a>00780     lat,
 <a name="l00781"></a>00781     lon,
 <a name="l00782"></a>00782     dX,
@@ -827,7 +827,7 @@
 <a name="l00802"></a>00802   <span class="keywordflow">return</span> TRUE;
 <a name="l00803"></a>00803 }
 <a name="l00804"></a>00804 
-</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:42 2007 for The Essential GNSS Project by&nbsp;
+</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:54 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

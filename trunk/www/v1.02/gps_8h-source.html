@@ -103,8 +103,8 @@
 <a name="l00078"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#f272912453fa4dfe0af6524fdac61a8f">00078</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>  fit_interval_flag;  <span class="comment">//!&lt; fit interval flag (four hour interval or longer) 0=4 fours, 1=greater         [0,1]</span>
 <a name="l00079"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#a9d575dde3402c0a14630cdfcf880896">00079</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>  ura;                <span class="comment">//!&lt; User Range Accuracy lookup code, 0 is excellent, 15 is use at own risk        [0-15], see p. 83 GPSICD200C  </span>
 <a name="l00080"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#119879f9120e614e488936a34dea1ef1">00080</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span> age_of_data_offset; <span class="comment">//!&lt; age of data offset                                                            [s]</span>
-<a name="l00081"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#b50c1cae88bb709e68274420ff1a30a4">00081</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span> reserved2;          <span class="comment">//!&lt; reserved bytes</span>
-<a name="l00082"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#012e32e09919e9c090a0a5cc68ead0d3">00082</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span>       reserved3;          <span class="comment">//!&lt; reserved bytes</span>
+<a name="l00081"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#a22cc8765dc58325383564aaa8f6b902">00081</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span> tow_week;           <span class="comment">//!&lt; The week corresponding to tow (0-1024+). Can be one week larger than week.    [week]</span>
+<a name="l00082"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#2bde00785bbe868541dc2094d25d4820">00082</a> <span class="comment"></span>  <span class="keywordtype">unsigned</span>       tow;                <span class="comment">//!&lt; The time of week derived formt the Z-count in the Hand Over Word (HOW)        [s]</span>
 <a name="l00083"></a>00083 <span class="comment"></span>  
 <a name="l00084"></a>00084   <span class="comment">// clock parameters</span>
 <a name="l00085"></a><a class="code" href="struct_g_p_s__struct_ephemeris.html#6404c39268a1be715c95c24c1a14414b">00085</a>   <span class="keywordtype">double</span>         tgd;        <span class="comment">//!&lt; group delay                                                                   [s]</span>
@@ -467,7 +467,7 @@
 <a name="l00442"></a>00442 <span class="preprocessor"></span>
 <a name="l00443"></a>00443 
 <a name="l00444"></a>00444 <span class="preprocessor">#endif // _C_GPS_H_</span>
-</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:43 2007 for The Essential GNSS Project by&nbsp;
+</pre></div><hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:55 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

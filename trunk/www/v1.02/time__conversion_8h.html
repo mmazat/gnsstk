@@ -78,6 +78,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="time__conversion_8h.html#a0e3c3b32113b703494a649668dbedba">TIMECONV_GetGPSTimeFromUTCTime</a> (unsigned short utc_year, unsigned char utc_month, unsigned char utc_day, unsigned char utc_hour, unsigned char utc_minute, float utc_seconds, unsigned short *gps_week, double *gps_tow)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes GPS time from UTC time.  <a href="#a0e3c3b32113b703494a649668dbedba"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="time__conversion_8h.html#c7dc9fb375d4263269d0d5bd3afe762a">TIMECONV_GetGPSTimeFromRinexTime</a> (unsigned short utc_year, unsigned char utc_month, unsigned char utc_day, unsigned char utc_hour, unsigned char utc_minute, float utc_seconds, unsigned short *gps_week, double *gps_tow)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes GPS time from RINEX time. RINEX time looks like UTC but it is GPS time in year, month, day, hours, minutes, seconds.  <a href="#c7dc9fb375d4263269d0d5bd3afe762a"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="time__conversion_8h.html#c5bd7797ef31f234136d0e35d16be131">TIMECONV_GetUTCTimeFromGPSTime</a> (unsigned short gps_week, double gps_tow, unsigned short *utc_year, unsigned char *utc_month, unsigned char *utc_day, unsigned char *utc_hour, unsigned char *utc_minute, float *utc_seconds)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes UTC time from GPS time.  <a href="#c5bd7797ef31f234136d0e35d16be131"></a><br></td></tr>
@@ -93,6 +96,9 @@ THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLI
 <tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="time__conversion_8h.html#b7ebba6f72eed2330412b9d310684eaf">TIMECONV_GetDayOfYear</a> (const unsigned short utc_year, const unsigned char utc_month, const unsigned char utc_day, unsigned short *dayofyear)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determines the day of year given the year, month, and day.  <a href="#b7ebba6f72eed2330412b9d310684eaf"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">BOOL&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="time__conversion_8h.html#31336320a93e40b230b29bfba24bb089">TIMECONV_GetGPSTimeFromYearAndDayOfYear</a> (const unsigned short year, const unsigned short dayofyear, unsigned short *gps_week, double *gps_tow)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Determines the GPS time of the start of a day from the day of year and the year.  <a href="#31336320a93e40b230b29bfba24bb089"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="64200aa2fa4c94184297f48f37d7ac6c"></a><!-- doxytag: member="time_conversion.h::TIMECONV_DetermineUTCOffset" ref="64200aa2fa4c94184297f48f37d7ac6c" args="(double julian_date, unsigned char *utc_offset)" -->
@@ -151,6 +157,7 @@ This function is a look up table to determine the UTC offset from the Julian Dat
  11, Jan 01 1996 00:00:00.0, 2450083.5000 <br>
  12, Jul 01 1997 00:00:00.0, 2450630.5000 <br>
  13, Jan 01 1999 00:00:00.0, 2451179.5000 <br>
+ 14, Jan 01 2006 00:00:00.0, 2453736.5000 <br>
  <dl compact><dt><b>Parameters: </b></dt><dd>
 <table border="0" cellspacing="2" cellpadding="0">
 <tr><td valign="top"><em>julian_date</em>&nbsp;</td><td>
@@ -159,7 +166,7 @@ Number of days since noon Universal Time Jan 1, 4713 BCE (Julian calendar) [days
 Integer seconds that GPS is ahead of UTC time, always positive [s], obtained from a look up table </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00455">455</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00500">500</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
@@ -209,7 +216,7 @@ Determines the day of year given the year, month, and day.
 <dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE(1) if successful, FALSE(0) otherwise.</dd></dl>
 <dl class="remark" compact><dt><b>Remarks:</b></dt><dd>(1) Performed independant comparison with <a href="http://www.mbari.org/staff/coletti/doytable.html">http://www.mbari.org/staff/coletti/doytable.html</a> </dd></dl>
 
-<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00553">553</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00599">599</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
@@ -274,6 +281,105 @@ GPS time of week [s] </td></tr>
 </table>
 </dl>
 <p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00242">242</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+
+</div>
+</div><p>
+<a class="anchor" name="c7dc9fb375d4263269d0d5bd3afe762a"></a><!-- doxytag: member="time_conversion.h::TIMECONV_GetGPSTimeFromRinexTime" ref="c7dc9fb375d4263269d0d5bd3afe762a" args="(unsigned short utc_year, unsigned char utc_month, unsigned char utc_day, unsigned char utc_hour, unsigned char utc_minute, float utc_seconds, unsigned short *gps_week, double *gps_tow)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL TIMECONV_GetGPSTimeFromRinexTime           </td>
+          <td>(</td>
+          <td class="paramtype">unsigned short&nbsp;</td>
+          <td class="paramname"> <em>utc_year</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char&nbsp;</td>
+          <td class="paramname"> <em>utc_month</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char&nbsp;</td>
+          <td class="paramname"> <em>utc_day</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char&nbsp;</td>
+          <td class="paramname"> <em>utc_hour</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char&nbsp;</td>
+          <td class="paramname"> <em>utc_minute</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&nbsp;</td>
+          <td class="paramname"> <em>utc_seconds</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned short *&nbsp;</td>
+          <td class="paramname"> <em>gps_week</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&nbsp;</td>
+          <td class="paramname"> <em>gps_tow</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Computes GPS time from RINEX time. RINEX time looks like UTC but it is GPS time in year, month, day, hours, minutes, seconds. 
+<p>
+<dl class="author" compact><dt><b>Author:</b></dt><dd>Glenn D. MacGougan (GDM) </dd></dl>
+<dl class="date" compact><dt><b>Date:</b></dt><dd>2007-12-07 </dd></dl>
+<dl class="since" compact><dt><b>Since:</b></dt><dd>2007-12-07 </dd></dl>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE(1) if successful, FALSE(0) otherwise.</dd></dl>
+<dl class="remark" compact><dt><b>Remarks:</b></dt><dd><ul>
+<li>There is no UTC offset to apply</li><li>The RINEX time system must be the GPS Time system to use this function.</li></ul>
+</dd></dl>
+<b>REFERENCES</b> <br>
+<ul>
+<li>Hofmann-Wellenhof, B., H. Lichtenegger, and J. Collins (1994). GPS Theory and Practice, Third, revised edition. Springer-Verlag, Wien New York. pp. 38-42 <br>
+</li><li>RINEX version 2.11, (<a href="http://www.aiub-download.unibe.ch/rinex/rinex211.txt">http://www.aiub-download.unibe.ch/rinex/rinex211.txt</a>) </li></ul>
+<dl compact><dt><b>Parameters: </b></dt><dd>
+<table border="0" cellspacing="2" cellpadding="0">
+<tr><td valign="top"><em>utc_year</em>&nbsp;</td><td>
+Universal Time Coordinated [year] </td></tr>
+<tr><td valign="top"><em>utc_month</em>&nbsp;</td><td>
+Universal Time Coordinated [1-12 months] </td></tr>
+<tr><td valign="top"><em>utc_day</em>&nbsp;</td><td>
+Universal Time Coordinated [1-31 days] </td></tr>
+<tr><td valign="top"><em>utc_hour</em>&nbsp;</td><td>
+Universal Time Coordinated [hours] </td></tr>
+<tr><td valign="top"><em>utc_minute</em>&nbsp;</td><td>
+Universal Time Coordinated [minutes] </td></tr>
+<tr><td valign="top"><em>utc_seconds</em>&nbsp;</td><td>
+Universal Time Coordinated [s] </td></tr>
+<tr><td valign="top"><em>gps_week</em>&nbsp;</td><td>
+GPS week (0-1024+) [week] </td></tr>
+<tr><td valign="top"><em>gps_tow</em>&nbsp;</td><td>
+GPS time of week (0-604800.0) [s] </td></tr>
+</table>
+</dl>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00405">405</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
@@ -371,6 +477,62 @@ GPS time of week (0-604800.0) [s] </td></tr>
 </table>
 </dl>
 <p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00357">357</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+
+</div>
+</div><p>
+<a class="anchor" name="31336320a93e40b230b29bfba24bb089"></a><!-- doxytag: member="time_conversion.h::TIMECONV_GetGPSTimeFromYearAndDayOfYear" ref="31336320a93e40b230b29bfba24bb089" args="(const unsigned short year, const unsigned short dayofyear, unsigned short *gps_week, double *gps_tow)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BOOL TIMECONV_GetGPSTimeFromYearAndDayOfYear           </td>
+          <td>(</td>
+          <td class="paramtype">const unsigned short&nbsp;</td>
+          <td class="paramname"> <em>year</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned short&nbsp;</td>
+          <td class="paramname"> <em>dayofyear</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned short *&nbsp;</td>
+          <td class="paramname"> <em>gps_week</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&nbsp;</td>
+          <td class="paramname"> <em>gps_tow</em></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td width="100%"></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>
+Determines the GPS time of the start of a day from the day of year and the year. 
+<p>
+<dl class="author" compact><dt><b>Author:</b></dt><dd>Glenn D. MacGougan (GDM) </dd></dl>
+<dl class="date" compact><dt><b>Date:</b></dt><dd>2007-12-07 </dd></dl>
+<dl class="since" compact><dt><b>Since:</b></dt><dd>2007-12-07 </dd></dl>
+<dl class="return" compact><dt><b>Returns:</b></dt><dd>TRUE(1) if successful, FALSE(0) otherwise. </dd></dl>
+<dl compact><dt><b>Parameters: </b></dt><dd>
+<table border="0" cellspacing="2" cellpadding="0">
+<tr><td valign="top"><em>gps_week</em>&nbsp;</td><td>
+GPS week (0-1024+) [week] </td></tr>
+<tr><td valign="top"><em>gps_tow</em>&nbsp;</td><td>
+GPS time of week (0-604800.0) [s] </td></tr>
+</table>
+</dl>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00633">633</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
@@ -582,7 +744,7 @@ Universal Time Coordinated [1-12 months] </td></tr>
 Days in the specified month [1-28|29|30|31 days] </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00484">484</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00530">530</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
@@ -790,7 +952,7 @@ Universal Time Coordinated [minutes] </td></tr>
 Universal Time Coordinated [s] </td></tr>
 </table>
 </dl>
-<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00404">404</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00449">449</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
@@ -909,11 +1071,11 @@ Determines if the given year is a leap year.
 <li>Hofmann-Wellenhof, B., H. Lichtenegger, and J. Collins (1994). GPS Theory and Practice, Third, revised edition. Springer-Verlag, Wien New York. pp. 38-42 <br>
  </li></ul>
 
-<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00520">520</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
+<p>Definition at line <a class="el" href="time__conversion_8c-source.html#l00566">566</a> of file <a class="el" href="time__conversion_8c-source.html">time_conversion.c</a>.</p>
 
 </div>
 </div><p>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:46 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:57 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>

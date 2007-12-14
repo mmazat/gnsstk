@@ -92,12 +92,12 @@ A set of satellite orbit parameters that is used to calculate GPS satellite posi
 <tr><td class="memItemLeft" nowrap align="right" valign="top">unsigned short&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_g_p_s__struct_ephemeris.html#119879f9120e614e488936a34dea1ef1">age_of_data_offset</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">age of data offset [s]  <a href="#119879f9120e614e488936a34dea1ef1"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">unsigned short&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_g_p_s__struct_ephemeris.html#b50c1cae88bb709e68274420ff1a30a4">reserved2</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">unsigned short&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_g_p_s__struct_ephemeris.html#a22cc8765dc58325383564aaa8f6b902">tow_week</a></td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">reserved bytes  <a href="#b50c1cae88bb709e68274420ff1a30a4"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">unsigned&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_g_p_s__struct_ephemeris.html#012e32e09919e9c090a0a5cc68ead0d3">reserved3</a></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The week corresponding to tow (0-1024+). Can be one week larger than week. [week].  <a href="#a22cc8765dc58325383564aaa8f6b902"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">unsigned&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_g_p_s__struct_ephemeris.html#2bde00785bbe868541dc2094d25d4820">tow</a></td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">reserved bytes  <a href="#012e32e09919e9c090a0a5cc68ead0d3"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The time of week derived formt the Z-count in the Hand Over Word (HOW) [s].  <a href="#2bde00785bbe868541dc2094d25d4820"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">double&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_g_p_s__struct_ephemeris.html#6404c39268a1be715c95c24c1a14414b">tgd</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">group delay [s]  <a href="#6404c39268a1be715c95c24c1a14414b"></a><br></td></tr>
@@ -442,38 +442,38 @@ age of data offset [s]
 
 </div>
 </div><p>
-<a class="anchor" name="b50c1cae88bb709e68274420ff1a30a4"></a><!-- doxytag: member="GPS_structEphemeris::reserved2" ref="b50c1cae88bb709e68274420ff1a30a4" args="" -->
+<a class="anchor" name="a22cc8765dc58325383564aaa8f6b902"></a><!-- doxytag: member="GPS_structEphemeris::tow_week" ref="a22cc8765dc58325383564aaa8f6b902" args="" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned short <a class="el" href="struct_g_p_s__struct_ephemeris.html#b50c1cae88bb709e68274420ff1a30a4">GPS_structEphemeris::reserved2</a>          </td>
+          <td class="memname">unsigned short <a class="el" href="struct_g_p_s__struct_ephemeris.html#a22cc8765dc58325383564aaa8f6b902">GPS_structEphemeris::tow_week</a>          </td>
         </tr>
       </table>
 </div>
 <div class="memdoc">
 
 <p>
-reserved bytes 
+The week corresponding to tow (0-1024+). Can be one week larger than week. [week]. 
 <p>
 
 <p>Definition at line <a class="el" href="gps_8h-source.html#l00081">81</a> of file <a class="el" href="gps_8h-source.html">gps.h</a>.</p>
 
 </div>
 </div><p>
-<a class="anchor" name="012e32e09919e9c090a0a5cc68ead0d3"></a><!-- doxytag: member="GPS_structEphemeris::reserved3" ref="012e32e09919e9c090a0a5cc68ead0d3" args="" -->
+<a class="anchor" name="2bde00785bbe868541dc2094d25d4820"></a><!-- doxytag: member="GPS_structEphemeris::tow" ref="2bde00785bbe868541dc2094d25d4820" args="" -->
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned <a class="el" href="struct_g_p_s__struct_ephemeris.html#012e32e09919e9c090a0a5cc68ead0d3">GPS_structEphemeris::reserved3</a>          </td>
+          <td class="memname">unsigned <a class="el" href="struct_g_p_s__struct_ephemeris.html#2bde00785bbe868541dc2094d25d4820">GPS_structEphemeris::tow</a>          </td>
         </tr>
       </table>
 </div>
 <div class="memdoc">
 
 <p>
-reserved bytes 
+The time of week derived formt the Z-count in the Hand Over Word (HOW) [s]. 
 <p>
 
 <p>Definition at line <a class="el" href="gps_8h-source.html#l00082">82</a> of file <a class="el" href="gps_8h-source.html">gps.h</a>.</p>
@@ -843,7 +843,7 @@ amplitude of the sine harmonic correction term to the angle of inclination [rad]
 </div><p>
 <hr>The documentation for this struct was generated from the following file:<ul>
 <li><a class="el" href="gps_8h-source.html">gps.h</a></ul>
-<hr size="1"><address style="text-align: right;"><small>Generated on Fri Nov 30 12:26:46 2007 for The Essential GNSS Project by&nbsp;
+<hr size="1"><address style="text-align: right;"><small>Generated on Fri Dec 14 15:51:58 2007 for The Essential GNSS Project by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.4 </small></address>
 </body>
