@@ -139,8 +139,8 @@ public:
   /// \return   true if successful, false otherwise.    
   bool GetComment( const std::string Field, std::string &Comment );
 
-  /// \breif    Get the comment for the field specified present after the <value> 
-  ///           field. i.e. <field>, <comment> = <valud> ; <post-value-comment>    
+  /// \brief    Get the comment for the field specified present after the VALUE 
+  ///           field. i.e. FIELD, COMMENT = VALUE ; POST-VALUE-COMMENT    
   /// \return   true if successful, false otherwise.        
   bool GetPostValueComment( const std::string Field, std::string &PostValueComment );
 

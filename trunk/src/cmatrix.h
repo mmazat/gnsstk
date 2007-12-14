@@ -1,49 +1,49 @@
-//============================================================================
-/// \file     cmatrix.h
-/// \brief    'c' functions for vector and matrix operations.
-/// \author   Glenn D. MacGougan (GDM)
-/// \date     2007-03-19
-/// \version  1.04
-///
-/// \b LICENSE \b INFORMATION \n
-/// Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
-///
-/// Redistribution pertains only to the following files and their contents. \n
-/// - Matrix.h\n
-/// - Matrix.cpp\n
-/// - cmatrix.h\n
-/// - cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)\n
-///
-/// Redistribution and use in source and binary forms, with or without
-/// modification, of the specified files is permitted provided the following 
-/// conditions are met: \n
-///
-/// - Redistributions of source code must retain the above copyright
-///   notice, this list of conditions and the following disclaimer. \n
-/// - Redistributions in binary form must reproduce the above copyright
-///   notice, this list of conditions and the following disclaimer in the
-///   documentation and/or other materials provided with the distribution. \n
-/// - The name(s) of the contributor(s) may not be used to endorse or promote 
-///   products derived from this software without specific prior written 
-///   permission. \n
-///
-/// THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
-/// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-/// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-/// DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-/// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-/// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-/// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-/// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-/// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
-/// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
-/// SUCH DAMAGE.
-///
-/// \b NOTES: \n
-/// This code was developed using rigourous unit testing for every function 
-/// and operation. Despite any rigorous development process, bugs are
-/// inevitable. Please report bugs and suggested fixes to glenn_at_zenautics.com.\n
-//============================================================================
+/**
+\file     cmatrix.h
+\brief    'c' functions for vector and matrix operations.
+\author   Glenn D. MacGougan (GDM)
+\date     2007-12-13
+\version  1.10
+
+\b LICENSE \b INFORMATION \n
+Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
+
+Redistribution pertains only to the following files and their contents. \n
+- Matrix.h\n
+- Matrix.cpp\n
+- cmatrix.h\n
+- cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)\n
+
+Redistribution and use in source and binary forms, with or without
+modification, of the specified files is permitted provided the following 
+conditions are met: \n
+
+- Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer. \n
+- Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution. \n
+- The name(s) of the contributor(s) may not be used to endorse or promote 
+  products derived from this software without specific prior written 
+  permission. \n
+
+THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
+SUCH DAMAGE.
+
+\b NOTES: \n
+This code was developed using rigourous unit testing for every function 
+and operation. Despite any rigorous development process, bugs are
+inevitable. Please report bugs and suggested fixes to glenn@zenautics.com.\n
+*/
 
 #ifndef ZENUATICS_MTX_H
 #define ZENUATICS_MTX_H
@@ -905,6 +905,12 @@ BOOL MTX_Range( const MTX *M, double *re, double *im );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_ColumnSum( const MTX *M, const unsigned col,  double *re, double *im );
 
+/// \brief  Computes the sum of the absolute values for the specified column.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_ColumnSumAbs( const MTX *M, const unsigned col, double *value );
+
+
 /// \brief  Computes the sum for the specified row.
 /// If the matrix is real, only the real value, re is set, im = 0. 
 /// If the matrix is complex, both re and im are set.
@@ -1049,9 +1055,8 @@ BOOL MTX_Skewness( const MTX *M, double *re, double* im );
 /// To adjust the computed kurtosis value for bias, subtract 3 from the real component.
 /// Reference: http://en.wikipedia.org/wiki/Kurtosis.
 /// Reference: http://mathworld.wolfram.com/Kurtosis.html (kurtosis proper is computed).
-/// g_2 = \frac{m_4}{m_{2}^2} = \frac{n\,\sum_{i=1}^n (x_i - \overline{x})^4}{\left(\sum_{i=1}^n (x_i - \overline{x})^2\right)^2}.
-///
 /// \return TRUE if successful, FALSE otherwise.
+// g_2 = \frac{m_4}{m_{2}^2} = \frac{n\,\sum_{i=1}^n (x_i - \overline{x})^4}{\left(\sum_{i=1}^n (x_i - \overline{x})^2\right)^2}.
 BOOL MTX_ColumnKurtosis( const MTX *M, const unsigned col, double *re, double *im );
 
 /// \brief  Computes the sample kurtosis value for the specified row.
@@ -1061,9 +1066,9 @@ BOOL MTX_ColumnKurtosis( const MTX *M, const unsigned col, double *re, double *i
 /// To adjust the computed kurtosis value for bias, subtract 3 from the real component.
 /// Reference: http://en.wikipedia.org/wiki/Kurtosis.
 /// Reference: http://mathworld.wolfram.com/Kurtosis.html (kurtosis proper is computed).
-/// g_2 = \frac{m_4}{m_{2}^2} = \frac{n\,\sum_{i=1}^n (x_i - \overline{x})^4}{\left(\sum_{i=1}^n (x_i - \overline{x})^2\right)^2}.
 ///
 /// \return TRUE if successful, FALSE otherwise.
+// g_2 = \frac{m_4}{m_{2}^2} = \frac{n\,\sum_{i=1}^n (x_i - \overline{x})^4}{\left(\sum_{i=1}^n (x_i - \overline{x})^2\right)^2}.
 BOOL MTX_RowKurtosis( const MTX *M, const unsigned row, double *re, double *im );
 
 
@@ -1074,9 +1079,9 @@ BOOL MTX_RowKurtosis( const MTX *M, const unsigned row, double *re, double *im )
 /// To adjust the computed kurtosis value for bias, subtract 3 from the real component.
 /// Reference: http://en.wikipedia.org/wiki/Kurtosis.
 /// Reference: http://mathworld.wolfram.com/Kurtosis.html (kurtosis proper is computed).
-/// g_2 = \frac{m_4}{m_{2}^2} = \frac{n\,\sum_{i=1}^n (x_i - \overline{x})^4}{\left(\sum_{i=1}^n (x_i - \overline{x})^2\right)^2}.
 ///
 /// \return TRUE if successful, FALSE otherwise.
+// g_2 = \frac{m_4}{m_{2}^2} = \frac{n\,\sum_{i=1}^n (x_i - \overline{x})^4}{\left(\sum_{i=1}^n (x_i - \overline{x})^2\right)^2}.
 BOOL MTX_Kurtosis( const MTX *M, double *re, double *im );
 
 
@@ -1484,6 +1489,8 @@ BOOL MTX_RemoveRowsAndColumns(
   const unsigned cols[]
   );
 
+
+  #ifdef ___MTX_RANDN_READY
 /** \brief Produce a matrix that is composed of pseudo-random numbers. 
  *  The seed state is based on the system clock or alternatively by the seed
  *  parameter, a positive integer can set the seed state upon generation. 
@@ -1505,6 +1512,7 @@ BOOL MTX_randn(
   const BOOL useSeed, 
   const unsigned seed 
   );
+#endif
 
 
 #ifdef __cplusplus

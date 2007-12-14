@@ -55,11 +55,6 @@ extern "C" {
 #include "basictypes.h"
 
 
-/** /defgroup GeodesyGroup The Geodesy Group 
- *  
- *  @{
- */
-
 /*************************************************************************************************/
 // preprocessor constant definitions, any related enumerations and descriptors
 
@@ -218,7 +213,7 @@ static char *GEODESY_REFERENCE_ELLIPSE_STRING_DESCRIPTION[64] =
 
 
 /** 
-This is a look up table function to get reference ellipse parameters.
+\brief    This is a look up table function to get reference ellipse parameters.
 \author   Glenn D. MacGougan (GDM)
 \date     2005-07-30
 \since    2005-07-30
@@ -256,7 +251,7 @@ BOOL GEODESY_GetReferenceEllipseParameters(
 
 
 /**
-This function converts curvilinear geodetic coordinates from latitude, longitude, 
+\brief    This function converts curvilinear geodetic coordinates from latitude, longitude, 
 and ellipsoidal height to cartesian geodetic coordinates x, y, and z for the 
 reference ellipse specified. 
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
@@ -309,7 +304,7 @@ BOOL GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
   );
 
 /**
-This function converts cartesian geodetic coordinates from x, y, and z to 
+\brief    This function converts cartesian geodetic coordinates from x, y, and z to 
 curvilinear geodetic coordinates latitude, longitude, and ellipsoidal 
 height for the reference ellipse specified. An iterative approach is used.
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
@@ -349,7 +344,7 @@ BOOL GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates(
 
 
 /**
-Given a reference point (datum) for a local geodetic coordinate system
+\brief    Given a reference point (datum) for a local geodetic coordinate system
 compute northing easting and vertical of another point given its latitude,
 longitude, and height for the reference ellipse specified.
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
@@ -378,8 +373,8 @@ BOOL GEODESY_ComputeNorthingEastingVertical(
 
 
 
-/*
-Compute the difference between two points in a local geodetic frame
+/**
+\brief  Compute the difference between two points in a local geodetic frame
 using one point as the reference. Can be used to compute position error 
 with respect to a known reference but keep in mind a local geodetic 
 frame is used.
@@ -409,7 +404,7 @@ BOOL GEODESY_ComputePositionDifference(
 
 
 /**
-Computes meridian radius of curvature for the reference ellipse specified.
+\brief  Computes meridian radius of curvature for the reference ellipse specified.
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
 
 \author   Glenn D. MacGougan (GDM)
@@ -429,7 +424,7 @@ BOOL GEODESY_ComputeMeridianRadiusOfCurvature(
   );
 
 /**
-Computes the prime vertical radius of curvature for the reference ellipse specified.
+\brief  Computes the prime vertical radius of curvature for the reference ellipse specified.
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
 
 \author   Glenn D. MacGougan (GDM)
@@ -450,7 +445,7 @@ BOOL GEODESY_ComputePrimeVerticalRadiusOfCurvature(
 
 
 /**
-Compute the meridian arc between two latitudes for the reference ellipse specified.
+\brief  Compute the meridian arc between two latitudes for the reference ellipse specified.
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
  
 \author   Glenn D. MacGougan (GDM)
@@ -472,7 +467,7 @@ BOOL GEODESY_ComputeMeridianArcBetweenTwoLatitudes(
 
 
 /**
-Compute the parallel arc between two longitudes for the reference ellipse specified.
+\brief  Compute the parallel arc between two longitudes for the reference ellipse specified.
 (e.g. GEODESY_REFERENCE_ELLIPSE_WGS84).
  
 \author   Glenn D. MacGougan (GDM)
@@ -494,7 +489,7 @@ BOOL GEODESY_ComputeParallelArcBetweenTwoLongitudes(
   );
 
 /**
-Rotates a vector from a Local Geodetic Frame (LG) to and Earth Centered Earth Fixed Frame (ECEF).
+\brief  Rotates a vector from a Local Geodetic Frame (LG) to and Earth Centered Earth Fixed Frame (ECEF).
  
 \author   Glenn D. MacGougan (GDM)
 \date     2005-07-30
@@ -518,7 +513,7 @@ BOOL GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame(
   );
 
 /**
-Rotates a vector from a Earth Centered Earth Fixed Frame (ECEF) to a Local Geodetic Frame (LG).
+\brief  Rotates a vector from a Earth Centered Earth Fixed Frame (ECEF) to a Local Geodetic Frame (LG).
  
 \author   Glenn D. MacGougan (GDM)
 \date     2005-07-30
@@ -542,7 +537,7 @@ BOOL GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame(
   );
 
 /**
-Computes the azimuth and elevation angles in the local geodetic (LG) frame between the 'from' 
+\brief  Computes the azimuth and elevation angles in the local geodetic (LG) frame between the 'from' 
 point to the 'to' point given these point in the earth fixed frame. 
 e.g. between a user gps location (from) and a satellite (to).
  
@@ -562,9 +557,6 @@ BOOL GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame
   double* elevation,  //!< elevation angle [rad]
   double* azimuth     //!< azimuth angle   [rad]
   );
-
-
-/** @} */ // end of group1
   
 #ifdef __cplusplus
 }
