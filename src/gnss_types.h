@@ -45,7 +45,7 @@ extern "C" {
 
 
 /// \brief    These are the supported receiver data types.
-enum GNSS_enumRxDataType
+typedef enum GNSS_enumRxDataType
 {
   GNSS_RXDATA_NOVATELOEM4 = 0, //!< NovAtel OEM4 data.
   GNSS_RXDATA_RINEX21     = 1, //!< RINEX version 2.1
@@ -231,15 +231,22 @@ typedef struct
   double   rangerate;         //!< The best estimate of the geometric range rate between the antenna and the satellite [m/s].
   double   psr_smoothed;      //!< The carrier smoothed pseudorange if available [m].
   double   psr_predicted;     //!< The predicted pseudorange based on the satellite position, user position, and current clock offset [m].
-  double   ambiguity;         //!< The estimated integer component of the adr. This may be the single or double differenced ambiguity [].
+  double   ambiguity;         //!< The estimated float ambiguity [m].
+  double   ambiguity_dd;      //!< The estimated double difference float ambiguity [m].
   float    doppler_predicted; //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
   float    azimuthRads;       //!< The associated satellite azimuth for this channel [rad].
-  float    elevationRads;     //!< The associated satellite elevation for this channel  [rad].
 
+  float    elevationRads;     //!< The associated satellite elevation for this channel  [rad].
   short index_differential;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
   short index_time_differential; //!< The channel index of a matching time differential observation. -1 means there is no matching channel.
+
   short index_between_satellite_differential; //!< The channel index for between satellite difference of the satellite that is substracted from this one. -1 means there is no matching channel.
-  short index_ambiguity_state;   //!< The index into the state vector for this ambiguity state. -1 not estimated.
+  short index_ambiguity_state;    //!< The index into the state vector for the float ambiguity state. -1 not estimated.
+  short index_ambiguity_state_dd; //!< The index into the state vector for the double difference ambiguity state. -1 not estimated.
+  short index_psr_B;              //!< A very convenient index into the B matrix used in double differencing. -1 if not valid.
+  short index_Doppler_B;          //!< A very convenient index into the B matrix used in double differencing. -1 if not valid.
+  short index_adr_B;              //!< A very convenient index into the B matrix used in double differencing. -1 if not valid.
+  
   double adr_misclosure;         //!< The measured ADR minus the computed ADR estimate [m]. This is likely a differential quantity.
 
   double H_p[3]; //!< The design matrix row relating the pseudorange measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
