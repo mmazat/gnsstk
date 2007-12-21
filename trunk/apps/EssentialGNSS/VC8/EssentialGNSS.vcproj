@@ -60,7 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cmatrix_basic.lib"
+				AdditionalDependencies="../../../lib/cmatrix_basic.lib"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="true"
@@ -191,10 +191,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src_cpp\GNSS_RxData.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\Zenautics\repos\src\kissFFT\kiss_fft.c"
 				>
 			</File>
 			<File
