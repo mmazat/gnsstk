@@ -107,6 +107,7 @@ int main( int argc, char* argv[] )
   bool useLSQ = true;
   bool useEKF = false;
   bool useRTK = false;
+  bool useRTKDD = false;
   
   bool isAtFirstEpoch = true;
 
@@ -152,6 +153,13 @@ int main( int argc, char* argv[] )
       useLSQ = true; // least squares is used for the first epoch
       useEKF = false;
       useRTK  = true;
+    }
+	else if( opt.m_ProcessingMethod == "RTKDD" )
+    {
+      useLSQ = true; // least squares is used for the first epoch
+      useEKF = false;
+	  useRTK  = false;
+      useRTKDD  = true;
     }
 
     if( opt.m_ProcessingMethod != "LSQ" )
@@ -418,7 +426,7 @@ int main( int argc, char* argv[] )
         if( !wasPositionComputed )
           continue;
 
-        if( !wasVelocityComputed && (useEKF || useRTK) ) // compute initial velocity estimate for EKF or RTK if needed
+        if( !wasVelocityComputed && (useEKF || useRTK || useRTKDD) ) // compute initial velocity estimate for EKF or RTK if needed
         {            
           // Compute two consective position fixes and perform the difference
           // to initial the velocity filter.            
@@ -492,11 +500,26 @@ int main( int argc, char* argv[] )
               rxDataRover.m_pvt.std_vup,
               rxDataRover.m_pvt.std_clk,
               rxDataRover.m_pvt.std_clkdrift,
-              Estimator.m_P );  //KO Could use LS m_P here to keep all information from LS step.
+              Estimator.m_RTK.P );  //KO Could use LS m_P here to keep all information from LS step.
 
             if( !result )
               return 1;
           }
+		  //DD added by KO, Dec 18, 2007 results in m_P being a 6x6 matrix
+		  else if ( useRTKDD )
+		  {
+			  useLSQ = false; // position/velocity is now seeded
+			  result = Estimator.InitializeStateVarianceCovariance_6StatePVGM(
+				  rxDataRover.m_pvt.std_lat,
+				  rxDataRover.m_pvt.std_lon,
+				  rxDataRover.m_pvt.std_hgt,
+				  rxDataRover.m_pvt.std_vn,
+				  rxDataRover.m_pvt.std_ve,
+				  rxDataRover.m_pvt.std_vup,
+				  Estimator.m_RTKDD.P );
+			  if( !result )
+				  return 1;
+		  }
         }
       }
       else if( useEKF )
@@ -504,9 +527,9 @@ int main( int argc, char* argv[] )
         result = Estimator.PredictAhead_8StatePVGM(
           rxDataRover,
           dT,
-          Estimator.m_T,
-          Estimator.m_Q,
-          Estimator.m_P );
+          Estimator.m_RTK.T,
+          Estimator.m_RTK.Q,
+          Estimator.m_RTK.P );
         if( !result )
           return 1;
 
@@ -515,7 +538,7 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM(
             &rxDataRover,
             &rxDataBase,
-            Estimator.m_P );
+            Estimator.m_RTK.P );
           if( !result )
             return -1;
         }
@@ -524,7 +547,7 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM(
             &rxDataRover,
             NULL,
-            Estimator.m_P );
+            Estimator.m_RTK.P );
           if( !result )
             return -1;
         }
@@ -534,9 +557,9 @@ int main( int argc, char* argv[] )
         result = Estimator.PredictAhead_8StatePVGM_Float(
           rxDataRover,
           dT,
-          Estimator.m_T,
-          Estimator.m_Q,
-          Estimator.m_P );
+          Estimator.m_RTK.T,
+          Estimator.m_RTK.Q,
+          Estimator.m_RTK.P );
         if( !result )
           return 1;
 
@@ -545,7 +568,7 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
             &rxDataRover,
             &rxDataBase,
-            Estimator.m_P );
+            Estimator.m_RTK.P );
           if( !result )
             return 1;
         }
@@ -554,11 +577,35 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
             &rxDataRover,
             NULL,
-            Estimator.m_P );
+            Estimator.m_RTK.P );
           if( !result )
             return 1;
         }
-      }
+	  }
+	  //Fixed mode added by KO, Dec 18, 2007
+	  else if ( useRTKDD )
+	  {
+		  result = Estimator.PredictAhead_6StatePVGM_Float(
+			  rxDataRover,
+			  dT,
+			  Estimator.m_RTKDD.T,
+			  Estimator.m_RTKDD.Q,
+			  Estimator.m_RTKDD.P );
+		  if ( !result )
+			  return 1;
+
+		  result = Estimator.Kalman_Update_6StatePVGM_FloatSolution(
+			  &rxDataRover,
+			  &rxDataBase,
+			  Estimator.m_RTKDD.P );
+		  if ( !result )
+			  return 1;
+
+		  result = Estimator.FixAmbiguities();
+		  if ( !result )
+			  return 1;
+	  }
+
 
       printf( "%12.3lf %5d %d %d %d \n", 
         rxDataRover.m_pvt.time.gps_tow, 

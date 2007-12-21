@@ -2,8 +2,8 @@
 \file     Matrix.cpp
 \brief    The Zenautics Matrix Class
 \author   Glenn D. MacGougan (GDM)
-\date     2007-12-13
-\version  1.10
+\date     2007-12-21
+\version  1.11
 
 \b LICENSE \b INFORMATION \n
 Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n

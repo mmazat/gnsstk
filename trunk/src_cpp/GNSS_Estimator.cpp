@@ -49,7 +49,7 @@ SUCH DAMAGE.
 #include "troposphere.h"
 #include "time_conversion.h"
 
-//#define DEBUG_THE_ESTIMATOR
+#define DEBUG_THE_ESTIMATOR
 #define GNSS_CYCLESLIP_THREADHOLD 1.5
 
 using namespace std;
@@ -2444,6 +2444,55 @@ namespace GNSS
     return true;
   }
 
+  bool GNSS_Estimator::ComputeTransitionMatrix_6StatePVGM_Float(
+    const double dT, //!< The change in time since the last update [s].
+    Matrix &T        //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
+    )
+  {
+    const double betaVn       = 1.0/m_KF.alphaVn;       // The Gauss Markov beta for northing velocity [1/s].
+    const double betaVe       = 1.0/m_KF.alphaVe;       // The Gauss Markov beta for easting velocity [1/s].
+    const double betaVup      = 1.0/m_KF.alphaVup;      // The Gauss Markov beta for up velocity [1/s].
+    const double betaClkDrift = 1.0/m_KF.alphaClkDrift; // The Gauss Markov beta for the clock drift [1/s].
+
+    //double dN = 0;
+    double eVn = 0;
+    double eVe = 0;
+    double eVup = 0;
+    //double eClkDrift = 0;
+    
+  	//Need to check this, when there are no dd ambiguities, T should by 6x6, when there are ambiguities, they should be added
+	  const unsigned int u = 6;
+
+    T.Redim(u,u);
+
+    eVn  = exp( -betaVn  * dT );
+    eVe  = exp( -betaVe  * dT );
+    eVup = exp( -betaVup * dT );
+
+    //eClkDrift = exp( -betaClkDrift * dT );
+
+    T[0][0] = 1.0;
+    T[0][3] = (1.0 - eVn) / betaVn;
+
+    T[1][1] = 1.0;
+    T[1][4] = (1.0 - eVe) / betaVe;
+
+    T[2][2] = 1.0;
+    T[2][5] = (1.0 - eVup) / betaVup;
+    
+    T[3][3] = eVn;
+    T[4][4] = eVe;
+    T[5][5] = eVup;
+
+    //T[6][6] = 1.0;
+    //T[6][7] = (1.0 - eClkDrift) / betaClkDrift;
+
+    //T[7][7] = eClkDrift;
+
+    return true;
+  }
+
+
 
   bool GNSS_Estimator::ComputeProcessNoiseMatrix_8StatePVGM(
     const double dT,  //!< The change in time since the last update [s].
@@ -2612,6 +2661,94 @@ namespace GNSS
 
     return true;
   }
+
+  bool GNSS_Estimator::ComputeProcessNoiseMatrix_6StatePVGM_Float(
+    const double dT,  //!< The change in time since the last update [s].
+    Matrix &Q         //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
+    )
+  {
+    const double betaVn       = 1.0/m_KF.alphaVn;       // The Gauss Markov beta for northing velocity [1/s].
+    const double betaVe       = 1.0/m_KF.alphaVe;       // The Gauss Markov beta for easting velocity [1/s].
+    const double betaVup      = 1.0/m_KF.alphaVup;      // The Gauss Markov beta for up velocity [1/s].
+    const double betaClkDrift = 1.0/m_KF.alphaClkDrift; // The Gauss Markov beta for the clock drift [1/s].
+
+    const double qVn       = 2 * m_KF.sigmaVn  * m_KF.sigmaVn  * betaVn;  // The process noise value for northing velocity.
+    const double qVe       = 2 * m_KF.sigmaVe  * m_KF.sigmaVe  * betaVe;  // The process noise value for easting  velocity.
+    const double qVup      = 2 * m_KF.sigmaVup * m_KF.sigmaVup * betaVup; // The process noise value for up       velocity.
+    const double qClkDrift = 2 * m_KF.sigmaClkDrift * m_KF.sigmaClkDrift * betaClkDrift; // The process noise value for clock drift.
+
+    //const double dT2 = dT*dT;
+    double eVn = 0;
+    double eVe = 0;
+    double eVup = 0;
+    //double eClkDrift = 0;
+    double eVn2 = 0;
+    double eVe2 = 0;
+    double eVup2 = 0;
+    //double eClkDrift2 = 0;
+
+	//Same problem with dimensions. m_ActiveAmbiguitiesList.size has the be the DD size now.
+    const unsigned int u = 6;
+
+    if( Q.nrows() != u )
+    {
+      if( !Q.Resize( u, u ) )
+      {
+        return false;
+      }
+    }
+    
+    eVn        = exp( -betaVn  * dT );
+    eVe        = exp( -betaVe  * dT );
+    eVup       = exp( -betaVup * dT );
+    //eClkDrift  = exp( -betaClkDrift * dT );
+
+    eVn2       = exp( -2.0 * betaVn  * dT );
+    eVe2       = exp( -2.0 * betaVe  * dT );
+    eVup2      = exp( -2.0 * betaVup * dT );
+    //eClkDrift2 = exp( -2.0 * betaClkDrift * dT );
+
+    Q[0][0]  = qVn / (betaVn*betaVn);
+    Q[0][0] *= dT - 2.0*(1.0 - eVn)/(betaVn) + (1.0 - eVn2)/(2.0*betaVn);
+
+    Q[1][1]  = qVe / (betaVe*betaVe);
+    Q[1][1] *= dT - 2.0*(1.0 - eVe)/(betaVe) + (1.0 - eVe2)/(2.0*betaVe);
+
+    Q[2][2]  = qVn / (betaVup*betaVup);
+    Q[2][2] *= dT - 2.0*(1.0 - eVup)/(betaVup) + (1.0 - eVup2)/(2.0*betaVup);
+
+    Q[3][3]  = qVn * (1.0 - eVn2) / (2.0*betaVn);
+    
+    Q[4][4]  = qVe * (1.0 - eVe2) / (2.0*betaVe);
+
+    Q[5][5]  = qVup * (1.0 - eVup2) / (2.0*betaVup);
+
+    // GDM_HACK added the 0.009
+    //Q[6][6]  = 0.3*dT + qClkDrift / (betaClkDrift*betaClkDrift);
+    //Q[6][6]  = qClkDrift / (betaClkDrift*betaClkDrift);
+    //Q[6][6] *= dT - 2.0*(1.0 - eClkDrift)/(betaClkDrift) + (1.0 - eClkDrift2)/(2.0*betaClkDrift);
+    
+    //Q[7][7]  = qClkDrift * (1.0 - eClkDrift2) / (2.0*betaClkDrift);
+
+    Q[0][3]  = qVn / betaVn;
+    Q[0][3] *= (1.0 - eVn)/betaVn - (1.0 - eVn2)/(2.0*betaVn);
+    Q[3][0]  = Q[0][3];
+
+    Q[1][4]  = qVe / betaVe;
+    Q[1][4] *= (1.0 - eVe)/betaVe - (1.0 - eVe2)/(2.0*betaVe);
+    Q[4][1]  = Q[1][4];
+
+    Q[2][5]  = qVup / betaVup;
+    Q[2][5] *= (1.0 - eVup)/betaVup - (1.0 - eVup2)/(2.0*betaVup);
+    Q[5][2]  = Q[2][5];
+
+    //Q[6][7]  = qClkDrift / betaClkDrift;
+    //Q[6][7] *= (1.0 - eClkDrift)/betaClkDrift - (1.0 - eClkDrift2)/(2.0*betaClkDrift);
+    //Q[7][6]  = Q[6][7];
+
+    return true;
+  }
+
 
 
   bool GNSS_Estimator::PredictAhead_8StatePVGM(
@@ -2812,6 +2949,110 @@ namespace GNSS
     return true;    
   }
 
+  bool GNSS_Estimator::PredictAhead_6StatePVGM_Float(
+    GNSS_RxData &rxData, //!< The receiver data.
+    const double dT,     //!< The change in time since the last update [s].
+    Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
+    Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
+    Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+    )
+  {
+    unsigned i = 0;
+    unsigned j = 0;
+    double M = 0; // The meridian radius of curvature.
+    double N = 0; // The prime vertical radius of curvature.
+    bool result = false;
+    Matrix tmpMat;
+    double lat = 0;
+    double h = 0;
+
+    GEODESY_ComputeMeridianRadiusOfCurvature(
+      GEODESY_REFERENCE_ELLIPSE_WGS84,
+      rxData.m_pvt.latitude,
+      &M );
+
+    GEODESY_ComputePrimeVerticalRadiusOfCurvature(
+      GEODESY_REFERENCE_ELLIPSE_WGS84,
+      rxData.m_pvt.latitude,
+      &N );
+
+    // Get the transition Matrix
+    result = ComputeTransitionMatrix_6StatePVGM_Float( dT, T );
+    if( result == false )
+      return false;
+
+    PrintMatToDebug( "T", T );
+
+    // Set the process noise Matrix
+    result = ComputeProcessNoiseMatrix_6StatePVGM_Float( dT, Q );
+    if( result == false )
+      return false;
+
+    PrintMatToDebug( "Q", Q );
+    
+    ////
+    // predict the states ahead    
+    
+    // for use of use
+    lat = rxData.m_pvt.latitude;
+    h   = rxData.m_pvt.height;
+    
+    rxData.m_pvt.latitude  += T[0][3] * rxData.m_pvt.vn / (M+h);  // for small dT, this should be: lat += dT * vn / M
+    rxData.m_pvt.longitude += T[1][4] * rxData.m_pvt.ve / ((N+h)*cos(lat));  // for small dT, this should be: lon += dT * ve / ((N+h)*cos(lat))
+    rxData.m_pvt.height    += T[2][5] * rxData.m_pvt.vup;  // for small dT, this should be: hgt += dT * vup    
+    
+    rxData.m_pvt.vn  *= T[3][3];  // for small dT, this should be vn = vn    
+    rxData.m_pvt.ve  *= T[4][4];  // for small dT, this should be ve = ve
+    rxData.m_pvt.vup *= T[5][5];  // for small dT, this should be vup = vup
+
+    //
+    ////
+
+
+    ////
+    // predict the new state variance/covariance
+
+    // It can be done this way:
+    // P = T * P * T.transpose() + Q;
+    // but the following is more efficient
+
+    if( !T.Redim( P.nrows(), P.ncols() ) )
+      return false;
+
+    for( i = 6; i < T.nrows(); i++ )
+    {
+      for( j = 6; j < T.ncols(); j++ )
+      {
+        T[i][j] = 1.0;
+      }
+    }
+
+    tmpMat = T;
+    if( !tmpMat.Inplace_Transpose() )
+      return false;
+
+    if( !P.Inplace_PreMultiply( T ) )
+      return false;
+
+    if( !P.Inplace_PostMultiply( tmpMat ) )
+      return false;
+
+    if( !Q.Redim( P.nrows(), P.ncols() ) )
+      return false;
+
+    if( !P.Inplace_Add( Q ) )
+      return false;
+    //
+    ////
+
+    PrintMatToDebug( "P", P );
+
+    return true;    
+  }
+
+
+
+
 
 
   bool GNSS_Estimator::InitializeStateVarianceCovariance_8StatePVGM(
@@ -2848,6 +3089,35 @@ namespace GNSS
     return true;
   }
 
+  bool GNSS_Estimator::InitializeStateVarianceCovariance_6StatePVGM(
+    const double std_lat,        //!< The standard deviation uncertainty in the latitude [m].
+    const double std_lon,        //!< The standard deviation uncertainty in the longitude [m]. 
+    const double std_hgt,        //!< The standard deviation uncertainty in the height [m].
+    const double std_vn,         //!< The standard deviation uncertainty in the northing velocity [m/s].
+    const double std_ve,         //!< The standard deviation uncertainty in the easting velocity [m/s].
+    const double std_vup,        //!< The standard deviation uncertainty in the up velocity [m/s].  
+    Matrix &P                    //!< The variance covariance of the states [8x8].
+    )
+  {
+    if( P.GetNrRows() != 6 || P.GetNrCols() != 6 )
+    {
+      if( !P.Resize( 6, 6 ) )
+      {
+        return false;
+      }
+    }
+
+    P[0][0] = std_lat*std_lat;
+    P[1][1] = std_lon*std_lon;
+    P[2][2] = std_hgt*std_hgt;
+    P[3][3] = std_vn*std_vn;
+    P[4][4] = std_ve*std_ve;
+    P[5][5] = std_vup*std_vup;
+   
+    PrintMatToDebug( "P", P );
+
+    return true;
+  }
 
 
   bool GNSS_Estimator::Kalman_Update_8StatePVGM(
@@ -3242,6 +3512,545 @@ namespace GNSS
 
     return true;
   }
+
+
+
+  bool GNSS_Estimator::Kalman_Update_6StatePVGM_FloatSolution(
+    GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
+    GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
+    Matrix &P                 //!< The variance-covariance of the states.
+  )
+  {
+    bool result = false;
+    unsigned index = 0;
+    unsigned i = 0;
+    unsigned j = 0;
+    unsigned k = 0; 
+    unsigned m = 0; // counter
+    unsigned n = 0;
+    unsigned nrP = 0;           // The number of valid psr.
+    unsigned nrP_base = 0;      // The number of valid psr for the reference station.
+    unsigned nrD = 0;           // The number of valid Doppler.
+    unsigned nrD_base = 0;      // The number of valid Doppler for the reference station.
+    unsigned nrValidEph = 0;    // The number of valid ephemeris.
+    unsigned nrUsableAdr = 0;      // The number of valid adr.
+    unsigned nrUsableAdr_base = 0; // The number of valid adr for the reference station.
+    unsigned nrDifferentialPsr = 0;     // The number of differential psr.
+    unsigned nrDifferentialDoppler = 0; // The number of differential Doppler.
+    unsigned nrDifferentialAdr = 0;     // The number of differntial adr.
+	unsigned nDD = 0;
+	unsigned nrPDD = 0;
+	unsigned nrDDD = 0;
+	unsigned nrDifferentialAdrDD = 0;
+    bool isDifferential = false;
+    unsigned u = 0;
+    bool setToUseOnlyDifferential = true;
+
+    double lat = 0;
+    double lon = 0;
+    double hgt = 0;
+    double clk = 0;
+    double vn = 0;
+    double ve = 0;
+    double vup = 0;
+    double clkdrift = 0;
+    double M = 0;   // The computed meridian radius of curvature [m].
+    double N = 0;   // The computed prime vertical radius of curvature [m].
+
+    Matrix H_p;
+    Matrix H_v;
+    Matrix H;
+    Matrix r; // A vector corresponding to the diagonal elements of R.
+    Matrix R_p;
+    Matrix R_v;
+    Matrix w_p;
+    Matrix w_v;
+    Matrix w_adr;
+    Matrix w;
+    Matrix K;
+    Matrix tmpMat;
+    Matrix tmpMatP;
+    Matrix dx(8);
+    Matrix I;
+
+    dx.Zero();
+    
+    
+    lat = rxData->m_pvt.latitude;
+    lon = rxData->m_pvt.longitude;
+    hgt = rxData->m_pvt.height;
+    clk = rxData->m_pvt.clockOffset;
+    vn  = rxData->m_pvt.vn;
+    ve  = rxData->m_pvt.ve;
+    vup = rxData->m_pvt.vup;
+    clkdrift = rxData->m_pvt.clockDrift;
+        
+    if( rxBaseData != NULL )
+      isDifferential = true;
+
+#ifdef CONSTRAINPOS
+    rxData->m_pvt.isPositionConstrained = 1;
+#else
+    rxData->m_pvt.isPositionConstrained = 0;
+#endif
+    
+    
+    ////
+    // Perform operations specific to the rover.
+
+    // Update the receiver time information (UTC and day of year)
+    result = UpdateTime( *rxData );
+    if( !result )
+      return false;
+
+    if( isDifferential )
+    {
+      result = UpdateTime( *rxBaseData );
+      if( !result )
+      {
+        return false;
+      }
+    }
+
+    result = DetermineSatellitePVT_GPSL1( rxData, rxBaseData, nrValidEph );
+    if( !result )
+    {
+      return false;
+    }
+
+
+    result = DetermineAtmosphericCorrections_GPSL1( *rxData );
+    if( !result )
+    {
+      return false;
+    }
+    result = DetermineUsablePseudorangeMeasurementsForThePositionSolution_GPSL1( *rxData, nrP );
+    if( !result )
+    {
+      return false;
+    }
+    result = DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( *rxData, nrD );
+    if( !result )
+    {
+      return false;
+    }
+    result = DetermineUsableAdrMeasurements_GPSL1( *rxData, nrUsableAdr );
+    if( !result )
+    {
+      return false;
+    }
+    
+    if( isDifferential )
+    {
+      result = DetermineAtmosphericCorrections_GPSL1( *rxBaseData );
+      if( !result )
+        return false;
+      result = DetermineUsablePseudorangeMeasurementsForThePositionSolution_GPSL1( *rxBaseData, nrP_base );
+      if( !result )
+        return false;
+      result = DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( *rxBaseData, nrD_base );
+      if( !result )
+        return false;
+      result = DetermineUsableAdrMeasurements_GPSL1( *rxBaseData, nrUsableAdr_base );
+      if( !result )
+      {
+        return false;
+      }
+
+      // When in differential mode, only differntial measurements will be used
+      result = DetermineBetweenReceiverDifferentialIndex(
+        rxData,
+        rxBaseData,
+        true
+        );
+      if( !result )      
+        return false;
+
+      nrDifferentialPsr = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+        {
+          nrDifferentialPsr++;
+        }
+      }
+      
+#ifdef CONSTRAINPOS
+      nrP = nrDifferentialPsr+3;
+#else
+      nrP = nrDifferentialPsr;
+#endif
+
+      nrDifferentialDoppler = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+        {
+          nrDifferentialDoppler++;
+        }
+      }
+
+#ifdef CONSTRAINPOS
+      nrD = nrDifferentialDoppler+3;
+#else
+      nrD = nrDifferentialDoppler;
+#endif
+
+      nrDifferentialAdr = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+          rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+          rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+        {
+          nrDifferentialAdr++;
+        }
+      }
+
+    }
+    else
+    {
+      return false;
+    }
+
+    result = DetermineDesignMatrixForThePositionSolution_GPSL1(
+      *rxData,
+      nrP,
+      H_p );
+    if( !result )
+    {
+      return false;
+    }
+    
+    result = DetermineDesignMatrixForTheVelocitySolution_GPSL1(
+      *rxData,
+      nrD,
+      H_v );
+    if( !result )
+    {
+      return false;
+    }
+
+    result = DeterminePseudorangeMisclosures_GPSL1(
+      rxData,
+      rxBaseData,
+      nrP,
+      w_p );
+    if( !result )
+    {
+      return false;
+    }
+
+    result = DetermineDopplerMisclosures_GPSL1(
+      rxData,
+      rxBaseData,
+      nrD,
+      w_v );
+    if( !result )
+    {
+      return false;
+    }
+
+    bool hasAmbiguityChangeOccurred = false;
+    result = DetermineAmbiguitiesChanges(
+      rxData,
+      rxBaseData,
+      P,
+      hasAmbiguityChangeOccurred );
+    if( !result )
+      return false;
+
+    if( hasAmbiguityChangeOccurred )
+      int gagagagag=101;
+
+    result = DetermineSingleDifferenceADR_Misclosures_GPSL1(
+      rxData,
+      rxBaseData,
+      nrDifferentialAdr,
+      w_adr );
+    if( !result )
+    {
+      return false;
+    }
+
+    
+    // Form the combined design matrix.
+    n = nrP + nrD + nrDifferentialAdr;
+
+    if( hasAmbiguityChangeOccurred )
+      int gg=99; // place breakpoint here to debug issues related to changes in ambiguities.
+
+    result = H.Resize( n, 8 + nrDifferentialAdr );
+    if( !result )
+    {
+      return false;
+    }
+
+    result = r.Resize( n );
+    if( !result )
+    {
+      return false;
+    }
+
+    unsigned int iP = 0; // A counter for the pseudorange.
+    unsigned int iD = 0; // A counter for the Doppler.
+    unsigned int iA = 0; // A counter for the ADR.
+    double stdev; // a temporary double.
+    for( k = 0; k < rxData->m_nrValidObs; k++ )
+    {
+      if( rxData->m_ObsArray[k].flags.isActive )
+      {
+        if( rxData->m_ObsArray[k].flags.isPsrUsedInSolution )
+        {
+          H[iP][0] = rxData->m_ObsArray[k].H_p[0];
+          H[iP][1] = rxData->m_ObsArray[k].H_p[1];
+          H[iP][2] = rxData->m_ObsArray[k].H_p[2];
+          H[iP][6] = 1.0;
+
+          stdev = rxData->m_ObsArray[k].stdev_psr;  // KO not differential obs error (need to change)
+          r[iP] = stdev*stdev;
+          iP++;
+        }
+        if( rxData->m_ObsArray[k].flags.isDopplerUsedInSolution )
+        {
+          H[iD+nrP][3] = rxData->m_ObsArray[k].H_v[0];
+          H[iD+nrP][4] = rxData->m_ObsArray[k].H_v[1];
+          H[iD+nrP][5] = rxData->m_ObsArray[k].H_v[2];
+          H[iD+nrP][7] = 1.0;
+          stdev = rxData->m_ObsArray[k].stdev_doppler * GPS_WAVELENGTHL1; // Change from cycles/s to meters/s.
+          r[iD+nrP] = stdev*stdev;          
+          iD++;
+        }
+        if( rxData->m_ObsArray[k].flags.isAdrUsedInSolution )
+        {          
+          H[iA+nrP+nrD][0] = rxData->m_ObsArray[k].H_p[0];
+          H[iA+nrP+nrD][1] = rxData->m_ObsArray[k].H_p[1];
+          H[iA+nrP+nrD][2] = rxData->m_ObsArray[k].H_p[2];
+          H[iA+nrP+nrD][6] = 1.0;
+
+		  //
+          //H[iA+nrP+nrD][rxData->m_ObsArray[k].index_ambiguity_state] = 1.0;
+
+          stdev = rxData->m_ObsArray[k].stdev_adr * GPS_WAVELENGTHL1; // Change from cycles to meters.
+          r[iA+nrP+nrD] = stdev*stdev;          
+          iA++;
+        }
+      }
+    }
+
+    Matrix timeMat(1);
+    timeMat[0] = rxData->m_pvt.time.gps_tow;
+    PrintMatToDebug( "gpstime", timeMat );
+    PrintMatToDebug( "H", H );
+
+    // Form the combined misclosure vector.
+    result = w.Resize( n, 1 );
+    if( !result )
+    {
+      return false;
+    }
+    for( i = 0; i < n; i++ )
+    {
+      if( i < nrP )
+      {
+        w[i] = w_p[i];
+      }
+      else if ( i < nrP+nrD )
+      {
+        w[i] = w_v[i-nrP];
+      }
+      else
+      {
+        w[i] = w_adr[i-nrP-nrD];
+      }
+    }
+
+    PrintMatToDebug( "w", w );
+    
+    
+	//KO Dec 18. Now that the design matrix, covariance matrix and misclosure vector are formed for the SD case time to DD them
+
+	if(nrP == 0) 
+		nrPDD = 0;
+	else
+		nrPDD = nrP - 1;
+	if(nrD == 0)
+		nrDDD = 0;
+	else
+		nrDDD = nrD - 1;
+	if(nrDifferentialAdr == 0)
+		nrDifferentialAdrDD = 0;
+	else
+		nrDifferentialAdrDD = nrDifferentialAdr - 1;
+
+	nDD = nrPDD + nrDDD + nrDifferentialAdrDD;
+
+	
+	//At this point, the B matrix exists. Now we have to apply it to H, Cl and w
+	
+	w = m_RTKDD.B*w;
+	H = m_RTKDD.B*H;
+
+	//Need to remove the dt column of H, and also the dtdot columns.
+
+	Matrix R(r.nrows(),r.nrows());
+	for (i = 0; i < r.nrows(); i++)
+		R[i][i] = r[i];
+	R = m_RTKDD.B * R * m_RTKDD.B.Transpose();
+
+	//At this point have DD format H, w and R matrices, as well as Transition and Process noise
+	//However now we have to replace the sequential estimator with a batch one because the observations are correlated
+
+	//Need to remove columns 6 and 7 from H and also one ambiguity column,
+	//and also replace the ambiguity column for the ADR rows with the identity matrix
+
+	H.RemoveColumn(6);
+	H.RemoveColumn(6);
+	if( nrDifferentialAdrDD > 0 )
+	{
+		H.RemoveColumn(6);
+		for (i = 0; i < nrDifferentialAdrDD; i++)
+			H[i + nrPDD + nrDDD][6 + i] = 1.0;
+	}
+
+
+	 // Compute the Kalman gain matrix.
+    // K = P*Ht*(H*P*Ht+R)^-1
+    // do (H*P*Ht+R)^-1 first
+	tmpMat = H*m_RTKDD.P*H.Transpose() + R;
+    result = tmpMat.Inplace_Invert();
+    if( !result )
+      return false;    
+	K = m_RTKDD.P*H.Transpose()*tmpMat;
+    
+
+    // Compute the change in states due to the innovations (misclosures).
+    dx = K*w;
+
+    
+
+    // Compute the updated state variance-covariance matrix, P.
+	result = I.Resize( K.nrows(), K.nrows() );
+    if( !result )
+      return false;
+    result = I.Identity();
+    if( !result )
+      return false;
+
+    m_RTKDD.P = (I - K * H)*m_RTKDD.P;
+    
+    PrintMatToDebug( "dx", dx );
+    PrintMatToDebug( "P", m_RTKDD.P );
+    PrintMatToDebug( "K", K );
+
+    
+    // Update the position and clock states
+    // Update height first as it is need to reduce the corrections for lat and lon.
+    hgt += dx[2];
+    //clk += dx[6];
+
+	// The corrections for lat and lon, dx_p, must be converted to [rad] from [m].
+    GEODESY_ComputePrimeVerticalRadiusOfCurvature(
+      GEODESY_REFERENCE_ELLIPSE_WGS84, 
+      lat,
+      &N );
+    GEODESY_ComputeMeridianRadiusOfCurvature(
+      GEODESY_REFERENCE_ELLIPSE_WGS84, 
+      lat,
+      &M );
+
+     lat += dx[0] / ( M + hgt );             // convert from meters to radians.
+     lon += dx[1] / (( N + hgt )*cos(lat));  // convert from meters to radians.
+
+     result = rxData->UpdatePositionAndRxClock(
+       lat,
+       lon,
+       hgt,
+       0.0,
+       sqrt(m_RTKDD.P[0][0]),
+       sqrt(m_RTKDD.P[1][1]),
+       sqrt(m_RTKDD.P[2][2]),
+       0.0
+       );
+     if( !result )
+       return false;
+
+
+     // Update the velocity and clock drift states.
+     vn        += dx[3];
+     ve        += dx[4];
+     vup       += dx[5];
+     //clkdrift  += dx[7];
+
+     result = rxData->UpdateVelocityAndClockDrift(
+       vn,
+       ve,
+       vup,
+       0.0,
+       sqrt(m_RTKDD.P[3][3]),
+       sqrt(m_RTKDD.P[4][4]),
+       sqrt(m_RTKDD.P[5][5]),
+       0.0 );
+     if( !result )
+       return false;
+
+	 //KO: Update the ambiguities: Here is where it gets tricky, 
+	 //How/where were the original values set and how are they indexed?
+
+     /*
+    Matrix amb;
+    if( nrDifferentialAdrDD > 0 )
+      amb.Resize(nrDifferentialAdrDD);
+       
+      j = 0;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution && rxData->m_ObsArray[i].index_between_satellite_differential != -1 )
+        {
+          rxData->m_ObsArray[i].ambiguity_dd = dx[rxData->m_ObsArray[i].index_ambiguity_state];
+          amb[j] = rxData->m_ObsArray[i].ambiguity_dd;
+          j++;
+        }
+      }
+      */
+
+
+    //for( i = 0; i < rxData->m_nrValidObs; i++ )
+    //{
+    //  if( rxData->m_ObsArray[i].flags.isUsedInPosSolution )
+    //    rxData->m_pvt.nrPsrObsUsed++;
+    //  if( rxData->m_ObsArray[i].flags.isUsedInVelSolution )
+    //    rxData->m_pvt.nrDopplerObsUsed++;
+    //  if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+    //    rxData->m_pvt.nrAdrObsUsed++;
+    //}
+
+    
+#ifdef DEBUG_THE_ESTIMATOR
+    char supermsg[8192];
+    unsigned nrBytesInBuffer = 0;
+    rxData->Debug_WriteSuperMsg80CharsWide( 
+      supermsg,
+      8192,
+      51.0916666667*DEG2RAD,
+      -114.0000000000*DEG2RAD,
+      1000.000,
+      nrBytesInBuffer );
+    printf( supermsg );
+#endif
+   
+    return true;
+  }
+
+  bool GNSS_Estimator::FixAmbiguities()
+  {
+	  return true;
+  }
+
   
   
   bool GNSS_Estimator::Kalman_Update_8StatePVGM_SequentialMode(
@@ -4296,6 +5105,14 @@ namespace GNSS
   {
     unsigned i = 0;
     unsigned j = 0;
+    unsigned k = 0;
+    unsigned m = 0;
+    unsigned iP = 0;
+    unsigned iD = 0;
+    unsigned iA = 0;
+    unsigned nP = 0; // The number of valid pseudoranges used in solution.
+    unsigned nD = 0; // The number of valid Doppler used in solution.
+    unsigned nA = 0; // The number of valid adr used in solution.
     // First look for ambiguities that are no longer active.
     bool isAmbiguityActive = false;      
     std::list<stAmbiguityInfo>::iterator iter;
@@ -4499,7 +5316,252 @@ namespace GNSS
       }
       i++;      
     }
-    
+
+
+    if( changeOccured )
+    {
+      // KO_DEBUG  For now use the first active channel as the base satellite and differnce the others.
+      int ch_index_base = -1;
+
+      // Loop through and look for the first active channel with a 
+      // valid adr (ready for use in the single difference solution).
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+          if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+            rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+            rxData->m_ObsArray[i].flags.isAdrValid &&
+            rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            ch_index_base = i;
+            break;
+          }
+        }
+      }
+      if( ch_index_base == -1 )
+      {
+        // KO_TODO set B to 0x0
+        return true;
+      }
+
+      // Set the differencing indices between channels.
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        rxData->m_ObsArray[i].index_between_satellite_differential = -1; // initialize to not used.
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+          if( rxData->m_ObsArray[i].system == GNSS_GPS &&
+            rxData->m_ObsArray[i].freqType == GNSS_GPSL1 &&
+            rxData->m_ObsArray[i].flags.isAdrValid &&
+            rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            if( i != ch_index_base )
+            {
+              rxData->m_ObsArray[i].index_between_satellite_differential = ch_index_base;
+            }
+          }
+        }
+      }
+
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        rxData->m_ObsArray[i].index_psr_B = -1;
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+          if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          {
+            rxData->m_ObsArray[i].index_psr_B = nP;
+            nP++;
+          }          
+        }
+      }
+
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        rxData->m_ObsArray[i].index_Doppler_B = -1;
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+          if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+          {
+            rxData->m_ObsArray[i].index_Doppler_B = nP + nD;
+            nD++;
+          }          
+        }
+      }
+
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        rxData->m_ObsArray[i].index_adr_B = -1;
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            rxData->m_ObsArray[i].index_adr_B = nP + nD + nA;
+            nA++;
+          }
+        }
+      }
+
+      unsigned n=0;
+      
+      j = 0;
+      if( nP > 0 )
+      {
+        n += nP - 1;
+        j++;
+      }
+      if( nD > 0 )
+      {
+        n += nD - 1;
+        j++;
+      }
+      if( nA > 0 )
+      {
+        n += nA - 1;
+        j++;
+      }
+
+      // Dimension B and set to zero.
+      if( !m_RTKDD.B.Resize( n, n+j ) )
+        return false;
+
+      // Form the double difference operator matrix.
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {
+          if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          {
+            if( rxData->m_ObsArray[i].index_between_satellite_differential != -1 )
+            {
+              if( rxData->m_ObsArray[ rxData->m_ObsArray[i].index_between_satellite_differential ].index_psr_B == -1 )
+              {
+                return false;
+              }
+              m_RTKDD.B[iP][ rxData->m_ObsArray[ rxData->m_ObsArray[i].index_between_satellite_differential ].index_psr_B ] = -1.0;
+              m_RTKDD.B[iP][ rxData->m_ObsArray[i].index_psr_B ] = 1.0;
+              iP++;
+            }
+          }
+        }
+      }
+
+
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {      
+          if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+          {
+            if( rxData->m_ObsArray[i].index_between_satellite_differential != -1 )
+            {
+              if( rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_Doppler_B == -1 )
+              {
+                return false;
+              }
+              m_RTKDD.B[iD+iP][ rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_Doppler_B ] = -1.0;
+              m_RTKDD.B[iD+iP][ rxData->m_ObsArray[i].index_Doppler_B ] = 1.0;
+              iD++;
+            }            
+          }
+        }
+      }
+
+      if( !m_RTKDD.B.isEmpty() )
+        m_RTKDD.prevB    = m_RTKDD.B;
+      if( !m_RTKDD.SubB.isEmpty() )
+        m_RTKDD.prevSubB = m_RTKDD.SubB;
+
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isActive )
+        {      
+          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            if( rxData->m_ObsArray[i].index_between_satellite_differential != -1 )
+            {
+              if( rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_adr_B == -1 )
+              {
+                return false;
+              }
+              m_RTKDD.B[iA+iP+iD][ rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_adr_B ] = -1.0;
+              m_RTKDD.B[iA+iP+iD][ rxData->m_ObsArray[i].index_adr_B ] = 1.0;
+              iA++;
+            }            
+          }
+        }
+      }
+      if( iA < 1 )
+      {
+        // KO_TODO anything else?
+        return true;
+      }
+
+      PrintMatToDebug( "B", m_RTKDD.B );
+
+      if( !m_RTKDD.SubB.Resize(iA,iA+1)  )
+        return false;
+
+      for( i = 0; i < iA; i++ )
+      {
+        for( j = 0; j < iA+1; j++ )
+        {
+          m_RTKDD.SubB[i][j] = m_RTKDD.B[i+iP+iD][j+nP+nD];
+        }
+      }
+
+      PrintMatToDebug( "subB", m_RTKDD.SubB );
+
+      if( m_RTKDD.prevSubB.isEmpty() )
+      {
+        // Just build dd P
+        Matrix subP(nA,nA);
+        for( i = 0; i < nA; i++ )
+        {
+          for( j = 0; j < nA; j++ )
+          {          
+            subP[i][j] = P[i+6][j+6];            
+          }
+        }
+
+        m_RTKDD.P = P;
+        P.Redim( 6, 6 );
+        P.Redim( 6+iA, 6+iA );
+        
+        subP = m_RTKDD.SubB*subP*m_RTKDD.SubB.T();
+        for( i = 0; i < iA; i++ )
+        {
+          for( j = 0; j < iA; j++ )
+          {          
+            P[i+6][j+6] = subP[i][j];
+          }
+        }       
+        PrintMatToDebug( "subP", subP );
+      }
+      
+      PrintMatToDebug( "P", m_RTKDD.P );
+
+      //m_RTKDD.P = 
+
+
+
+      /*
+      for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
+      {
+        if( rxData->m_ObsArray[iter->channel].index_between_satellite_differential != -1 )
+        {
+
+        }
+      }
+      */
+      
+
+
+
+      // Form the double differnce state variance covariance matrix.
+
+    }
 
     return true;
   }

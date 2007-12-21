@@ -472,6 +472,11 @@ namespace GNSS
       const double dT, //!< The change in time since the last update [s].
       Matrix &T        //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
       );
+
+	bool ComputeTransitionMatrix_6StatePVGM_Float(
+      const double dT, //!< The change in time since the last update [s].
+      Matrix &T        //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
+      );
   
 
     bool ComputeProcessNoiseMatrix_8StatePVGM(
@@ -483,6 +488,12 @@ namespace GNSS
       const double dT, //!< The change in time since the last update [s].
       Matrix &Q        //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
       );
+
+	bool ComputeProcessNoiseMatrix_6StatePVGM_Float(
+      const double dT, //!< The change in time since the last update [s].
+      Matrix &Q        //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
+      );
+
   
 
 
@@ -501,6 +512,21 @@ namespace GNSS
       const double std_clkdrift,   //!< The standard deviation uncertainty in the clock drift [m/s].    
       Matrix &P                    //!< The variance covariance of the states [8x8].
       );
+
+    /// \brief    Initialize the state variance-covariance matrix 
+    ///           for the 6 state PV Gauss Markov model.
+    ///
+    /// \return   true if successful, false if error.
+	bool InitializeStateVarianceCovariance_6StatePVGM(
+	  const double std_lat,        //!< The standard deviation uncertainty in the latitude [m].
+      const double std_lon,        //!< The standard deviation uncertainty in the longitude [m]. 
+      const double std_hgt,        //!< The standard deviation uncertainty in the height [m].
+      const double std_vn,         //!< The standard deviation uncertainty in the northing velocity [m/s].
+      const double std_ve,         //!< The standard deviation uncertainty in the easting velocity [m/s].
+      const double std_vup,        //!< The standard deviation uncertainty in the up velocity [m/s].
+      Matrix &P                    //!< The variance covariance of the states [6x6].
+      );
+
   
 
     bool PredictAhead_8StatePVGM(
@@ -518,6 +544,15 @@ namespace GNSS
       Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
       Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
       );
+
+    bool PredictAhead_6StatePVGM_Float(
+      GNSS_RxData &rxData, //!< The receiver data.
+      const double dT,     //!< The change in time since the last update [s].
+      Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
+      Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
+      Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+      );
+
 
 
     
@@ -539,8 +574,18 @@ namespace GNSS
       GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
       Matrix &P                 //!< The variance-covariance of the states.
     );
-  
-  
+
+	bool Kalman_Update_6StatePVGM_FloatSolution(
+      GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
+      GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
+      Matrix &P                 //!< The variance-covariance of the states.
+    );
+
+
+	/// \brief    Fix ambiguities, right now does nothing.
+    ///
+    /// \return   true if successful, false if error.
+    bool FixAmbiguities();
     
 
 
@@ -589,21 +634,50 @@ namespace GNSS
 
     // number of unknown paramters: u 
     // number of observations:      n
-        
-    Matrix m_x;   //!< The states,                                                  [u x 1].
-    Matrix m_dx;  //!< The iterative update to the states,                          [u x 1].
-    Matrix m_P;   //!< The states variance-covariance matrix,                       [u x u].
-    Matrix m_H;   //!< The design matrix,                                           [n x u].
-    Matrix m_w;   //!< The observation misclosure vector,                           [n x 1].
-    Matrix m_R;   //!< The variance covariance matrix of the observations,          [n x n].
-    Matrix m_W;   //!< The inverse of m_R,                                          [n x n].
-    Matrix m_r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
-    Matrix m_T;   //!< The transition matrix,                                       [u x u].
-    Matrix m_Q;   //!< The process noise matrix,                                    [u x u].
-    
-    Matrix m_T_prev;   //!< The previous transition matrix,                         [u x u].
-    Matrix m_Q_prev;   //!< The previous process noise matrix,                      [u x u].
 
+    struct stLSQ
+    {
+      Matrix x;   //!< The states,                                                  [u x 1].
+      Matrix dx;  //!< The iterative update to the states,                          [u x 1].
+      Matrix P;   //!< The states variance-covariance matrix,                       [u x u].
+      Matrix H;   //!< The design matrix,                                           [n x u].
+      Matrix w;   //!< The observation misclosure vector,                           [n x 1].
+      Matrix R;   //!< The variance covariance matrix of the observations,          [n x n].
+      Matrix W;   //!< The inverse of m_R,                                          [n x n].
+      Matrix r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
+    };
+
+    struct stRTK
+    {
+      Matrix x;   //!< The states,                                                  [u x 1].
+      Matrix dx;  //!< The iterative update to the states,                          [u x 1].
+      Matrix P;   //!< The states variance-covariance matrix,                       [u x u].
+      Matrix H;   //!< The design matrix,                                           [n x u].
+      Matrix w;   //!< The observation misclosure vector,                           [n x 1].
+      Matrix R;   //!< The variance covariance matrix of the observations,          [n x n].
+      Matrix W;   //!< The inverse of m_R,                                          [n x n].
+      Matrix r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
+      Matrix T;   //!< The transition matrix,                                       [u x u].
+      Matrix Q;   //!< The process noise matrix,                                    [u x u].
+    };
+
+    struct stRTKDD
+    {
+      Matrix x;     //!< The states,                                                  [u x 1].
+      Matrix dx;    //!< The iterative update to the states,                          [u x 1].
+      Matrix P;     //!< The states variance-covariance matrix,                       [u x u].
+      Matrix H;     //!< The design matrix,                                           [n x u].
+      Matrix w;     //!< The observation misclosure vector,                           [n x 1].
+      Matrix R;     //!< The variance covariance matrix of the observations,          [n x n].
+      Matrix W;     //!< The inverse of m_R,                                          [n x n].
+      Matrix r;     //!< The diagonal of the observations variance-covariance matrix, [n x 1].
+      Matrix T;     //!< The transition matrix,                                       [u x u].
+      Matrix Q;     //!< The process noise matrix,                                    [u x u].
+      Matrix B;     //!< The double difference operator matrix.                       [n x n-1/2/3].
+      Matrix prevB; //!< The previous double difference operator matrix.              [n_prev x n_prev-1/2/3].
+      Matrix SubB;  //!< The double difference operator matrix for just ambiguities.      
+      Matrix prevSubB; //!< The previuos double difference operator matrix just ambiguities.
+    };
 
     struct stKalmanModel
     {
@@ -629,6 +703,13 @@ namespace GNSS
       {}
     };
 
+    stLSQ m_posLSQ; //!< The Least Sqaures estimation matrix information for the position and clock offset solution.
+    stLSQ m_velLSQ; //!< The Least Sqaures estimation matrix information for the velocity and clock drift solution.
+
+    stRTK m_RTK; //!< The RTK estimation matrix information.
+    stRTKDD m_RTKDD; //!< The double difference RTK estimation matrix information.
+
+
     /// Kalman filter model settings for 1st order Gauss Markov
     /// Velocity/ClkDrift states. 8 state PVGM model.
     stKalmanModel m_KF;
@@ -636,15 +717,19 @@ namespace GNSS
 
     struct stAmbiguityInfo
     {
-      unsigned short      channel;     //!< The channel number associated with this measurement.
-      unsigned short      id;          //!< The unique id for this channel (eg PRN for GPS).    
-      int                 state_index; //!< The index of the corresponding row and column of the state variance-covariance matrix. -1 means not estimated.
-      GNSS_enumSystem     system;      //!< The satellite system associated with this channel.
-      GNSS_enumFrequency  freqType;    //!< The frequency type for this channel.
+      unsigned short      channel;        //!< The channel number associated with this measurement.
+      unsigned short      id;             //!< The unique id for this channel (eg PRN for GPS).    
+      int                 state_index;    //!< The index of the corresponding row and column of the state variance-covariance matrix. -1 means not estimated.
+      int                 state_index_dd; //!< The index of the corresponding row and column of the state variance-covariance matrix for the double difference case. -1 means not estimated.
+      GNSS_enumSystem     system;         //!< The satellite system associated with this channel.
+      GNSS_enumFrequency  freqType;       //!< The frequency type for this channel.
 	  // GDM most recent ambiguity estimate
 	  // GDM time of last above
 	  // GDM flag indicating amb reset
 	  // GDM quality indicator?
+      stAmbiguityInfo()
+        : channel(0),id(0),state_index(-1),state_index_dd(-1)
+      {}
     };    
 
     /// This list keeps track of which amibiguities are active. i.e. already included in the state vector
