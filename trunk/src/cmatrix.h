@@ -2,8 +2,8 @@
 \file     cmatrix.h
 \brief    'c' functions for vector and matrix operations.
 \author   Glenn D. MacGougan (GDM)
-\date     2007-12-13
-\version  1.10
+\date     2007-12-21
+\version  1.11
 
 \b LICENSE \b INFORMATION \n
 Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
@@ -53,7 +53,6 @@ extern "C"
 {
 #endif
 
-//#define MTX_SIMD_OPTIMIZED
 
 typedef int BOOL;
 
@@ -1513,6 +1512,15 @@ BOOL MTX_randn(
   const unsigned seed 
   );
 #endif
+
+/// \brief  Test if a double value is NaN.
+BOOL MTX_IsNAN( double value );
+
+/// \brief  Test if a double value is +INF.
+BOOL MTX_IsPostiveINF( double value );
+
+/// \brief  Test if a double value is -INF.
+BOOL MTX_IsNegativeINF( double value );
 
 
 #ifdef __cplusplus
