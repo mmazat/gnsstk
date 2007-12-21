@@ -40,6 +40,7 @@ SUCH DAMAGE.
 #include "GNSS_OptionFile.h"
 #include "rinex.h"
 #include "geodesy.h"
+#include "StdStringUtils.h"
 
 namespace GNSS
 {
@@ -77,7 +78,10 @@ namespace GNSS
 
     if( !GetValue( "ProcessingMethod", m_ProcessingMethod ) )
       return false; 
-    if( m_ProcessingMethod != "LSQ" && m_ProcessingMethod != "EKF" && m_ProcessingMethod != "RTK" )
+    if( m_ProcessingMethod != "LSQ" 
+		&& m_ProcessingMethod != "EKF" 
+		&& m_ProcessingMethod != "RTK" 
+		&& m_ProcessingMethod != "RTKDD" )
       return false;
 
     if( m_ProcessingMethod != "LSQ" )
@@ -134,6 +138,8 @@ namespace GNSS
 
         if( !GetValue( "Reference_DataType", m_Reference.DataTypeStr ) )
           return false;
+
+		StdStringUtils::MakeUpper(m_Reference.DataTypeStr);
 
         if( m_Reference.DataTypeStr.compare("NOVATELOEM4") == 0 )
           m_Reference.DataType = GNSS_RXDATA_NOVATELOEM4;
@@ -291,6 +297,8 @@ namespace GNSS
 
     if( !GetValue( "Rover_DataType", m_Rover.DataTypeStr ) )
       return false;
+
+	StdStringUtils::MakeUpper(m_Rover.DataTypeStr);
 
     if( m_Rover.DataTypeStr.compare("NOVATELOEM4") == 0 )
       m_Rover.DataType = GNSS_RXDATA_NOVATELOEM4;
