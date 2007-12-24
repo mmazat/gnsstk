@@ -1823,6 +1823,125 @@ namespace GNSS
     return true;
   }
 
+  bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
+    GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available. 
+    Matrix &subB             //!< The matrix that describes the differencing from SD to DD adr measurements
+    const unsigned n,        //!< The number of DD misclosures required.
+    Matrix &w                //!< The adr misclosure vector [n x 1].
+    )
+  {
+    unsigned i = 0;
+    unsigned j = 0;
+    int k = 0;
+    double adr_base = 0;
+    double range_base = 0;
+    double adr_measured = 0;
+    double adr_computed = 0;
+
+    if( n == 0 )
+      return true;
+
+    // Check the dimension of w.
+    if( w.GetNrRows() != n || w.GetNrCols() != 1 )
+    {
+      if( !w.Resize( n, 1 ) )
+        return false;
+    }
+
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( rxData->m_ObsArray[i].flags.isActive )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
+        {
+          // allows computation of the misclosure value (regardless of whether it is used in solution
+          adr_measured = rxData->m_ObsArray[i].adr * GPS_WAVELENGTHL1;
+
+          // Add the satellite clock correction.
+          adr_measured += rxData->m_ObsArray[i].satellite.clk;
+
+          // Compensate for the ionospheric delay if indicated.
+          // The corrections must be determined beforehand.
+          if( rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection )
+          {
+            // Compensate for the ionospheric delay
+            adr_measured += rxData->m_ObsArray[i].corrections.prcIono;
+          }
+
+          // Compensate for the tropospheric delay if indicated.
+          // The corrections must be determined beforehand.
+          if( rxData->m_ObsArray[i].flags.useTropoCorrection )
+          {
+            // Compensate for the tropospheric delay
+            adr_measured -= rxData->m_ObsArray[i].corrections.prcTropoDry;
+            adr_measured -= rxData->m_ObsArray[i].corrections.prcTropoWet;
+          }
+
+          range_base = 0;
+          if( rxBaseData != NULL )
+          {    
+            if( rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
+            {
+              k = rxData->m_ObsArray[i].index_differential;
+              if( k != -1 )
+              {
+                adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
+                adr_base += rxBaseData->m_ObsArray[k].satellite.clk;
+                
+                // Compensate for the ionospheric delay if indicated.
+                // The corrections must be determined beforehand.
+                if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
+                {
+                  // Compensate for the ionospheric delay
+                  adr_base += rxBaseData->m_ObsArray[k].corrections.prcIono;
+                }
+
+                // Compensate for the tropospheric delay if indicated.
+                // The corrections must be determined beforehand.
+                if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
+                {
+                  // Compensate for the tropospheric delay
+                  adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
+                  adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
+                }                  
+
+                range_base = rxBaseData->m_ObsArray[k].range;
+
+                // Compute the differential adr.
+                adr_measured -= adr_base;
+              }
+            }
+          }
+
+          // Calculate the computed adr = geometric range + clock offset (m)
+          // The range value and the clock offset must be determined beforehand.
+          // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
+          adr_computed = rxData->m_ObsArray[i].range - range_base;
+          adr_computed += rxData->m_pvt.clockOffset;          
+          adr_computed += rxData->m_ObsArray[i].ambiguity; 
+
+          // The misclosure is the corrected measured value minus the computed valid.
+          rxData->m_ObsArray[i].adr_misclosure = adr_measured - adr_computed;            
+
+          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            // Sanity index check.
+            if( j >= n )
+              return false;
+
+            w[j] = rxData->m_ObsArray[i].adr_misclosure;
+            j++;
+          }
+        }
+        else
+        {
+          rxData->m_ObsArray[i].adr_misclosure = 0.0;            
+        }
+      }
+    }
+    return true;
+  }
 
   bool GNSS_Estimator::DetermineDopplerMisclosures_GPSL1( 
     GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
@@ -3767,6 +3886,9 @@ namespace GNSS
     if( hasAmbiguityChangeOccurred )
       int gagagagag=101;
 
+    
+    //KO Debug: We need to replace this with a DD misclosure forming function that uses the current
+    //DD misclosure estimate and the B matrix to determine the new DD misclosure.
     result = DetermineSingleDifferenceADR_Misclosures_GPSL1(
       rxData,
       rxBaseData,
@@ -3847,6 +3969,10 @@ namespace GNSS
     PrintMatToDebug( "gpstime", timeMat );
     PrintMatToDebug( "H", H );
 
+    
+    //KO Debug: Can still use the code to form the combined code and Doppler misclosure, but then the phase
+    //misclosure needs to be added after the code and Doppler w is differenced using B.
+
     // Form the combined misclosure vector.
     result = w.Resize( n, 1 );
     if( !result )
@@ -3892,8 +4018,12 @@ namespace GNSS
 	
 	//At this point, the B matrix exists. Now we have to apply it to H, Cl and w
 	
-	w = m_RTKDD.B*w;
-	H = m_RTKDD.B*H;
+	// This line needs to be removed, once we have a DD phase misclosure forming function that works
+  // Could still use something like this to form the code and doppler misclosure sub vector
+  w = m_RTKDD.B*w;
+	
+
+  H = m_RTKDD.B*H;
 
 	//Need to remove the dt column of H, and also the dtdot columns.
 
