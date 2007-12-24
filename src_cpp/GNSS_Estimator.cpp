@@ -4131,7 +4131,7 @@ namespace GNSS
 	 //KO: Update the ambiguities: Here is where it gets tricky, 
 	 //How/where were the original values set and how are they indexed?
 
-     /*
+    
     Matrix amb;
     if( nrDifferentialAdrDD > 0 )
       amb.Resize(nrDifferentialAdrDD);
@@ -4141,13 +4141,13 @@ namespace GNSS
       {
         if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution && rxData->m_ObsArray[i].index_between_satellite_differential != -1 )
         {
-          rxData->m_ObsArray[i].ambiguity_dd = dx[rxData->m_ObsArray[i].index_ambiguity_state];
+          rxData->m_ObsArray[i].ambiguity_dd += dx[rxData->m_ObsArray[i].index_ambiguity_state_dd];
           amb[j] = rxData->m_ObsArray[i].ambiguity_dd;
           j++;
         }
       }
-      */
-
+    
+      PrintMatToDebug( "amb", amb );
 
     //for( i = 0; i < rxData->m_nrValidObs; i++ )
     //{
@@ -5617,6 +5617,27 @@ namespace GNSS
               }
               m_RTKDD.B[iA+iP+iD][ rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_adr_B ] = -1.0;
               m_RTKDD.B[iA+iP+iD][ rxData->m_ObsArray[i].index_adr_B ] = 1.0;
+              
+              
+              //Assign an initial value to the DD ambiguity based on the initial value of the SD ambiguity set above
+              // Initialize the ambiguity state [m].
+              // Compute the single difference adr measurement [m].
+              double sd_adr_current = rxData->m_ObsArray[i].adr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential].adr;
+              sd_adr_current *= GPS_WAVELENGTHL1;
+              double sd_psr_current = rxData->m_ObsArray[i].psr - rxBaseData->m_ObsArray[rxData->m_ObsArray[i].index_differential].psr;
+              
+              double sd_ambiguity_current =  sd_adr_current - sd_psr_current; // in meters!  //KO possibly replace psr with position derived range plus clock offset
+
+              // Initialize the ambiguity state [m].
+              // Compute the single difference adr measurement [m].
+              double sd_adr_base = rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].adr - rxBaseData->m_ObsArray[rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_differential].adr;
+              sd_adr_base *= GPS_WAVELENGTHL1;
+              
+              double sd_psr_base = rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].psr - rxBaseData->m_ObsArray[rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].index_differential].psr;
+              double sd_ambiguity_base =  sd_adr_base - sd_psr_base;
+
+              // Initial double difference ambiugity is the difference difference between the adr and phase of the 4 observations involved in the DD
+              rxData->m_ObsArray[i].ambiguity_dd = sd_ambiguity_current - sd_ambiguity_base;
               iA++;
             }            
           }
