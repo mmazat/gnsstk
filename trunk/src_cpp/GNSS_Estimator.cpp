@@ -1826,7 +1826,7 @@ namespace GNSS
   bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
     GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
     GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available. 
-    Matrix &subB             //!< The matrix that describes the differencing from SD to DD adr measurements
+    Matrix &subB,             //!< The matrix that describes the differencing from SD to DD adr measurements
     const unsigned n,        //!< The number of DD misclosures required.
     Matrix &w                //!< The adr misclosure vector [n x 1].
     )
