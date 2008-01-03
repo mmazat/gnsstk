@@ -64,10 +64,10 @@ ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
 ; \alpha  is referred to as the correlation time of the process.
 ; \sigma  is the standard deviation of the system noise.
 ;
-alpha_Vn,       (correlation time Vn       [s])              = 100.0
-alpha_Ve,       (correlation time Ve       [s])              = 100.0
-alpha_Vup,      (correlation time Vup      [s])              = 100.0
-alpha_ClkDrift, (correlation time ClkDrift [s])              = 10.0
+alpha_Vn,       (correlation time Vn       [s])              = 0.0001
+alpha_Ve,       (correlation time Ve       [s])              = 0.0001
+alpha_Vup,      (correlation time Vup      [s])              = 0.0001
+alpha_ClkDrift, (correlation time ClkDrift [s])              = 0.0001
 sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.01
 sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.01
 sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.01
