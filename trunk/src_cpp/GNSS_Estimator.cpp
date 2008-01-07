@@ -49,7 +49,7 @@ SUCH DAMAGE.
 #include "troposphere.h"
 #include "time_conversion.h"
 
-#define DEBUG_THE_ESTIMATOR
+//#define DEBUG_THE_ESTIMATOR
 #define GNSS_CYCLESLIP_THREADHOLD 1.5
 
 using namespace std;
@@ -5448,6 +5448,7 @@ namespace GNSS
     }
 
 
+#ifdef KO_SECTION
     if( changeOccured )
     {
       // KO_DEBUG  For now use the first active channel as the base satellite and differnce the others.
@@ -5713,6 +5714,7 @@ namespace GNSS
       // Form the double differnce state variance covariance matrix.
 
     }
+#endif // KO_SECTION
 
     return true;
   }
