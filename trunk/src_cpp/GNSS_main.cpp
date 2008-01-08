@@ -91,6 +91,9 @@ int main( int argc, char* argv[] )
   double start_time = 0.0;
   double end_time = 604800.0;
 
+  Matrix U_Bierman;
+  Matrix D_Bierman;
+
   bool wasPositionComputed = false;
   bool wasVelocityComputed = false;
 
@@ -559,7 +562,9 @@ int main( int argc, char* argv[] )
           dT,
           Estimator.m_RTK.T,
           Estimator.m_RTK.Q,
-          Estimator.m_RTK.P );
+          Estimator.m_RTK.P,
+		  U_Bierman,
+		  D_Bierman	);
         if( !result )
           return 1;
 
@@ -568,7 +573,9 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
             &rxDataRover,
             &rxDataBase,
-            Estimator.m_RTK.P );
+            Estimator.m_RTK.P,
+			U_Bierman,
+			D_Bierman	);
           if( !result )
             return 1;
         }
@@ -577,7 +584,9 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
             &rxDataRover,
             NULL,
-            Estimator.m_RTK.P );
+            Estimator.m_RTK.P,
+			U_Bierman,
+			D_Bierman	);
           if( !result )
             return 1;
         }
