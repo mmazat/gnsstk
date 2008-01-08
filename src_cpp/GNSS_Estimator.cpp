@@ -2958,8 +2958,10 @@ namespace GNSS
     const double dT,     //!< The change in time since the last update [s].
     Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
     Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-    Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-    )
+    Matrix &P,           //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+    Matrix &U_Bierman,
+	Matrix &D_Bierman    
+	)
   {
     double M = 0; // The meridian radius of curvature.
     double N = 0; // The prime vertical radius of curvature.
@@ -2967,6 +2969,8 @@ namespace GNSS
     Matrix tmpMat;
     double lat = 0;
     double h = 0;
+
+	bool ThorntonBool = true;
 
     GEODESY_ComputeMeridianRadiusOfCurvature(
       GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -3015,27 +3019,36 @@ namespace GNSS
     //
     ////
 
+	if (ThorntonBool)
+	{
+		if ( !Thornton(U_Bierman,D_Bierman,P,T,Q) )
+			return false;
+	}
+	else
+	{
 
-    ////
-    // predict the new state variance/covariance
+		////
+		// predict the new state variance/covariance
 
-    // It can be done this way:
-    // P = T * P * T.transpose() + Q;
-    // but the following is more efficient
-    tmpMat = T;
-    if( !tmpMat.Inplace_Transpose() )
-      return false;
+		// It can be done this way:
+		// P = T * P * T.transpose() + Q;
+		// but the following is more efficient
+		tmpMat = T;
+		if( !tmpMat.Inplace_Transpose() )
+			return false;
 
-    if( !P.Inplace_PreMultiply( T ) )
-      return false;
+		if( !P.Inplace_PreMultiply( T ) )
+			return false;
 
-    if( !P.Inplace_PostMultiply( tmpMat ) )
-      return false;
+		if( !P.Inplace_PostMultiply( tmpMat ) )
+			return false;
 
-    if( !P.Inplace_Add( Q ) )
-      return false;
-    //
-    ////
+		if( !P.Inplace_Add( Q ) )
+			return false;
+		//
+		////
+
+	}
 
     result = rxData.UpdatePositionAndRxClock(
       rxData.m_pvt.latitude,
@@ -4643,7 +4656,9 @@ namespace GNSS
   bool GNSS_Estimator::Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
     GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
     GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-    Matrix &P                 //!< The variance-covariance of the states.
+    Matrix &P,                //!< The variance-covariance of the states.
+	Matrix &U_Bierman,
+	Matrix &D_Bierman
   )
   {
     bool result = false;
@@ -4693,6 +4708,8 @@ namespace GNSS
     Matrix tmpMatP;
     Matrix dx(8);
     Matrix I;
+
+	bool BiermanBool = true;
 
     dx.Zero();
     
@@ -5038,13 +5055,22 @@ namespace GNSS
 
       //PrintMatToDebug( "k_i", k_i );
 
-      // Update the state variance-coveriance;
-      D = k_i;
-      if( !D.Inplace_PostMultiply( h ) )
-        return false;
-      if( !D.Inplace_PostMultiply( P ) )
-        return false;
-      P -= D;
+	  // Option to compute Kalman gain normally or with Bierman UDU factorization
+	  if (BiermanBool)
+	  {
+		if ( !Bierman(P, h, ht, C, U_Bierman, D_Bierman) )
+			return false;	
+	  }
+	  else
+	  {
+		// Update the state variance-coveriance;
+		D = k_i;
+		if( !D.Inplace_PostMultiply( h ) )
+			return false;
+		if( !D.Inplace_PostMultiply( P ) )
+			return false;
+		P -= D;
+	  }
       
       double innovation = w[index];
       k_i.Inplace_MultiplyScalar( innovation );
@@ -5719,7 +5745,395 @@ namespace GNSS
     return true;
   }
       
+  bool GNSS_Estimator::UDU(
+		Matrix &Mat,		//!< Square matrix (input)								
+		Matrix &U,			//!< Upper triangular matrix (output)					
+		Matrix &D			//!< Diagonal matrix (output)							
+		)
+  {
+	  int dimension = 0;
+	  double temp = 0.0;
 
+	// get dimension of input matrix Mat
+	if( Mat.GetNrRows() != Mat.GetNrCols() )
+	{
+		return false;
+	}
+	else
+	{
+	  dimension = Mat.GetNrRows();
+	}
+
+	// resize U and D
+	if ( !U.Resize(dimension,dimension) || !D.Resize(dimension,dimension) )
+	{
+		return false;
+	}
+	
+	// check for positive definate
+	for (int a = 0; a < dimension; a++)
+	{
+		if ( Mat[a][a] < 0 )
+			return false;
+	}
+	
+	// main UDUt algorithm
+	for (int j = (dimension-1); j >= 0; j--)
+	{
+		for (int i = j; i >= 0; i--)
+		{
+			temp = Mat[i][j];
+			if ( ((j+1) < dimension) )
+			{				
+				for (int k = (j+1); k < dimension; k++)
+				{
+					temp -= U[i][k]*D[k][k]*U[j][k];
+				}
+			}
+			if ( i == j )
+			{
+				D[j][j] = temp;
+				U[j][j] = 1;
+			}
+			else
+			{
+				U[i][j] = temp/D[j][j];
+			}
+		}
+	}
+
+	//check if U is upper triangular and D is diagonal
+	for (int b = (dimension - 1); b >= 0; b--) //rows
+	{
+		for (int c = 0; c < b; c++) //columns
+		{
+			if (U[b][c] != 0)
+				return false;
+		}
+	}
+
+	for (int d = 0; d < (dimension - 1); d++)
+	{
+		if (U[d][d] != 1)
+			return false;
+	}
+
+	for (int e = 0; e < (dimension - 1); e++)
+	{
+		for (int f = 0; f < (dimension - 1); f++)
+		{
+			if (e != f)
+			{
+				if (D[e][f] != 0)
+					return false;
+			}
+		}
+	}
+
+	return true;
+  }
+
+
+  bool GNSS_Estimator::Bierman(
+		Matrix &P,			//!< Variance-Covariance matrix P- (input)
+		Matrix &H,			//!< Matrix H (input)
+		Matrix &Ht,			//!< Matrix H transposed (input)
+		Matrix &alpha,		//!< Scalar value for (HPHt + R)^-1
+		Matrix &U,	    	//!< Resultant upper triangular matrix (output)
+		Matrix &D			//!< Resultant diagonal matrix (output)
+		)
+  {
+	  	Matrix Uminus;
+		Matrix Dminus;
+		Matrix Ubar;
+		Matrix Dbar;
+	  
+	  int Pdimension = 0;
+	  int Udimension = 0;
+
+	//  start = clock();
+	  Udimension = U.GetNrRows();
+	  Pdimension = P.GetNrRows();
+
+	  //initialization of Uminus or Dminus
+	if (Udimension == 0 || (Udimension != Pdimension))	//done if dimension of P has changed from previous epoch
+	{
+	  if ( !UDU(P, Uminus, Dminus) )
+		  return false;
+
+	  U = Uminus;
+	}
+	else	//no change in dimensionality of P from previous epoch
+	{
+		Uminus = U;
+		Dminus = D;
+	}
+
+	  if ( ! U.Inplace_Transpose() )
+		  return false;
+
+	  if ( ! U.Inplace_PreMultiply(Dminus) )
+		  return false;
+
+	  if ( ! U.Inplace_PostMultiply(Ht) )
+		  return false;
+
+	  if ( ! U.Inplace_PostMultiply(H) )
+		  return false;
+
+	  if ( ! U.Inplace_PostMultiply(Uminus) )
+		  return false;
+
+	  if ( ! U.Inplace_PostMultiply(Dminus) )
+		  return false;
+
+	if (alpha.GetNrRows() == 1)
+	{
+	  U = U/alpha[0][0];
+	}
+	else
+	{
+		Matrix tempMat;
+		tempMat = alpha.Inplace_Invert();
+		U.Inplace_PreMultiply(alpha);
+	}
+	  
+	U = Dminus - U;
+
+	  if ( !UDU(U, Ubar, Dbar) )
+		  return false;
+
+	  U = Uminus;
+	  U.Inplace_PostMultiply(Ubar);
+	  D = Dbar;
+
+	  if ( (D.GetNrRows() != P.GetNrRows() ) || ( D.GetNrCols() != P.GetNrCols() ))
+		  return false;
+
+	  P = U;
+
+	  if ( ! P.Inplace_Transpose() )
+		  return false;
+
+	  if ( ! P.Inplace_PreMultiply(D) )
+		  return false;
+
+	  if ( ! P.Inplace_PreMultiply(U) )
+		  return false;
+
+	  return true;
+  }
+
+  bool GNSS_Estimator::Thornton(
+		Matrix &UP,		//!< Upper triangular matrix of UDU of P
+		Matrix &DP,		//!< Diagonal matrix of UDU of P
+		Matrix &P,
+		Matrix &T,		//!< Transition matrix
+		Matrix &Q		//!< Process noise matrix
+		)
+  {	  
+	  int Pdimension = 0;
+	  int Qdimension = 0;
+	  int UPdimension = 0;
+	  Qdimension = 8 + static_cast<unsigned int>(m_ActiveAmbiguitiesList.size());
+	  double sigma;
+	  Matrix TU;
+	  Matrix Gbar;
+	  Matrix U;
+	  Matrix D;
+	  Matrix G;
+	  Matrix UQ;
+	  Matrix DQ;
+	  Matrix temp;
+  
+	  Pdimension = P.GetNrRows();	 
+	  Qdimension = Q.GetNrRows();
+
+	  UPdimension = UP.GetNrRows();
+
+	  if (UPdimension == 0)
+	  {
+		////
+		// predict the new state variance/covariance
+
+		// It can be done this way:
+		// P = T * P * T.transpose() + Q;
+		// but the following is more efficient
+		temp = T;
+		if( !temp.Inplace_Transpose() )
+			return false;
+
+		if( !P.Inplace_PreMultiply( T ) )
+			return false;
+
+		if( !P.Inplace_PostMultiply( temp ) )
+			return false;
+
+		if( !P.Inplace_Add( Q ) )
+			return false;
+
+	  }
+	  else
+	  {
+
+		/*G.Identity(dimensionQ);
+
+		if ( !UDU(Q, UQ, DQ) )
+		{
+			return false;
+		}*/
+
+		TU = T;
+
+		if ( ! TU.Inplace_PostMultiply(UP) )
+			return false;
+
+		P = TU;
+
+		if ( !P.Inplace_Transpose() )
+			return false;
+
+		if ( !P.Inplace_PreMultiply(DP) )
+			return false;
+
+		if ( !P.Inplace_PreMultiply(TU) )
+			return false;
+
+		if ( !P.Inplace_Add(Q) )
+			return false;
+
+		if ( !UDU(P,UP,DP) )
+			return false;
+	  }
+
+	 /* for (int i = dimensionP - 1; i >= 0; i--)
+	  {
+		  //sigma.Zero();
+		  sigma = 0.0;
+		  for (int j = 0; j < dimensionP; j++)
+		  {
+			  sigma += TU[i][j]*TU[i][j]*DP[j][j];
+		  }
+		  for (int j = 0; j < dimensionQ; j++)
+		  {
+			  //sigma += G[i][j]*G[i][j]*DQ[j][j];
+			  sigma += DQ[j][j];
+		  }
+		  D[i][i] = sigma;
+		  U[i][i] = 1;
+		  for (int j = 0; j <= i-2; j++)
+		  {
+			  sigma = 0;
+			  for (int k = 0; k <= dimensionP - 1; k++)
+			  {
+				  sigma += TU[i][k]*DP[k][k]*TU[j][k];
+			  }
+			  for (int k = 0; k <= dimensionQ - 1; k++)
+			  {
+				  //sigma += G[i][k]*DQ[k][k]*G[j][k];
+				  sigma += DQ[k][k];
+			  }
+			  U[j][i] = sigma/D[i][i];
+			  for (int k = 0; k <= dimensionP - 1; k++)
+			  {
+				  TU[j][k] -= U[j][i]*TU[i][k];
+			  }
+			  for (int k = 0; k <= dimensionQ - 1; k++)
+			  {
+				  G[j][k] -= U[j][i]*G[i][k];
+			  }
+		  }
+	  }*/
+
+	  return true;
+  }
+
+  bool GNSS_Estimator::UInverse(
+	  Matrix &U,
+	  Matrix &Mat)
+  {
+	  Matrix tmpMat;
+
+	  int MatRows;
+	  int MatCols;
+
+	  MatRows = Mat.GetNrRows();
+	  MatCols = Mat.GetNrCols();
+
+	  tmpMat = Mat;
+
+	  for (int i = 0; i < MatRows; i++)
+	  {
+		  for (int j = 0; j < MatCols; j++)
+		  {
+			  Mat[i][j] = tmpMat[i][j];
+
+			  for (int k = MatRows - 1; k > i; k--)
+			  {
+				  Mat[i][j] = Mat[i][j] - U[i][k]*Mat[k][j];
+			  }
+		  }
+	  }
+
+	  return true;
+
+  }
+
+  bool GNSS_Estimator::RDecorrelation(
+	  Matrix &R,
+	  Matrix &H,
+	  Matrix &w)
+  {
+		Matrix URt;
+		Matrix UR;
+		Matrix DR;
+		int dimension = 0;
+		bool diagonal = true;
+
+		dimension = R.GetNrRows();
+
+	/*	// check if R is already diagonal
+		for (int i = 0; i < dimension; i++)
+		{
+			for (int j = 0; j < dimension; j++)
+			{
+				if (i != j)
+				{
+					if (R[i][j] != 0)
+						diagonal = false;
+				}
+			}
+		}*/
+
+		diagonal = false;
+
+		// main decorrelation procedure
+		if (diagonal == false)
+		{
+			if ( ! UDU(R, UR, DR) )
+				return false;
+
+			R = DR;
+
+			if ( ! UInverse(UR,H) )
+				return false;
+
+			if ( ! UInverse(UR,w) )
+				return false;
+
+			/*URt = UR;
+			if ( ! URt.Inplace_Transpose() )
+				return false;
+
+			if ( ! H.Inplace_PreMultiply(URt) )
+				return false;
+
+			if ( ! w.Inplace_PreMultiply(URt) )
+				return false;*/
+		}
+
+		return true;
+  }
 
 
 
