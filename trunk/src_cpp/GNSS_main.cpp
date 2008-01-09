@@ -599,14 +599,18 @@ int main( int argc, char* argv[] )
 			  dT,
 			  Estimator.m_RTKDD.T,
 			  Estimator.m_RTKDD.Q,
-			  Estimator.m_RTKDD.P );
+			  Estimator.m_RTKDD.P,
+			  U_Bierman,
+			  D_Bierman	);
 		  if ( !result )
 			  return 1;
 
 		  result = Estimator.Kalman_Update_6StatePVGM_FloatSolution(
 			  &rxDataRover,
 			  &rxDataBase,
-			  Estimator.m_RTKDD.P );
+			  Estimator.m_RTKDD.P,
+			  U_Bierman,
+			  D_Bierman	);
 		  if ( !result )
 			  return 1;
 

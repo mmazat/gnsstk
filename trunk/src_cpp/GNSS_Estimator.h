@@ -573,8 +573,10 @@ namespace GNSS
       const double dT,     //!< The change in time since the last update [s].
       Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
       Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-      );
+      Matrix &P,           //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+      Matrix &U_Bierman,
+	  Matrix &D_Bierman
+	  );
 
 
 
@@ -603,7 +605,9 @@ namespace GNSS
 	bool Kalman_Update_6StatePVGM_FloatSolution(
       GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
       GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P                 //!< The variance-covariance of the states.
+      Matrix &P,                //!< The variance-covariance of the states.
+	  Matrix &U_Bierman,
+	  Matrix &D_Bierman
     );
 
 
