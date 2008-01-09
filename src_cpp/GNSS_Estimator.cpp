@@ -3086,8 +3086,9 @@ namespace GNSS
     const double dT,     //!< The change in time since the last update [s].
     Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
     Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-    Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-    )
+    Matrix &P,           //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+    Matrix &U_Bierman,
+	Matrix &D_Bierman	)
   {
     unsigned i = 0;
     unsigned j = 0;
@@ -3097,6 +3098,8 @@ namespace GNSS
     Matrix tmpMat;
     double lat = 0;
     double h = 0;
+
+	bool ThorntonBool = true;
 
     GEODESY_ComputeMeridianRadiusOfCurvature(
       GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -3159,23 +3162,31 @@ namespace GNSS
       }
     }
 
-    tmpMat = T;
-    if( !tmpMat.Inplace_Transpose() )
-      return false;
+	if (ThorntonBool)
+	{
+		if ( !Thornton(U_Bierman,D_Bierman,P,T,Q) )
+			return false;
+	}
+	else
+	{
+		tmpMat = T;
+		if( !tmpMat.Inplace_Transpose() )
+			return false;
 
-    if( !P.Inplace_PreMultiply( T ) )
-      return false;
+		if( !P.Inplace_PreMultiply( T ) )
+			return false;
 
-    if( !P.Inplace_PostMultiply( tmpMat ) )
-      return false;
+		if( !P.Inplace_PostMultiply( tmpMat ) )
+			return false;
 
-    if( !Q.Redim( P.nrows(), P.ncols() ) )
-      return false;
+		if( !Q.Redim( P.nrows(), P.ncols() ) )
+			return false;
 
-    if( !P.Inplace_Add( Q ) )
-      return false;
+		if( !P.Inplace_Add( Q ) )
+			return false;
     //
     ////
+	}
 
     PrintMatToDebug( "P", P );
 
@@ -3650,7 +3661,9 @@ namespace GNSS
   bool GNSS_Estimator::Kalman_Update_6StatePVGM_FloatSolution(
     GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
     GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-    Matrix &P                 //!< The variance-covariance of the states.
+    Matrix &P,                //!< The variance-covariance of the states.
+	Matrix &U_Bierman,
+	Matrix &D_Bierman
   )
   {
     bool result = false;
@@ -3692,6 +3705,7 @@ namespace GNSS
     Matrix H_p;
     Matrix H_v;
     Matrix H;
+	Matrix Ht;
     Matrix r; // A vector corresponding to the diagonal elements of R.
     Matrix R_p;
     Matrix R_v;
@@ -3704,6 +3718,9 @@ namespace GNSS
     Matrix tmpMatP;
     Matrix dx(8);
     Matrix I;
+
+	int Udimension = 0;
+	bool BiermanBool = true;
 
     dx.Zero();
     
@@ -4033,10 +4050,9 @@ namespace GNSS
 	
 	// This line needs to be removed, once we have a DD phase misclosure forming function that works
   // Could still use something like this to form the code and doppler misclosure sub vector
-  w = m_RTKDD.B*w;
+    w = m_RTKDD.B*w;
 	
-
-  H = m_RTKDD.B*H;
+    H = m_RTKDD.B*H;
 
 	//Need to remove the dt column of H, and also the dtdot columns.
 
@@ -4060,31 +4076,98 @@ namespace GNSS
 			H[i + nrPDD + nrDDD][6 + i] = 1.0;
 	}
 
+	/* NOT NECESSARY YET, SINCE THIS IS NOT SEQUENTIAL 
+    // measurement decorrelation
+	if ( ! RDecorrelation(R,H,w) )
+		return false; */
 
-	 // Compute the Kalman gain matrix.
-    // K = P*Ht*(H*P*Ht+R)^-1
-    // do (H*P*Ht+R)^-1 first
-	tmpMat = H*m_RTKDD.P*H.Transpose() + R;
-    result = tmpMat.Inplace_Invert();
-    if( !result )
-      return false;    
-	K = m_RTKDD.P*H.Transpose()*tmpMat;
-    
+	Ht = H;
+	if ( !Ht.Inplace_Transpose() )
+		return false;
+
+	Udimension = U_Bierman.GetNrRows();
+
+	if (BiermanBool && (Udimension != 0))
+	{
+		Matrix Ut;
+
+		Ut = U_Bierman;
+		if ( ! Ut.Inplace_Transpose() )
+			return false;
+		
+		// Compute the Kalman gain matrix.
+		// K = (UDUt)*Ht*(H*(UDUt)*Ht+R)^-1
+		// do (H*(UDUt)*Ht+R)^-1 first
+ 
+		tmpMat = Ht;
+
+		if ( ! tmpMat.Inplace_PreMultiply(Ut) )
+			return false;
+
+		if ( ! tmpMat.Inplace_PreMultiply(D_Bierman) )
+			return false;
+
+		if ( ! tmpMat.Inplace_PreMultiply(U_Bierman) )
+			return false;
+
+		if ( ! tmpMat.Inplace_PreMultiply(H) )
+			return false;
+
+		if ( !tmpMat.Inplace_Add(R) )
+			return false;
+
+		K = tmpMat;
+
+		if ( ! K.Inplace_Invert() )
+			return false;
+
+		if ( ! K.Inplace_PreMultiply(Ht) )
+			return false;
+
+		if ( ! K.Inplace_PreMultiply(Ut) )
+			return false;
+
+		if ( ! K.Inplace_PreMultiply(D_Bierman) )
+			return false;
+
+		if ( ! K.Inplace_PreMultiply(U_Bierman) )
+			return false;
+		
+	}
+	else
+	{
+		// Compute the Kalman gain matrix.
+		// K = P*Ht*(H*P*Ht+R)^-1
+		// do (H*P*Ht+R)^-1 first
+		tmpMat = H*m_RTKDD.P*H.Transpose() + R;
+		result = tmpMat.Inplace_Invert();
+		if( !result )
+			return false;    
+		K = m_RTKDD.P*H.Transpose()*tmpMat;
+	}
 
     // Compute the change in states due to the innovations (misclosures).
     dx = K*w;
 
-    
+	// Option to compute Kalman gain normally or with Bierman UDU factorization
+	if (BiermanBool)
+	{		
+		if ( !Bierman(m_RTKDD.P, H, Ht, tmpMat, U_Bierman, D_Bierman) )
+			return false;	
+	}
+	else
+	{   
 
-    // Compute the updated state variance-covariance matrix, P.
-	result = I.Resize( K.nrows(), K.nrows() );
-    if( !result )
-      return false;
-    result = I.Identity();
-    if( !result )
-      return false;
+		// Compute the updated state variance-covariance matrix, P.
+		result = I.Resize( K.nrows(), K.nrows() );
+		if( !result )
+			return false;
+		result = I.Identity();
+		if( !result )
+			return false;
 
-    m_RTKDD.P = (I - K * H)*m_RTKDD.P;
+		m_RTKDD.P = (I - K * H)*m_RTKDD.P;
+	}
     
     PrintMatToDebug( "dx", dx );
     PrintMatToDebug( "P", m_RTKDD.P );
@@ -5004,7 +5087,7 @@ namespace GNSS
     }
 
     PrintMatToDebug( "w", w );
-    
+
     // The corrections for lat and lon, dx_p, must be converted to [rad] from [m].
     GEODESY_ComputePrimeVerticalRadiusOfCurvature(
       GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -5936,7 +6019,7 @@ namespace GNSS
 	  int Qdimension = 0;
 	  int UPdimension = 0;
 	  Qdimension = 8 + static_cast<unsigned int>(m_ActiveAmbiguitiesList.size());
-	  double sigma;
+	  //double sigma;
 	  Matrix TU;
 	  Matrix Gbar;
 	  Matrix U;
