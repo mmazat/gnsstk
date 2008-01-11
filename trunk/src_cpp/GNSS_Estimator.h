@@ -563,20 +563,16 @@ namespace GNSS
       const double dT,     //!< The change in time since the last update [s].
       Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
       Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &P,            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-      Matrix &U_Bierman,
-	  Matrix &D_Bierman
-	  );
+      Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+      );
 
     bool PredictAhead_6StatePVGM_Float(
       GNSS_RxData &rxData, //!< The receiver data.
       const double dT,     //!< The change in time since the last update [s].
       Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
       Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &P,           //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-      Matrix &U_Bierman,
-	  Matrix &D_Bierman
-	  );
+      Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
+      );
 
 
 
@@ -597,17 +593,13 @@ namespace GNSS
     bool Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
       GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
       GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P,                //!< The variance-covariance of the states.
-      Matrix &U_Bierman,
-	  Matrix &D_Bierman
+      Matrix &P                 //!< The variance-covariance of the states.
     );
 
 	bool Kalman_Update_6StatePVGM_FloatSolution(
       GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
       GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P,                //!< The variance-covariance of the states.
-	  Matrix &U_Bierman,
-	  Matrix &D_Bierman
+      Matrix &P                 //!< The variance-covariance of the states.
     );
 
 
@@ -657,56 +649,6 @@ namespace GNSS
       Matrix &P,               //!< The state variance-covariance matrix.
       bool& changeOccured 
       );
-
-	/// \brief	Takes a square matrix and performs U*D*transpose(U)
-	///
-	/// \return true if successful, false if error.
-	bool UDU(
-		Matrix &Mat,		//!< Square matrix (input)								[n x n].
-		Matrix &U,			//!< Upper triangular matrix (output)					[n x n].
-		Matrix &D			//!< Diagonal matrix (output)							[n x n].
-		);
-
-	/// \brief Performs UDU on variance covariance matrix P
-	///
-	/// \return true if successful, falst if error.
-	bool Bierman(
-		Matrix &P,			//!< Variance-Covariance matrix P- (input)
-		Matrix &H,			//!< Matrix H (input)
-		Matrix &Ht,			//!< Matrix H transposed (input)
-		Matrix &alpha,		//!< Scalar value for (HP-Ht + R)^-1
-		Matrix &Uplus,		//!< Resultant upper triangular matrix (output)
-		Matrix &Dplus		//!< Resultant diagonal matrix (output)
-		);
-
-	/// \brief Performs decorrelation on the process noise matrix Q
-	///
-	/// \return true if successful, false if error.
-	bool Thornton(
-		Matrix &UP,		//!< Upper triangular matrix of UDU of P
-		Matrix &DP,		//!< Diagonal matrix of UDU of P
-		Matrix &P,
-		Matrix &T,	//!< Transition matrix
-		Matrix &Q		//!< Process noise matrix
-		);
-
-	/// \brief Performs inversion on an upper triangular matrix without
-	/// explicitly inverting the matrix. Uses backwards substitution
-	/// and saves processing time.
-	/// U*H' = H  ---> H' = inverse(U)*H
-	///
-	/// \return true if successful, false if error.
-  bool UInverse(
-	  Matrix &U,
-	  Matrix &Mat);
-
-	/// \brief Performs decorrelation on measurement noise matrix R
-	///
-	/// \return true if successful, false if error.
-    bool RDecorrelation(
-	    Matrix &R,
-	    Matrix &H,
-	    Matrix &w);
 
     // Publically accessable data
   public: 
