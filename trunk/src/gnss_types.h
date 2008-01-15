@@ -249,6 +249,9 @@ typedef struct
   
   double adr_misclosure;         //!< The measured ADR minus the computed ADR estimate [m]. This is likely a differential quantity.
 
+  double adr_misclosure_dd;     //!< The measured ADR minuse the computed ADR estimate + the DD ambiugity estimate
+  double adr_misclosure_temp;   //!< A temporary variable used to compute adr_misclosure_dd above/
+
   double H_p[3]; //!< The design matrix row relating the pseudorange measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
   double H_v[3]; //!< The design matrix row relating the Doppler measurements to the velocity solution. dD/d(lat), dD/d(lon), dD/d(hgt).
 
