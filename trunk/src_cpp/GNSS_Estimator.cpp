@@ -49,10 +49,9 @@ SUCH DAMAGE.
 #include "troposphere.h"
 #include "time_conversion.h"
 
-//#define DEBUG_THE_ESTIMATOR
+#define DEBUG_THE_ESTIMATOR
 #define GNSS_CYCLESLIP_THREADHOLD 1.5
-//#define DC_Bierman
-//#define KO_SECTION
+#define KO_SECTION
 
 using namespace std;
 
@@ -1920,28 +1919,59 @@ namespace GNSS
           // The range value and the clock offset must be determined beforehand.
           // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
           adr_computed = rxData->m_ObsArray[i].range - range_base;
-          adr_computed += rxData->m_pvt.clockOffset;          
-          adr_computed += rxData->m_ObsArray[i].ambiguity; 
+          
+          //adr_computed += rxData->m_pvt.clockOffset;          
+          //adr_computed += rxData->m_ObsArray[i].ambiguity; 
 
-          // The misclosure is the corrected measured value minus the computed valid.
-          rxData->m_ObsArray[i].adr_misclosure = adr_measured - adr_computed;            
+          // The misclosure is the corrected measured value minus the computed valid but not including rx clock or SD ambiguity.
+          rxData->m_ObsArray[i].adr_misclosure_temp = adr_measured - adr_computed;            
 
-          if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-          {
+
+          //if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          //{
             // Sanity index check.
-            if( j >= n )
-              return false;
+            //if( j >= n )
+              //return false;
 
-            w[j] = rxData->m_ObsArray[i].adr_misclosure;
-            j++;
-          }
+            //w[j] = rxData->m_ObsArray[i].adr_misclosure_temp;
+            //j++;
+          //}
         }
         else
         {
-          rxData->m_ObsArray[i].adr_misclosure = 0.0;            
+          rxData->m_ObsArray[i].adr_misclosure_temp = 0.0;            
+        }
+      }
+    }  //end for each observation
+    j = 0;
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( rxData->m_ObsArray[i].flags.isActive )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
+        {
+          if (rxData->m_ObsArray[i].index_between_satellite_differential == -1)
+            continue;
+          else
+          {
+            rxData->m_ObsArray[i].adr_misclosure_dd = rxData->m_ObsArray[i].adr_misclosure_temp -
+              rxData->m_ObsArray[rxData->m_ObsArray[i].index_between_satellite_differential].adr_misclosure_temp + rxData->m_ObsArray[i].ambiguity_dd;
+
+            if (j > n-1)
+              int crap = 1;
+            w[j] = rxData->m_ObsArray[i].adr_misclosure_dd;
+            j++;
+
+          }
+
+        }
+        else
+        {
+          rxData->m_ObsArray[i].adr_misclosure_dd = 0.0; 
         }
       }
     }
+
     return true;
   }
 
@@ -3012,14 +3042,7 @@ namespace GNSS
     rxData.m_pvt.clockOffset += T[6][7] * rxData.m_pvt.clockDrift;  // for small dT, this should be: clk += dT * clkrate
     rxData.m_pvt.clockDrift  *= T[7][7];  // for small dT, this should be clkdrift = clkdrift
 
-#ifdef DC_Bierman
-
-    if ( !Thornton(m_RTK.U_Bierman,m_RTK.D_Bierman,P,T,Q) )
-    {
-			return false;
-    }
-
-#else
+   
 
     //
     ////
@@ -3045,7 +3068,7 @@ namespace GNSS
       return false;
     //
     ////
-#endif
+
     result = rxData.UpdatePositionAndRxClock(
       rxData.m_pvt.latitude,
       rxData.m_pvt.longitude,
@@ -3155,13 +3178,6 @@ namespace GNSS
       }
     }
 
-#ifdef DC_Bierman
-    		
-    if ( !Thornton(m_RTKDD.U_Bierman,m_RTKDD.D_Bierman,P,T,Q) )
-    {
-			return false;
-    }
-#else
     tmpMat = T;
     if( !tmpMat.Inplace_Transpose() )
       return false;
@@ -3179,7 +3195,6 @@ namespace GNSS
       return false;
     //
     ////
-#endif
 
     PrintMatToDebug( "P", P );
 
@@ -3696,7 +3711,6 @@ namespace GNSS
     Matrix H_p;
     Matrix H_v;
     Matrix H;
-    Matrix Ht;
     Matrix r; // A vector corresponding to the diagonal elements of R.
     Matrix R_p;
     Matrix R_v;
@@ -3709,8 +3723,6 @@ namespace GNSS
     Matrix tmpMatP;
     Matrix dx(8);
     Matrix I;
-
-    int Udimension = 0;
 
     dx.Zero();
     
@@ -4042,6 +4054,25 @@ namespace GNSS
   // Could still use something like this to form the code and doppler misclosure sub vector
   w = m_RTKDD.B*w;
 	
+  
+  Matrix w_adrDD;
+  result = DetermineDoubleDifferenceADR_Misclosures_GPSL1(
+    rxData,
+    rxBaseData,
+    m_RTKDD.SubB,
+    nrDifferentialAdrDD,
+    w_adrDD ); 
+
+  j = 0;
+  for (i = nrPDD + nrDDD; i < w.nrows(); i++)
+  {
+    w[i] = w_adrDD[j];
+    j++;
+  }
+
+  PrintMatToDebug("w_adrDD",w_adrDD);
+
+  PrintMatToDebug("w",w);
 
   H = m_RTKDD.B*H;
 
@@ -4067,66 +4098,6 @@ namespace GNSS
 			H[i + nrPDD + nrDDD][6 + i] = 1.0;
 	}
 
-#ifdef DC_Bierman
-  	/* NOT NECESSARY YET, SINCE THIS IS NOT SEQUENTIAL 
-    // measurement decorrelation
-	if ( ! RDecorrelation(R,H,w) )
-		return false; */
-
-	Ht = H;
-	if ( !Ht.Inplace_Transpose() )
-		return false;
-
-	Udimension = m_RTKDD.U_Bierman.GetNrRows();
-
-	if (Udimension != 0)
-	{
-		Matrix Ut;
-
-		Ut = m_RTKDD.U_Bierman;
-		if ( ! Ut.Inplace_Transpose() )
-			return false;
-		
-		// Compute the Kalman gain matrix.
-		// K = (UDUt)*Ht*(H*(UDUt)*Ht+R)^-1
-		// do (H*(UDUt)*Ht+R)^-1 first
- 
-		tmpMat = Ht;
-
-		if ( ! tmpMat.Inplace_PreMultiply(Ut) )
-			return false;
-
-		if ( ! tmpMat.Inplace_PreMultiply(m_RTKDD.D_Bierman) )
-			return false;
-
-		if ( ! tmpMat.Inplace_PreMultiply(m_RTKDD.U_Bierman) )
-			return false;
-
-		if ( ! tmpMat.Inplace_PreMultiply(H) )
-			return false;
-
-		if ( !tmpMat.Inplace_Add(R) )
-			return false;
-
-		K = tmpMat;
-
-		if ( ! K.Inplace_Invert() )
-			return false;
-
-		if ( ! K.Inplace_PreMultiply(Ht) )
-			return false;
-
-		if ( ! K.Inplace_PreMultiply(Ut) )
-			return false;
-
-		if ( ! K.Inplace_PreMultiply(m_RTKDD.D_Bierman) )
-			return false;
-
-		if ( ! K.Inplace_PreMultiply(m_RTKDD.U_Bierman) )
-			return false;
-  }
-		
-#else
 
 	 // Compute the Kalman gain matrix.
     // K = P*Ht*(H*P*Ht+R)^-1
@@ -4136,17 +4107,11 @@ namespace GNSS
     if( !result )
       return false;    
 	K = m_RTKDD.P*H.Transpose()*tmpMat;
-#endif
+    
 
     // Compute the change in states due to the innovations (misclosures).
     dx = K*w;
 
-#ifdef DC_Bierman
-    if ( !Bierman(m_RTKDD.P, H, Ht, tmpMat, m_RTKDD.U_Bierman, m_RTKDD.D_Bierman) )
-    {
-			return false;	
-    }
-#else
     
 
     // Compute the updated state variance-covariance matrix, P.
@@ -4158,8 +4123,7 @@ namespace GNSS
       return false;
 
     m_RTKDD.P = (I - K * H)*m_RTKDD.P;
-#endif
-
+    
     PrintMatToDebug( "dx", dx );
     PrintMatToDebug( "P", m_RTKDD.P );
     PrintMatToDebug( "K", K );
@@ -5125,12 +5089,6 @@ namespace GNSS
 
       //PrintMatToDebug( "k_i", k_i );
 
-#ifdef DC_Bierman
-		if ( !Bierman(P, h, ht, C, m_RTK.U_Bierman, m_RTK.D_Bierman) )
-    {
-			return false;
-    }
-#else
       // Update the state variance-coveriance;
       D = k_i;
       if( !D.Inplace_PostMultiply( h ) )
@@ -5138,8 +5096,7 @@ namespace GNSS
       if( !D.Inplace_PostMultiply( P ) )
         return false;
       P -= D;
-#endif
-
+      
       double innovation = w[index];
       k_i.Inplace_MultiplyScalar( innovation );
       dx = k_i;
@@ -5543,7 +5500,7 @@ namespace GNSS
 
 
 #ifdef KO_SECTION
-    if( changeOccured )
+    //if( changeOccured ) //need this whether or not change has occured.
     {
       // KO_DEBUG  For now use the first active channel as the base satellite and differnce the others.
       int ch_index_base = -1;
@@ -5570,6 +5527,7 @@ namespace GNSS
         return true;
       }
 
+      j = 0;
       // Set the differencing indices between channels.
       for( i = 0; i < rxData->m_nrValidObs; i++ )
       {
@@ -5584,6 +5542,9 @@ namespace GNSS
             if( i != ch_index_base )
             {
               rxData->m_ObsArray[i].index_between_satellite_differential = ch_index_base;
+              //KYLE CHANGE 11JAN2008 CHECK THIS
+              rxData->m_ObsArray[i].index_ambiguity_state_dd = 6 + j;
+              j++;
             }
           }
         }
@@ -5812,410 +5773,7 @@ namespace GNSS
 
     return true;
   }
-
-  bool GNSS_Estimator::UDU(
-		Matrix &Mat,		//!< Square matrix (input)								
-		Matrix &U,			//!< Upper triangular matrix (output)					
-		Matrix &D			//!< Diagonal matrix (output)							
-		)
-  {
-	  int dimension = 0;
-	  double temp = 0.0;
-
-	// get dimension of input matrix Mat
-	if( Mat.GetNrRows() != Mat.GetNrCols() )
-	{
-		return false;
-	}
-	else
-	{
-	  dimension = Mat.GetNrRows();
-	}
-
-	// resize U and D
-	if ( !U.Resize(dimension,dimension) || !D.Resize(dimension,dimension) )
-	{
-		return false;
-	}
-	
-	 /* for (int i =0; i <dimension; i++)
-	  {
-		  for (int j=0; j<dimension; j++)
-		  {
-			  printf(" %f ", Mat[i][j]);
-		  }
-		  printf("\n");
-	  }
-
-	  printf("\n\n\n");*/
-
-	// check for positive definate
-	for (int a = 0; a < dimension; a++)
-	{
-		if ( Mat[a][a] < 0 )
-		{
-			double value = Mat[a][a];
-			return false;
-		}
-	}
-	
-	// main UDUt algorithm
-	for (int j = (dimension-1); j >= 0; j--)
-	{
-		for (int i = j; i >= 0; i--)
-		{
-			temp = Mat[i][j];
-			if ( ((j+1) < dimension) )
-			{				
-				for (int k = (j+1); k < dimension; k++)
-				{
-					temp -= U[i][k]*D[k][k]*U[j][k];
-				}
-			}
-			if ( i == j )
-			{
-				D[j][j] = temp;
-				U[j][j] = 1;
-			}
-			else
-			{
-				U[i][j] = temp/D[j][j];
-			}
-		}
-	}
-
-	//check if U is upper triangular and D is diagonal
-	for (int b = (dimension - 1); b >= 0; b--) //rows
-	{
-		for (int c = 0; c < b; c++) //columns
-		{
-			if (U[b][c] != 0)
-				return false;
-		}
-	}
-
-	for (int d = 0; d < (dimension - 1); d++)
-	{
-		if (U[d][d] != 1)
-			return false;
-	}
-
-	for (int e = 0; e < (dimension - 1); e++)
-	{
-		for (int f = 0; f < (dimension - 1); f++)
-		{
-			if (e != f)
-			{
-				if (D[e][f] != 0)
-					return false;
-			}
-		}
-	}
-
-	return true;
-  }
-
-
-  bool GNSS_Estimator::Bierman(
-		Matrix &P,			//!< Variance-Covariance matrix P- (input)
-		Matrix &H,			//!< Matrix H (input)
-		Matrix &Ht,			//!< Matrix H transposed (input)
-		Matrix &alpha,		//!< Scalar value for (HPHt + R)^-1
-		Matrix &U,	    	//!< Resultant upper triangular matrix (output)
-		Matrix &D			//!< Resultant diagonal matrix (output)
-		)
-  {
-	  	Matrix Uminus;
-		Matrix Dminus;
-		Matrix Ubar;
-		Matrix Dbar;
-	  
-	  int Pdimension = 0;
-	  int Udimension = 0;
-
-	//  start = clock();
-	  Udimension = U.GetNrRows();
-	  Pdimension = P.GetNrRows();
-
-	  //initialization of Uminus or Dminus
-	if (Udimension == 0 || (Udimension != Pdimension))	//done if dimension of P has changed from previous epoch
-	{
-	  if ( !UDU(P, Uminus, Dminus) )
-		  return false;
-
-	  U = Uminus;
-	}
-	else	//no change in dimensionality of P from previous epoch
-	{
-		Uminus = U;
-		Dminus = D;
-	}
-
-	  if ( ! U.Inplace_Transpose() )
-		  return false;
-
-	  if ( ! U.Inplace_PreMultiply(Dminus) )
-		  return false;
-
-	  if ( ! U.Inplace_PostMultiply(Ht) )
-		  return false;
-
-	  if ( ! U.Inplace_PostMultiply(H) )
-		  return false;
-
-	  if ( ! U.Inplace_PostMultiply(Uminus) )
-		  return false;
-
-	  if ( ! U.Inplace_PostMultiply(Dminus) )
-		  return false;
-
-	if (alpha.GetNrRows() == 1)
-	{
-	  U = U/alpha[0][0];
-	}
-	else
-	{
-		Matrix tempMat;
-		tempMat = alpha.Inplace_Invert();
-		U.Inplace_PreMultiply(alpha);
-	}
-	  
-	U = Dminus - U;
-
-	  if ( !UDU(U, Ubar, Dbar) )
-		  return false;
-
-	  U = Uminus;
-	  U.Inplace_PostMultiply(Ubar);
-	  D = Dbar;
-
-	  if ( (D.GetNrRows() != P.GetNrRows() ) || ( D.GetNrCols() != P.GetNrCols() ))
-		  return false;
-
-	  P = U;
-
-	  if ( ! P.Inplace_Transpose() )
-		  return false;
-
-	  if ( ! P.Inplace_PreMultiply(D) )
-		  return false;
-
-	  if ( ! P.Inplace_PreMultiply(U) )
-		  return false;
-
-	  return true;
-  }
-
-  bool GNSS_Estimator::Thornton(
-		Matrix &UP,		//!< Upper triangular matrix of UDU of P
-		Matrix &DP,		//!< Diagonal matrix of UDU of P
-		Matrix &P,
-		Matrix &T,		//!< Transition matrix
-		Matrix &Q		//!< Process noise matrix
-		)
-  {	  
-	  int Pdimension = 0;
-	  int Qdimension = 0;
-	  int UPdimension = 0;
-	  Qdimension = 8 + static_cast<unsigned int>(m_ActiveAmbiguitiesList.size());
-	  //double sigma;
-	  Matrix TU;
-	  Matrix Gbar;
-	  Matrix U;
-	  Matrix D;
-	  Matrix G;
-	  Matrix UQ;
-	  Matrix DQ;
-	  Matrix temp;
-  
-	  Pdimension = P.GetNrRows();	 
-	  Qdimension = Q.GetNrRows();
-
-	  UPdimension = UP.GetNrRows();
-
-	  if (UPdimension == 0)
-	  {
-		////
-		// predict the new state variance/covariance
-
-		// It can be done this way:
-		// P = T * P * T.transpose() + Q;
-		// but the following is more efficient
-		temp = T;
-		if( !temp.Inplace_Transpose() )
-			return false;
-
-		if( !P.Inplace_PreMultiply( T ) )
-			return false;
-
-		if( !P.Inplace_PostMultiply( temp ) )
-			return false;
-
-		if( !P.Inplace_Add( Q ) )
-			return false;
-
-	  }
-	  else
-	  {
-
-		/*G.Identity(dimensionQ);
-
-		if ( !UDU(Q, UQ, DQ) )
-		{
-			return false;
-		}*/
-
-		TU = T;
-
-		if ( ! TU.Inplace_PostMultiply(UP) )
-			return false;
-
-		P = TU;
-
-		if ( !P.Inplace_Transpose() )
-			return false;
-
-		if ( !P.Inplace_PreMultiply(DP) )
-			return false;
-
-		if ( !P.Inplace_PreMultiply(TU) )
-			return false;
-
-		if ( !P.Inplace_Add(Q) )
-			return false;
-
-		if ( !UDU(P,UP,DP) )
-			return false;
-	  }
-
-	 /* for (int i = dimensionP - 1; i >= 0; i--)
-	  {
-		  //sigma.Zero();
-		  sigma = 0.0;
-		  for (int j = 0; j < dimensionP; j++)
-		  {
-			  sigma += TU[i][j]*TU[i][j]*DP[j][j];
-		  }
-		  for (int j = 0; j < dimensionQ; j++)
-		  {
-			  //sigma += G[i][j]*G[i][j]*DQ[j][j];
-			  sigma += DQ[j][j];
-		  }
-		  D[i][i] = sigma;
-		  U[i][i] = 1;
-		  for (int j = 0; j <= i-2; j++)
-		  {
-			  sigma = 0;
-			  for (int k = 0; k <= dimensionP - 1; k++)
-			  {
-				  sigma += TU[i][k]*DP[k][k]*TU[j][k];
-			  }
-			  for (int k = 0; k <= dimensionQ - 1; k++)
-			  {
-				  //sigma += G[i][k]*DQ[k][k]*G[j][k];
-				  sigma += DQ[k][k];
-			  }
-			  U[j][i] = sigma/D[i][i];
-			  for (int k = 0; k <= dimensionP - 1; k++)
-			  {
-				  TU[j][k] -= U[j][i]*TU[i][k];
-			  }
-			  for (int k = 0; k <= dimensionQ - 1; k++)
-			  {
-				  G[j][k] -= U[j][i]*G[i][k];
-			  }
-		  }
-	  }*/
-
-	  return true;
-  }
-
-  bool GNSS_Estimator::UInverse(
-	  Matrix &U,
-	  Matrix &Mat)
-  {
-	  Matrix tmpMat;
-
-	  int MatRows;
-	  int MatCols;
-
-	  MatRows = Mat.GetNrRows();
-	  MatCols = Mat.GetNrCols();
-
-	  tmpMat = Mat;
-
-	  for (int i = 0; i < MatRows; i++)
-	  {
-		  for (int j = 0; j < MatCols; j++)
-		  {
-			  Mat[i][j] = tmpMat[i][j];
-
-			  for (int k = MatRows - 1; k > i; k--)
-			  {
-				  Mat[i][j] = Mat[i][j] - U[i][k]*Mat[k][j];
-			  }
-		  }
-	  }
-
-	  return true;
-
-  }
-
-  bool GNSS_Estimator::RDecorrelation(
-	  Matrix &R,
-	  Matrix &H,
-	  Matrix &w)
-  {
-		Matrix URt;
-		Matrix UR;
-		Matrix DR;
-		int dimension = 0;
-		bool diagonal = true;
-
-		dimension = R.GetNrRows();
-
-	/*	// check if R is already diagonal
-		for (int i = 0; i < dimension; i++)
-		{
-			for (int j = 0; j < dimension; j++)
-			{
-				if (i != j)
-				{
-					if (R[i][j] != 0)
-						diagonal = false;
-				}
-			}
-		}*/
-
-		diagonal = false;
-
-		// main decorrelation procedure
-		if (diagonal == false)
-		{
-			if ( ! UDU(R, UR, DR) )
-				return false;
-
-			R = DR;
-
-			if ( ! UInverse(UR,H) )
-				return false;
-
-			if ( ! UInverse(UR,w) )
-				return false;
-
-			/*URt = UR;
-			if ( ! URt.Inplace_Transpose() )
-				return false;
-
-			if ( ! H.Inplace_PreMultiply(URt) )
-				return false;
-
-			if ( ! w.Inplace_PreMultiply(URt) )
-				return false;*/
-		}
-
-		return true;
-  }
+      
 
 
 
