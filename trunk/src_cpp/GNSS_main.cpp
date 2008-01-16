@@ -628,6 +628,7 @@ int main( int argc, char* argv[] )
       printf( supermsg );
       */
 
+      
       rxDataRover.m_prev_pvt = rxDataRover.m_pvt;
       rxDataBase.m_prev_pvt = rxDataBase.m_pvt;
 
