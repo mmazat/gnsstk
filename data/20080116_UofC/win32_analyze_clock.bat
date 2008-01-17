@@ -1,0 +1,1 @@
+..\..\bin\plot2d.exe results.txt 1 6 -title "Clock Offset" -gpslabel 1 14 -ylabel "clock offset (m)" -slabel 1 "clk offset" -out clockoffset.bmp
