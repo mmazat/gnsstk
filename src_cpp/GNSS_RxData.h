@@ -53,6 +53,19 @@ SUCH DAMAGE.
 /// by the receiver object in decoding data.
 #define GNSS_RXDATA_MSG_LENGTH  (16384)
 
+/// GDM - relates to a 'hack' to obtain an UWB range measurement from a 
+/// comma delimited input file as an additional 'satellite measurement',
+/// GNSS_structMeasurement, with the satellite position being that of the
+/// reference station. This works well for the setup when both the 
+/// reference and rover receivers have the same UWB mounts and antenna heights 
+/// and similar mount alignments.
+#define GDM_UWB_RANGE_HACK
+
+#ifdef GDM_UWB_RANGE_HACK
+#include "Matrix.h"
+using namespace Zenautics; // for Matrix
+#endif
+
 
 namespace GNSS
 {
@@ -605,6 +618,60 @@ namespace GNSS
 
     /// A boolean to indicate if the ionospheric correction is to be disabled for all satellites.
     bool m_DisableIonoCorrection;
+
+#ifdef GDM_UWB_RANGE_HACK
+
+    /// \brief  The UWB range hack data.
+    /// To use GDM_UWB_RANGE_HACK
+    /// The user must set the hack on
+    /// \code
+    /// GNSS_RxData rx; 
+    /// bool result = rx.EnableAndLoadUWBData( "uwb.csv", reference_x, reference_y, reference_z );
+    /// \endcode
+    /// The UWB range is loaded all at once into a Matrix
+    /// 
+    struct struct_UWB
+    {
+      bool isHackOn;       //!< A boolean to indicate if the UWB range hack is enabled for this receiver data.
+      char  filepath[512]; //!< The path to the UWB range data.
+      double x;  //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double y;  //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double z;  //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+
+      /// The UWB range data is loaded into this matrix. After loading the matrix has
+      /// column 0 = gps time of week (s), 
+      /// column 1 = gps week (weeks), 
+      /// column 2 = range (m) - converted from range in feet
+      Matrix data;
+
+      /// A boolean to indicate if there is a valid UWB range for the current processing epoch.
+      bool isValidForThisEpoch;
+
+      /// The index of the measurement in the obs array if available, -1 if not.
+      int index_in_obs_array;
+    
+      /// A simple constructor.
+      struct_UWB() : isHackOn(false), x(0.0), y(0.0), z(0.0), isValidForThisEpoch(false), index_in_obs_array(-1)
+      {
+        filepath[0] = '\0';
+      };
+    };
+
+    /// \brief  The UWB range data. see struct_UWB for details.
+    struct_UWB m_UWB;
+
+    /// Enable the use of UWB range measurements. Load all the UWB data.
+    bool EnableAndLoadUWBData( 
+      const char* filepath,  //!< The path to the UWB range data.
+      const double x, //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      const double y, //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      const double z, //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      const bool isStatic //!< If the data is static, measurement outliers based on a somewaht ad-hoc 2 sigma rejection are removed.
+      );
+
+    /// \brief  Load the UWB range for the current epoch as an additional measurement in m_ObsArray.
+    bool LoadUWBRangeForThisEpoch();
+#endif
 
   protected:
 

@@ -200,6 +200,15 @@ namespace GNSS
     /// The locktime mask [s].
     double m_locktimeMask;
 
+#ifdef GDM_UWB_RANGE_HACK    
+    /// The path to an UWB range data file.
+    /// containing:
+    /// column 0  = gps time of week (s)
+    /// column 1  = gps week (weeks)
+    /// column 14 = range (feet) * 100
+    std::string m_UWBFilePath;
+#endif
+
   };
 
 } // end namespace Zenautics

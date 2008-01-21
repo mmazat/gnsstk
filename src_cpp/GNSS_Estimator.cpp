@@ -289,6 +289,11 @@ namespace GNSS
         }
       }
   
+#ifdef GDM_UWB_RANGE_HACK
+      if( rxData->m_UWB.isValidForThisEpoch )
+        n++;
+#endif
+
       result = DetermineDesignMatrixForThePositionSolution_GPSL1(
         *rxData,
         n,
@@ -317,6 +322,11 @@ namespace GNSS
         w_p );
       if( !result )
         return false;
+
+      PrintMatToDebug( "H_p", H_p );
+      PrintMatToDebug( "W_p", W_p );
+      PrintMatToDebug( "R_p", R_p );
+      PrintMatToDebug( "w_p", w_p );
 
       // Compute Ht_p.
       Ht_p = H_p;
@@ -955,6 +965,28 @@ namespace GNSS
 
           nrValidEph++;
         }
+#ifdef GDM_UWB_RANGE_HACK
+        else if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+           // Compute the rover station geometric range and range rate.
+          GPS_ComputeUserToSatelliteRangeAndRangeRate(
+            rxData->m_pvt.x,
+            rxData->m_pvt.y,
+            rxData->m_pvt.z,
+            rxData->m_pvt.vx,
+            rxData->m_pvt.vy,
+            rxData->m_pvt.vz,
+            rxData->m_ObsArray[i].satellite.x,
+            rxData->m_ObsArray[i].satellite.y,
+            rxData->m_ObsArray[i].satellite.z,
+            rxData->m_ObsArray[i].satellite.vx,
+            rxData->m_ObsArray[i].satellite.vy,
+            rxData->m_ObsArray[i].satellite.vz,
+            &rxData->m_ObsArray[i].range,
+            &rxData->m_ObsArray[i].rangerate );
+          rxBaseData->m_ObsArray[i].rangerate = 0.0;
+        }
+#endif
       }
     }
     return true;
@@ -1263,6 +1295,35 @@ namespace GNSS
             j++;
           }
         }
+#ifdef GDM_UWB_RANGE_HACK
+        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+          // Sanity index check.            
+          if( j >= nrRowsInH )
+            return false;
+            
+          NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
+            rxData.m_pvt.latitude,
+            rxData.m_pvt.longitude, 
+            rxData.m_pvt.height,
+            rxData.m_ObsArray[i].satellite.x,
+            rxData.m_ObsArray[i].satellite.y,
+            rxData.m_ObsArray[i].satellite.z,
+            &H[j][0],
+            &H[j][1],
+            &H[j][2],
+            &rxData.m_ObsArray[i].range
+            );
+          H[j][3] = 0.0; // GDM - no clock for the UWB range measurement!
+          
+          // copy the row of the design matrix 
+          rxData.m_ObsArray[i].H_p[0] = H[j][0];
+          rxData.m_ObsArray[i].H_p[1] = H[j][1];
+          rxData.m_ObsArray[i].H_p[2] = H[j][2];
+
+          j++;
+        }
+#endif
       }
     }
 
@@ -1340,6 +1401,21 @@ namespace GNSS
             j++;
           }
         }
+#ifdef GDM_UWB_RANGE_HACK
+        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+          // Sanity index check.
+          if( j >= n )
+            return false;
+
+          // Check divide by zero.
+          if( rxData.m_ObsArray[i].stdev_psr == 0.0 )
+            return false;
+
+          W[j][j] = 1.0/(rxData.m_ObsArray[i].stdev_psr*rxData.m_ObsArray[i].stdev_psr);
+          j++;
+        }
+#endif
       }
     }
 
@@ -1405,6 +1481,21 @@ namespace GNSS
             j++;
           }
         }
+#ifdef GDM_UWB_RANGE_HACK
+        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+        // Sanity index check.
+          if( j >= n )
+            return false;
+
+          // Check divide by zero.
+          if( rxData.m_ObsArray[i].stdev_psr == 0.0 )
+            return false;
+
+          R[j][j] = rxData.m_ObsArray[i].stdev_psr*rxData.m_ObsArray[i].stdev_psr;
+          j++;
+        }
+#endif
       }
     }
 
@@ -1540,6 +1631,29 @@ namespace GNSS
             j++;
           }
         }
+#ifdef GDM_UWB_RANGE_HACK
+        else if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+          psr_measured = rxData->m_ObsArray[i].psr;
+          
+          // Calculate the computed uwbrange = geometric range only (m)
+          psr_computed = rxData->m_ObsArray[i].range;
+
+          // The misclosure is the corrected measured value minus the computed valid.
+          rxData->m_ObsArray[i].psr_misclosure = psr_measured - psr_computed;            
+          
+          rxData->m_ObsArray[i].flags.isPsrUsedInSolution = true; // GDM_HACK
+          if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          {
+            // Sanity index check.
+            if( j >= n )
+              return false;
+
+            w[j] = rxData->m_ObsArray[i].psr_misclosure;
+            j++;
+          }
+        }
+#endif
         else
         {
           rxData->m_ObsArray[i].psr_misclosure = 0.0;            
@@ -2543,7 +2657,7 @@ namespace GNSS
     T[5][5] = eVup;
 
     T[6][6] = 1.0;
-    T[6][7] = (1.0 - eClkDrift) / betaClkDrift;
+    T[6][7] = -1.0*(1.0 - eClkDrift) / betaClkDrift; // GDM - multiply by -1 required due to Doppler convention
 
     T[7][7] = eClkDrift;
 
@@ -2588,7 +2702,7 @@ namespace GNSS
     T[5][5] = eVup;
 
     T[6][6] = 1.0;
-    T[6][7] = (1.0 - eClkDrift) / betaClkDrift;
+    T[6][7] = -1.0 * (1.0 - eClkDrift) / betaClkDrift; // GDM - multiply by -1 required due to Doppler convention
 
     T[7][7] = eClkDrift;
 
@@ -4403,6 +4517,11 @@ namespace GNSS
 #endif
     }
 
+#ifdef GDM_UWB_RANGE_HACK
+    if( rxData->m_UWB.isValidForThisEpoch )
+      nrP++;
+#endif
+
     result = DetermineDesignMatrixForThePositionSolution_GPSL1(
       *rxData,
       nrP,
@@ -4441,7 +4560,6 @@ namespace GNSS
       return false;
     }
 
-
     result = DeterminePseudorangeMisclosures_GPSL1(
       rxData,
       rxBaseData,
@@ -4477,7 +4595,7 @@ namespace GNSS
       {
         for( j = 0; j < 3; j++ )
         {
-          H[i][j] = H_p[i][j];
+          H[i][j] = H_p[i][j];          
         }
 #ifdef CONSTRAINPOS
         if( i < nrP-3 )
@@ -4485,7 +4603,8 @@ namespace GNSS
           H[i][6] = 1.0;
         }
 #else
-        H[i][6] = 1.0;
+        if( H_p[i][3] > 0.0 )
+          H[i][6] = 1.0;
 #endif
       }
       else
@@ -4889,6 +5008,11 @@ namespace GNSS
       return false;
     }
 
+#ifdef GDM_UWB_RANGE_HACK
+    if( rxData->m_UWB.isValidForThisEpoch )
+      nrP++;
+#endif
+
     result = DetermineDesignMatrixForThePositionSolution_GPSL1(
       *rxData,
       nrP,
@@ -4978,7 +5102,11 @@ namespace GNSS
           H[iP][0] = rxData->m_ObsArray[k].H_p[0];
           H[iP][1] = rxData->m_ObsArray[k].H_p[1];
           H[iP][2] = rxData->m_ObsArray[k].H_p[2];
-          H[iP][6] = 1.0;
+
+          if( rxData->m_ObsArray[k].system == GNSS_UWBSystem )
+            H[iP][6] = 0.0;
+          else
+            H[iP][6] = 1.0;
 
           stdev = rxData->m_ObsArray[k].stdev_psr;  // KO not differential obs error (need to change)
           r[iP] = stdev*stdev;
@@ -5146,8 +5274,8 @@ namespace GNSS
         return false;
       }
 
-	  // KO recompute misclosures based on the single update (theoretically could redo design matrix too, but very small).
-	  result = DetermineDesignMatrixForThePositionSolution_GPSL1(
+      // KO recompute misclosures based on the single update (theoretically could redo design matrix too, but very small).
+      result = DetermineDesignMatrixForThePositionSolution_GPSL1(
         *rxData,
         nrP,
         H_p );

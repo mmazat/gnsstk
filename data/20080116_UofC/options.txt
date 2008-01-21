@@ -19,7 +19,7 @@
 OutputFilePath,       (full or relative path)                 = results.txt
 
 StartGPSWeek,         (GPS week (0-1024+)                     = 1462
-StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0.0
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0.0 ;320000.0 ;319300.0
 EndGPSWeek,           (GPS week (0-1024+)                     = 1462
 EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 321510.0
 
@@ -43,7 +43,6 @@ ProcessOnlyDGPS,      (enable(1),disable(0))                  = 1
 ;      sequential Kalman Filter.
 ;
 ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
-
 ;______________________________________________________________________________
 ; KALMAN FILTERING OPTIONS
 ;
@@ -60,18 +59,18 @@ ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
 ; These processes have autocorrelation: 
 ; R(t)     = \sigma^2 * exp( -\Beta abs(t)     ). (continous time)
 ; R(k2-k1) = \sigma^2 * exp( -\Beta abs(k2-k1) ). (discrete time) 
-; Let \alpha = \(1 / \Beta) 
+; Let \alpha = (1 / \Beta) 
 ; \alpha  is referred to as the correlation time of the process.
 ; \sigma  is the standard deviation of the system noise.
 ;
-alpha_Vn,       (correlation time Vn       [s])              = 0.0001
-alpha_Ve,       (correlation time Ve       [s])              = 0.0001
-alpha_Vup,      (correlation time Vup      [s])              = 0.0001
-alpha_ClkDrift, (correlation time ClkDrift [s])              = 0.0001
-sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.01
-sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.01
-sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.01
-sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 5
+alpha_Vn,       (correlation time Vn       [s])              = 100.0
+alpha_Ve,       (correlation time Ve       [s])              = 100.0
+alpha_Vup,      (correlation time Vup      [s])              = 100.0
+alpha_ClkDrift, (correlation time ClkDrift [s])              = 10.0
+sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.010
+sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.010
+sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.010
+sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 1.0
 
 
 ;______________________________________________________________________________
@@ -142,6 +141,8 @@ Rover_EnableTropoCorrection, (enable(1)/disable(0))           = 1
 Rover_EnableIonoCorrection,  (enable(1)/disable(0))           = 1
 Rover_ExcludeSatellites,     (array of PRN's to exclude)      = 
 
+; GDM - The hack to put in the UWB range data for the baseline constraint case.
+Rover_UWBFilePath, (full or relative path)                    = UWB1/msg0x15.csv
 
 ;______________________________________________________________________________
 ; REFERENCE STATION PROCESSING OPTIONS

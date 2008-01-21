@@ -154,11 +154,11 @@ int main( int argc, char* argv[] )
       useEKF = false;
       useRTK  = true;
     }
-	else if( opt.m_ProcessingMethod == "RTKDD" )
+    else if( opt.m_ProcessingMethod == "RTKDD" )
     {
       useLSQ = true; // least squares is used for the first epoch
       useEKF = false;
-	  useRTK  = false;
+      useRTK  = false;
       useRTKDD  = true;
     }
 
@@ -301,6 +301,15 @@ int main( int argc, char* argv[] )
     if( !result )
       return 1; 
 
+#ifdef GDM_UWB_RANGE_HACK
+    if( !opt.m_UWBFilePath.empty() )
+    {
+      // GDM - Load the UWB range data.
+      result = rxDataRover.EnableAndLoadUWBData( opt.m_UWBFilePath.c_str(), opt.m_Reference.x, opt.m_Reference.y, opt.m_Reference.z, true );
+      if( !result )
+        return 1; 
+    }
+#endif
 
     while( !endOfStreamRover )
     {
@@ -505,21 +514,21 @@ int main( int argc, char* argv[] )
             if( !result )
               return 1;
           }
-		  //DD added by KO, Dec 18, 2007 results in m_P being a 6x6 matrix
-		  else if ( useRTKDD )
-		  {
-			  useLSQ = false; // position/velocity is now seeded
-			  result = Estimator.InitializeStateVarianceCovariance_6StatePVGM(
-				  rxDataRover.m_pvt.std_lat,
-				  rxDataRover.m_pvt.std_lon,
-				  rxDataRover.m_pvt.std_hgt,
-				  rxDataRover.m_pvt.std_vn,
-				  rxDataRover.m_pvt.std_ve,
-				  rxDataRover.m_pvt.std_vup,
-				  Estimator.m_RTKDD.P );
-			  if( !result )
-				  return 1;
-		  }
+          //DD added by KO, Dec 18, 2007 results in m_P being a 6x6 matrix
+          else if ( useRTKDD )
+          {
+            useLSQ = false; // position/velocity is now seeded
+            result = Estimator.InitializeStateVarianceCovariance_6StatePVGM(
+              rxDataRover.m_pvt.std_lat,
+              rxDataRover.m_pvt.std_lon,
+              rxDataRover.m_pvt.std_hgt,
+              rxDataRover.m_pvt.std_vn,
+              rxDataRover.m_pvt.std_ve,
+              rxDataRover.m_pvt.std_vup,
+              Estimator.m_RTKDD.P );
+            if( !result )
+              return 1;
+          }
         }
       }
       else if( useEKF )
