@@ -1,0 +1,1 @@
+..\..\bin\plot2d.exe FilteredUWBRangeData.txt 1 3 -title "Filtered Static UWB range measurements" -gpslabel 1 14 -ylabel "range (m)" -slabel 1 "UWB range" -out FilteredUWBRanges.bmp
