@@ -400,6 +400,9 @@ namespace GNSS
 
     m_Rover.isValid = true;
 
+#ifdef GDM_UWB_RANGE_HACK    
+    GetValue( "Rover_UWBFilePath", m_UWBFilePath );      
+#endif
 
     return true;
   }

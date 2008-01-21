@@ -396,6 +396,177 @@ namespace GNSS
     }
   }
 
+#ifdef GDM_UWB_RANGE_HACK
+  bool GNSS_RxData::EnableAndLoadUWBData( 
+    const char* filepath,  //!< The path to the UWB range data.
+    const double x, //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+    const double y, //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+    const double z, //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+    const bool isStatic //!< If the data is static, measurement outliers based on a somewaht ad-hoc 2 sigma rejection are removed.
+    )
+  {    
+    unsigned i = 0;
+    unsigned j = 0;
+    Matrix tmp;
+    if( filepath == NULL )
+      return false;
+
+    if( !tmp.ReadFromFile(filepath) )
+      return false;
+
+    strcpy( m_UWB.filepath, filepath );
+
+    m_UWB.x = x;
+    m_UWB.y = y;
+    m_UWB.z = z;
+
+    // Remove unnecessary data
+    for( i = 2; i < 14; i++ )
+      tmp.RemoveColumn( 2 );    
+    tmp.RemoveColumnsAfterIndex( 2 );
+
+    if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols() )  )
+      return false;
+
+    // Remove bad data
+    for( i = 0; i < tmp.nrows(); i++ )
+    {
+      if( tmp[i][2] > 0.0 )
+      {
+        m_UWB.data[j][0] = tmp[i][0];
+        m_UWB.data[j][1] = tmp[i][1]; 
+        m_UWB.data[j][2] = tmp[i][2] * 0.3048 / 100.0; // convert to meters
+        j++;
+      }
+    }
+    if( !m_UWB.data.Redim( j, 3 ) )
+      return false;
+
+    if( isStatic )
+    {
+      double tmpd;
+      double range_mean = 0;
+      double range_std = 0;
+      
+      if( !tmp.Resize( j, 3 ) )
+        return false;
+
+      if( !m_UWB.data.GetStats_ColumnMean( 2, range_mean, tmpd ) )
+        return false;
+      if( !m_UWB.data.GetStats_ColumnStdev( 2, range_std ) )
+        return false;
+
+      // first reject those measurements that are 3 sigma from the mean
+      // then recompute the mean and standard deviation
+      // then reject at 2 sigma
+
+      j = 0;
+      for( i = 0; i < m_UWB.data.nrows(); i++ )
+      {
+        if( m_UWB.data[i][2] > range_mean+3.0*range_std )
+          continue;
+        if( m_UWB.data[i][2] < range_mean-3.0*range_std )
+          continue;
+
+        tmp[j][0] = m_UWB.data[i][0];
+        tmp[j][1] = m_UWB.data[i][1];
+        tmp[j][2] = m_UWB.data[i][2];        
+        j++;    
+      }
+
+      if( !tmp.Redim( j, 3 ) )
+        return false;
+
+      if( !tmp.GetStats_ColumnMean( 2, range_mean, tmpd ) )
+        return false;
+      if( !tmp.GetStats_ColumnStdev( 2, range_std ) )
+        return false;
+
+      j = 0;
+      for( i = 0; i < tmp.nrows(); i++ )
+      {
+        if( tmp[i][2] > range_mean+2.0*range_std )
+          continue;
+        if( tmp[i][2] < range_mean-2.0*range_std )
+          continue;
+
+        m_UWB.data[j][0] = tmp[i][0];
+        m_UWB.data[j][1] = tmp[i][1];
+        m_UWB.data[j][2] = tmp[i][2];
+        j++;    
+      }
+      if( !m_UWB.data.Redim( j, 3 ) )
+        return false;
+
+      // just for debug
+      if( !m_UWB.data.GetStats_ColumnMean( 2, range_mean, tmpd ) )
+        return false;
+      if( !m_UWB.data.GetStats_ColumnStdev( 2, range_std ) )
+        return false;      
+      j = 0;
+    }
+        
+    m_UWB.data.Print( "FilteredUWBRangeData.txt", 9 );
+
+    m_UWB.isHackOn = true;
+
+    return true;
+  }
+
+  bool GNSS_RxData::LoadUWBRangeForThisEpoch()
+  {
+    unsigned i = 0;
+    double uwb_time = 0.0;
+    double epoch = 0.0;
+    double tdiff = 0.0;
+    double uwb_range = 0.0;
+    if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 3 )
+      return false;
+
+    /// Just match the closest epoch before the gps measurment, not after.
+    epoch = m_pvt.time.gps_tow + m_pvt.time.gps_week*SECONDS_IN_WEEK;
+    for( i = 0; i < m_UWB.data.nrows(); i++ )
+    {
+      uwb_time = m_UWB.data[i][0] + m_UWB.data[i][1]*SECONDS_IN_WEEK;
+      if( uwb_time > epoch )
+        break;
+    }
+    tdiff = fabs(uwb_time-epoch);
+    if( tdiff > 60.0 )
+    {
+      m_UWB.isValidForThisEpoch = false;
+      m_UWB.index_in_obs_array = -1;
+      return true; // no measurement
+    }
+    m_UWB.isValidForThisEpoch = true;
+    
+    uwb_range = m_UWB.data[i][2];
+
+    m_nrValidObs++;
+    i = m_nrValidObs-1;
+    m_UWB.index_in_obs_array = i;
+    memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+    m_ObsArray[i].flags.isActive = true;
+    m_ObsArray[i].flags.isPsrValid = true;
+    m_ObsArray[i].flags.isPsrUsedInSolution = true;
+    m_ObsArray[i].psr = uwb_range;
+    m_ObsArray[i].codeType = GNSS_UWBCodeType;
+    m_ObsArray[i].freqType = GNSS_UWBFrequency;
+    m_ObsArray[i].system = GNSS_UWBSystem;
+    m_ObsArray[i].id = 1601; // arbitrary
+    m_ObsArray[i].satellite.x = m_UWB.x;
+    m_ObsArray[i].satellite.y = m_UWB.y;
+    m_ObsArray[i].satellite.z = m_UWB.z;
+    m_ObsArray[i].satellite.isValid = true;    
+    m_ObsArray[i].stdev_psr = 0.008f; // GDM - determined from actual measurements, ~3 m baseline after filtering the data for outliers.
+    m_ObsArray[i].tow = m_pvt.time.gps_tow;
+    m_ObsArray[i].week = m_pvt.time.gps_week;
+
+    return true;
+  }
+
+#endif
+
 
   bool GNSS_RxData::ZeroAllMeasurements()
   {
@@ -520,6 +691,17 @@ namespace GNSS
         break;
       }
     }
+
+
+#ifdef GDM_UWB_RANGE_HACK
+    if( result && m_UWB.isHackOn )
+    {
+      result = LoadUWBRangeForThisEpoch();
+      if( !result )
+        return false;
+    }
+#endif
+
 
     if( result )
     {

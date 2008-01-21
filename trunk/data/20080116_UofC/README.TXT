@@ -12,3 +12,6 @@ done Jan 16 2008
 Baseline is 2.96869 m or 9.739767 ft
 
 The UWB mean range value after ad-hoc outlier removal for UWB1 is: 2.956249 m (9.69898 ft), a 1.24 cm difference.
+
+GDM - After some better measurement filtering for the static case, I computed the UWB range to be 2.95795 m.
+This is a 1.074 cm difference

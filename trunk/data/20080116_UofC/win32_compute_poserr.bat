@@ -1,4 +1,4 @@
-..\..\bin\computeposerr results.txt 0 2 3 4 1 51.079428117 -114.132818611 1116.585 10
+..\..\bin\computeposerr results.txt 0 2 3 4 1 51.079428117 -114.132818611 1116.585 1
 del LatError.bmp
 del LonError.bmp
 del HgtError.bmp

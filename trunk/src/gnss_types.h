@@ -102,6 +102,7 @@ typedef enum
   GNSS_CACode     = 0,
   GNSS_PCode      = 1,
   GNSS_PCodeless  = 2,
+  GNSS_UWBCodeType = 1614,
   GNSS_ReservedCodeType 
 } GNSS_enumCodeType;
 
@@ -111,7 +112,8 @@ typedef enum
 typedef enum 
 {
   GNSS_GPSL1 = 0,
-  GNSS_GPSL2 = 1,         
+  GNSS_GPSL2 = 1,       
+  GNSS_UWBFrequency = 1615,
   GNSS_ReservedFrequency
 } GNSS_enumFrequency;
 
@@ -124,6 +126,7 @@ typedef enum
   GNSS_GLONASS    = 1,
   GNSS_WAAS       = 2,
   GNSS_Pseudolite = 3,
+  GNSS_UWBSystem = 1616,
   GNSS_ReservedSystem
 } GNSS_enumSystem;
 
