@@ -126,7 +126,7 @@ typedef enum
   GNSS_GLONASS    = 1,
   GNSS_WAAS       = 2,
   GNSS_Pseudolite = 3,
-  GNSS_UWBSystem = 1616,
+  GNSS_UWBSystem = 1616,  
   GNSS_ReservedSystem
 } GNSS_enumSystem;
 
@@ -354,7 +354,6 @@ typedef struct
   double std_vup;        //!< The standard deviation uncertainty in the up velocity [m/s].
   double std_clk;        //!< The standard deviation uncertainty in the clock offset [m].
   double std_clkdrift;   //!< The standard deviation uncertainty in the clock drift [m/s].
-
 
   unsigned char isPositionConstrained;      //!< Is this a constrained position solution [TRUE(1),FALSE(0)].
   unsigned char isHeightConstrained;        //!< Is this a height constrained solution   [TRUE(1),FALSE(0)].

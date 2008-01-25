@@ -619,6 +619,14 @@ namespace GNSS
     /// A boolean to indicate if the ionospheric correction is to be disabled for all satellites.
     bool m_DisableIonoCorrection;
 
+
+    /// This boolean indicates that a positive millisecond jump (the psr increased by 1 ms * c) occurred at this epoch.
+    bool m_msJumpDetected_Positive;
+
+    /// This boolean indicates that a negative millisecond jump (the psr decreased by 1 ms * c) occurred at this epoch.
+    bool m_msJumpDetected_Negative;
+    
+
 #ifdef GDM_UWB_RANGE_HACK
 
     /// \brief  The UWB range hack data.

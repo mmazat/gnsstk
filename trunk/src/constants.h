@@ -75,6 +75,11 @@ extern "C" {
 #define  LIGHTSPEED  (299792458.0) //!< light speed constant defined in ICD-GPS-200C p. 89  [m/s]
 #endif
 
+#ifndef  ONE_MS_IN_M
+#define  ONE_MS_IN_M (299792.4580) //!< 1 millisecond * light speed constant defined in ICD-GPS-200C p. 89  [m/s]
+#endif
+
+
 #ifndef GPS_FREQUENCYL1
 #define GPS_FREQUENCYL1  (1575.42e06) //!< [Hz]
 #endif

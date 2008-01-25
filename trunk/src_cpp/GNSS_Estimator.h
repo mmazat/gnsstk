@@ -103,6 +103,13 @@ namespace GNSS
       );
 
 
+    /// GDM_TODO add comments here
+    bool DealWithMillisecondClockJumps(
+      GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
+      GNSS_RxData *rxBaseData   //!< A pointer to the reference receiver data if available. NULL if not available.
+      );  
+
+
     /// \brief    Determine the satellite clock corrections, positions, and 
     ///           velocities for the rover receiver and the reference
     ///           receiver if aviailable (!NULL). Also determine if the 
@@ -249,6 +256,25 @@ namespace GNSS
       );
 
 
+    /// \brief    Determine the design matrix elements for the GPS L1 
+    ///           position solution based on pseudroange measurements.
+    ///
+    /// \pre      The following must be valid:
+    /// rxData.m_pvt
+    /// rxData.m_ObsArray[i].satellite
+    /// rxData.m_ObsArray[i].flags.isPsrUsedInSolution
+    /// \post     The following are set.
+    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_p[0]
+    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_p[1]
+    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_p[2]
+    /// 
+    /// \return   true if successful, false if error.            
+    bool GNSS_Estimator::DetermineDesignMatrixElements_GPSL1_Psr( GNSS_RxData &rxData );
+
+
+   
+
+
     /// \brief    Determine the measurement weight matrix for the GPS L1 
     ///           position solution based on pseudroange measurement
     ///           standard deviation values specified in 
@@ -300,10 +326,48 @@ namespace GNSS
     /// \return   true if successful, false if error.
     bool DeterminePseudorangeMisclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available.    
-      const unsigned nrPsr,    //!< The number of GPS L1 pseudorange measurements.
-      Matrix &w                //!< The pseudorange misclosure vector [nP x 1].
+      GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
       );
+
+
+    /**
+    \brief  Compute the miscloures from applying a position constraint.
+            The position constraints are pseudo-observations such that \n
+            current latitude = previous latitude (the pseudo-obs) \n
+            current longitude = previous longitude (the pseudo-obs) \n 
+            current height = previous height (the pseudo-obs).
+
+    Note that this allows position variation depending on the variance of the 
+    previous position. It is only fixing the position (fixed position constraint)
+    when the variance of the previuos position 'observations' is very very small.
+
+    \return   true if successful, false if error.
+    */
+    bool DeterminePositionConstraintMisclosures( 
+      GNSS_RxData *rxData, //!< The rover receiver data.
+      double &w_lat,       //!< The computed latitude constraint misclosure [m].
+      double &w_lon,       //!< The computed longitude constraint misclosure [m].
+      double &w_hgt        //!< The computed height constraint misclosure [m].
+      );
+
+
+    /**
+    \brief  Compute the miscloure from applying a height constraint.
+            The height constraints is a pseudo-observations such that 
+            current height = previous height (the pseudo-obs).
+
+    Note that this allows height variation depending on the variance of the 
+    previous height. It is only fixing the height (fixed height constraint)
+    when the variance of the previuos height 'observations' is very very small.
+
+    \return   true if successful, false if error.
+    */
+    bool DetermineHeightConstraintMisclosures( 
+      GNSS_RxData *rxData, //!< The rover receiver data.
+      double &w_hgt        //!< The computed height constraint misclosure [m].
+      );
+  
+  
   
 
     /// \brief    Compute the differntial GPS L1 ADR misclosures.
@@ -322,13 +386,12 @@ namespace GNSS
     /// rxData.m_ObsArray[i].adr_misclosure \n
     ///
     /// \return   true if successful, false if error.    
-    bool DetermineSingleDifferenceADR_Misclosures_GPSL1( 
+    bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available.    
-      const unsigned n,        //!< The number of misclosures.
-      Matrix &w                //!< The adr misclosure vector [n x 1].
+      GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
       );
-  /// \brief    Compute the double differntial GPS L1 ADR misclosures.
+  
+    /// \brief    Compute the double differntial GPS L1 ADR misclosures.
     ///
     /// \pre      The following must be valid:           \n
     /// rxData->m_ObsArray[i].flags.isAdrUsedInSolution  \n
@@ -344,13 +407,13 @@ namespace GNSS
     /// rxData.m_ObsArray[i].adr_misclosure \n
     ///
     /// \return   true if successful, false if error. 
-  bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
-    GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-    GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available. 
-    Matrix &subB,             //!< The matrix that describes the differencing from SD to DD adr measurements
-    const unsigned n,        //!< The number of DD misclosures required.
-    Matrix &w                //!< The adr misclosure vector [n x 1].
-    );
+    bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
+      GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available. 
+      Matrix &subB,             //!< The matrix that describes the differencing from SD to DD adr measurements
+      const unsigned n,        //!< The number of DD misclosures required.
+      Matrix &w                //!< The adr misclosure vector [n x 1].
+      );
 
     /// \brief    Determine the usable GPS L1 Doppler measurements.
     /// \pre      The rxData.m_ObsArray[i].flags values must be set 
@@ -385,14 +448,11 @@ namespace GNSS
     /// rxData.m_ObsArray[i].doppler_misclosure \n
     ///
     /// \return   true if successful, false if error.    
-    bool DetermineDopplerMisclosures_GPSL1( 
+    bool GNSS_Estimator::DetermineDopplerMisclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available.    
-      const unsigned n,        //!< The number of misclosures.
-      Matrix &w                //!< The pseudorange misclosure vector [n x 1].
+      GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
       );
-  
-  
+
   
     /// \brief    Determine the design matrix for the GPS L1 
     ///           velocity solution based on Doppler measurements.
@@ -401,13 +461,14 @@ namespace GNSS
     /// rxData.m_pvt
     /// rxData.m_ObsArray[i].satellite
     /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution
-    /// 
-    /// \return   true if successful, false if error.            
-    bool DetermineDesignMatrixForTheVelocitySolution_GPSL1( 
-      GNSS_RxData &rxData,             //!< The receiver data.
-      const unsigned nrUsableDopplers, //!< The number of usable GPS L1 Doppler measurements.
-      Matrix &H                        //!< The velocity & rx clock drift design matrix [nD x 4].
-    );
+    /// \post     The following are set:
+    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_v[0]
+    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_v[1]
+    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_v[2]
+    ///
+    /// \return   true if successful, false if error.                
+    bool DetermineDesignMatrixElements_GPSL1_Doppler( GNSS_RxData &rxData );
+ 
 
     /// \brief    Determine the measurement weight matrix for the GPS L1 
     ///           velocity solution based on Doppler measurement
@@ -718,6 +779,21 @@ namespace GNSS
       Matrix r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
     };
 
+    struct stEKF
+    {
+      Matrix x;   //!< The states,                                                  [u x 1].
+      Matrix dx;  //!< The iterative update to the states,                          [u x 1].
+      Matrix P;   //!< The states variance-covariance matrix,                       [u x u].
+      Matrix H;   //!< The design matrix,                                           [n x u].
+      Matrix w;   //!< The observation misclosure vector,                           [n x 1].
+      Matrix R;   //!< The variance covariance matrix of the observations,          [n x n].
+      Matrix W;   //!< The inverse of m_R,                                          [n x n].
+      Matrix r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
+      Matrix T;   //!< The transition matrix,                                       [u x u].
+      Matrix Q;   //!< The process noise matrix,                                    [u x u].
+      Matrix K;   //!< The Kalman gain matrix,                                      [u x n]. 
+    };
+
     struct stRTK
     {
       Matrix x;   //!< The states,                                                  [u x 1].
@@ -730,6 +806,7 @@ namespace GNSS
       Matrix r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
       Matrix T;   //!< The transition matrix,                                       [u x u].
       Matrix Q;   //!< The process noise matrix,                                    [u x u].
+      Matrix K;   //!< The Kalman gain matrix,                                      [u x n]. 
       Matrix U_Bierman; //!< The upper triangular matrix UDUt of P                  [u x u].
       Matrix D_Bierman; //!< The diagonal matrix of UDUt of P                       [u x u].
     };
@@ -746,6 +823,7 @@ namespace GNSS
       Matrix r;     //!< The diagonal of the observations variance-covariance matrix, [n x 1].
       Matrix T;     //!< The transition matrix,                                       [u x u].
       Matrix Q;     //!< The process noise matrix,                                    [u x u].
+      Matrix K;   //!< The Kalman gain matrix,                                      [u x n]. 
       Matrix B;     //!< The double difference operator matrix.                       [n x n-1/2/3].
       Matrix prevB; //!< The previous double difference operator matrix.              [n_prev x n_prev-1/2/3].
       Matrix SubB;  //!< The double difference operator matrix for just ambiguities.      
@@ -780,6 +858,8 @@ namespace GNSS
 
     stLSQ m_posLSQ; //!< The Least Sqaures estimation matrix information for the position and clock offset solution.
     stLSQ m_velLSQ; //!< The Least Sqaures estimation matrix information for the velocity and clock drift solution.
+
+    stEKF m_EKF; // The extended kalman filter matrix information for the pvt solution from pseudorange and Doppler.
 
     stRTK m_RTK; //!< The RTK estimation matrix information.
     stRTKDD m_RTKDD; //!< The double difference RTK estimation matrix information.

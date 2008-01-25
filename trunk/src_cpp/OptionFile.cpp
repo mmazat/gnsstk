@@ -71,12 +71,16 @@ bool OptionFile::ReadOptionFile( const std::string OptionFilePath )
 {
   unsigned i = 0;
   unsigned j = 0;
+  unsigned k = 0;
+  unsigned n = 0;
   unsigned numLines = 0;
+  unsigned length = 0;
   std::string::size_type p = 0;
   std::string::size_type equalsIndex = 0;
   bool result = false;
   FILE *fid = NULL;
   char lineBuffer[OPTIONFILE_MAX_LINE_BUFFER];
+  char lineBufferRevised[OPTIONFILE_MAX_LINE_BUFFER];
   char* fgetsBuffer = NULL;
   std::string DataLine;
   std::string TmpStr;
@@ -145,8 +149,39 @@ bool OptionFile::ReadOptionFile( const std::string OptionFilePath )
       break;
     }
 
-    DataLine = lineBuffer;
-    StdStringUtils::TrimLeftAndRight( DataLine ); // get rid of whitespace
+    // Search and replace "?;" with "? ;" when ? is not whitespace
+    n = 0;
+    length = (unsigned)strlen( lineBuffer );
+    lineBufferRevised[n] = lineBuffer[0];
+    n++;
+    for( k = 1; k < length; k++ )
+    {
+      if( lineBuffer[k] == ';' )
+      {
+        if( isspace(lineBuffer[k-1]) )
+        {
+          lineBufferRevised[n] = lineBuffer[k];
+          n++;
+        }
+        else
+        {
+          // add a space
+          lineBufferRevised[n] = ' ';
+          n++;
+          lineBufferRevised[n] = lineBuffer[k];
+          n++;
+        }
+      }
+      else
+      {
+        lineBufferRevised[n] = lineBuffer[k];
+        n++;
+      }
+    }
+    lineBufferRevised[n] = '\0';
+
+    DataLine = lineBufferRevised;
+    StdStringUtils::TrimLeftAndRight( DataLine ); // get rid of whitespace left and right
 
     // check for empty line
     if( DataLine.empty() )

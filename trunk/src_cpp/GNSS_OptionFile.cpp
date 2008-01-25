@@ -51,9 +51,12 @@ namespace GNSS
 
 
   GNSS_OptionFile::GNSS_OptionFile()
-    : m_elevationMask(0.0),
+    : m_processDGPSOnly(true),
+    m_elevationMask(0.0),
     m_cnoMask(0.0),
-    m_locktimeMask(0.0)
+    m_locktimeMask(0.0),
+    m_isPositionConstrained(false),
+    m_isHeightConstrained(false)
   {     
     memset( &m_klobuchar, 0, sizeof(m_klobuchar) );
   }
@@ -397,6 +400,11 @@ namespace GNSS
     if( !GetValueArray( "Rover_ExcludeSatellites", m_Rover.satsToExclude, 64, n ) )
       return false;
     m_Rover.nrSatsToExclude = n;
+
+
+    GetValue( "Rover_EnablePositionConstraint", m_isPositionConstrained );
+
+    GetValue( "Rover_EnableHeightConstraint", m_isHeightConstrained );
 
     m_Rover.isValid = true;
 

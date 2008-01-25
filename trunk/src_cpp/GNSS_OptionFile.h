@@ -200,6 +200,12 @@ namespace GNSS
     /// The locktime mask [s].
     double m_locktimeMask;
 
+    /// A boolean to indicate if the rover position is to be constrained.
+    bool m_isPositionConstrained;
+
+    /// A boolean to indicate if the rover height is to be constrained.
+    bool m_isHeightConstrained;
+
 #ifdef GDM_UWB_RANGE_HACK    
     /// The path to an UWB range data file.
     /// containing:
