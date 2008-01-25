@@ -352,9 +352,6 @@ namespace GNSS
   }
 
 
-
-
-
   GNSS_RxData::GNSS_RxData()
   : m_nrValidObs(0), 
     m_prev_nrValidObs(0),
@@ -364,6 +361,8 @@ namespace GNSS
     m_maxAgeEphemeris(14400), // 4 hours
     m_DisableTropoCorrection(false),
     m_DisableIonoCorrection(false),
+    m_msJumpDetected_Positive(false),
+    m_msJumpDetected_Negative(false),
     m_fid(NULL),
     m_messageLength(0),
     m_rxDataType(GNSS_RXDATA_UNKNOWN),
@@ -667,7 +666,15 @@ namespace GNSS
 
   bool GNSS_RxData::LoadNext( bool &endOfStream )
   {
+    unsigned i = 0;
+    unsigned j = 0;
+    double psr_difference = 0;
     bool result = false;
+
+    // Reset the millisecond jump detectors.
+    m_msJumpDetected_Positive = false;
+    m_msJumpDetected_Negative = false;
+
     switch( m_rxDataType )
     {
     case GNSS_RXDATA_NOVATELOEM4:
@@ -692,6 +699,46 @@ namespace GNSS
       }
     }
 
+    // Check for millisecond jumps in the data.
+    // First determine the index of the corresponding measurement in the previous epoch
+    for( i = 0; i < m_nrValidObs; i++ )
+    {
+      m_ObsArray[i].index_time_differential = -1;
+      if( m_ObsArray[i].flags.isActive && 
+        m_ObsArray[i].flags.isPsrValid )
+      {
+        for( j = 0; j < m_prev_nrValidObs; j++ )
+        {
+          if( m_prev_ObsArray[j].flags.isActive && 
+            m_prev_ObsArray[j].flags.isPsrValid )
+          {
+            if( m_ObsArray[i].id == m_prev_ObsArray[j].id )
+            {
+              m_ObsArray[i].index_time_differential = j;
+              psr_difference = m_ObsArray[i].psr - m_prev_ObsArray[j].psr;
+
+              // detect allowing 10 km psr changes between epochs
+              if( psr_difference > 0 )
+              {
+                if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
+                {
+                  m_msJumpDetected_Positive = true;
+                }
+              }
+              else
+              {
+                psr_difference *= -1.0;
+                if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
+                {
+                  m_msJumpDetected_Negative = true;
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
 
 #ifdef GDM_UWB_RANGE_HACK
     if( result && m_UWB.isHackOn )

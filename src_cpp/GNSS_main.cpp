@@ -242,10 +242,10 @@ int main( int argc, char* argv[] )
         opt.m_Reference.height,
         0.0, 0.0, 0.0,
         0.0, 0.0,
-        0.0, 0.0, 0.0,  // position is fixed
+        0.0, 0.0, 0.0,  // The reference position is fixed.
         0.0, 0.0, 0.0,
         100.0,
-        10.0 ); // position is fixed
+        10.0 ); // The reference position is fixed but the clock is still unknown.
       if( !result )
         return 1;
     }
@@ -408,9 +408,19 @@ int main( int argc, char* argv[] )
         } 
       }
 
+      // Enable constraints if any.
+      if( opt.m_isPositionConstrained )
+      {
+        rxDataRover.m_pvt.isPositionConstrained = true;
+      }
+      else if( opt.m_isHeightConstrained )
+      {
+        rxDataRover.m_pvt.isHeightConstrained = true;
+      }
 
       if( useLSQ )
-      {      
+      { 
+        // Always perform least squares!
         if( opt.m_Reference.isValid )
         {
           result = Estimator.PerformLeastSquares_8StatePVT(
@@ -431,7 +441,6 @@ int main( int argc, char* argv[] )
           if( !result )
             return -1;
         }
-
         if( !wasPositionComputed )
           continue;
 
@@ -509,7 +518,10 @@ int main( int argc, char* argv[] )
               rxDataRover.m_pvt.std_vup,
               rxDataRover.m_pvt.std_clk,
               rxDataRover.m_pvt.std_clkdrift,
-              Estimator.m_RTK.P );  //KO Could use LS m_P here to keep all information from LS step.
+              Estimator.m_EKF.P );  //KO Could use LS m_P here to keep all information from LS step.
+
+            if( useRTK )
+              Estimator.m_RTK.P = Estimator.m_EKF.P;
 
             if( !result )
               return 1;
@@ -531,14 +543,15 @@ int main( int argc, char* argv[] )
           }
         }
       }
-      else if( useEKF )
+      
+      if( useEKF )
       {
         result = Estimator.PredictAhead_8StatePVGM(
           rxDataRover,
           dT,
-          Estimator.m_RTK.T,
-          Estimator.m_RTK.Q,
-          Estimator.m_RTK.P );
+          Estimator.m_EKF.T,
+          Estimator.m_EKF.Q,
+          Estimator.m_EKF.P );
         if( !result )
           return 1;
 
@@ -547,7 +560,7 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM(
             &rxDataRover,
             &rxDataBase,
-            Estimator.m_RTK.P );
+            Estimator.m_EKF.P );
           if( !result )
             return -1;
         }
@@ -556,7 +569,7 @@ int main( int argc, char* argv[] )
           result = Estimator.Kalman_Update_8StatePVGM(
             &rxDataRover,
             NULL,
-            Estimator.m_RTK.P );
+            Estimator.m_EKF.P );
           if( !result )
             return -1;
         }
@@ -616,12 +629,14 @@ int main( int argc, char* argv[] )
 	  }
 
 
+      /*
       printf( "%12.3lf %5d %d %d %d \n", 
         rxDataRover.m_pvt.time.gps_tow, 
         rxDataRover.m_pvt.time.gps_week,         
         rxDataRover.m_pvt.nrPsrObsUsed,
         rxDataRover.m_pvt.nrDopplerObsUsed,
         rxDataRover.m_pvt.nrAdrObsUsed );    
+        */
 
       /*
       char supermsg[8192];

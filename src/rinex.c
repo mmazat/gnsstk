@@ -1418,6 +1418,7 @@ BOOL RINEX_GetNextObservationSet(
   BOOL overwriteCNoL1 = TRUE;
   BOOL overwriteCNoL2 = TRUE;
   BOOL isEpochValidToDecode = FALSE;
+  BOOL isContinuationLinePresent = FALSE;
   int nr_special_records = 0;
   
   double tow = 0; // A time of week (0-604399.99999) [s].
@@ -1690,6 +1691,12 @@ BOOL RINEX_GetNextObservationSet(
       {
         // This is the number of observations        
         RINEX_nr_satellites = itmp;
+        if( RINEX_nr_satellites > 12 )
+        {
+          // A continuation line will be used!
+          isContinuationLinePresent = TRUE;
+        }
+
         if( RINEX_nr_satellites >= 64 )
         {
           return FALSE; // a very unlikely error condition.
@@ -1729,9 +1736,10 @@ BOOL RINEX_GetNextObservationSet(
     return FALSE;
   }
 
+  // Deal with the possibility of continuation lines.
   if( count != RINEX_nr_satellites+1 )
   {
-    if( RINEX_nr_obs <= 12 )
+    if( RINEX_nr_satellites <= 12 )
     {
       return FALSE;
     }
