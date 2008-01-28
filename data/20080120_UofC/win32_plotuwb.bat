@@ -1,0 +1,1 @@
+..\..\bin\plot2d.exe FilteredUWBRangeData_CleanedManually.txt 1 3 -title "UWB Ranges" -ylabel "Range (m)" -gpslabel 1 14 -xlabel "GPS Time of Week (s) - UTC Time (hh:mm:ss)" -stats 0 -slabel 1 "UWB Range(m)" -out "UWBRanges.bmp" -ylim 10 20
