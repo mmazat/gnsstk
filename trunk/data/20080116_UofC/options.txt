@@ -1,4 +1,4 @@
-; EssentialGNSS
+	; EssentialGNSS
 ; Post Processing Options File
 ;______________________________________________________________________________
 ; FORMAT
@@ -19,9 +19,9 @@
 OutputFilePath,       (full or relative path)                 = results.txt
 
 StartGPSWeek,         (GPS week (0-1024+)                     = 1462
-StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 319600.0 ;320000.0;319300.0
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0.0; 319600.0 ;320000.0;319300.0
 EndGPSWeek,           (GPS week (0-1024+)                     = 1462
-EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 320760.0;321510.0
+EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 604800.0; 320760.0;321510.0
 
 ElevationMask,        (decimal degrees)                       = 3.0
 CNoMask,              (decimal dB-Hz)                         = 0.0
@@ -145,7 +145,16 @@ Rover_EnablePositionConstraint, (yes/no)                      = no
 Rover_EnableHeightConstraint,   (yes/no)                      = no
 
 ; GDM - The hack to put in the UWB range data for the baseline constraint case.
-Rover_UWBFilePath, (full or relative path)                    = ;UWB1/msg0x15.csv
+; GDM - Warning: do not seed the rover initial position with the reference position. This will destabilize the design Matrix!       
+Rover_UWBFilePath, (full or relative path)                    = UWB2\msg0x15.csv
+
+; The following position is used as a datum to compute a position difference with the rover.
+; If none is specified (empty values), then the first computed rover position is used.
+Rover_IsStatic,       (yes/no)                                = yes
+Rover_DatumLatitude,  (decimal degrees or dd mm ss.ss)        = 51.079428117
+Rover_DatumLongitude, (decimal degrees or dd mm ss.ss)        = -114.132818611 
+Rover_DatumHeight,    (m)                                     = 1116.585
+
 
 ;______________________________________________________________________________
 ; REFERENCE STATION PROCESSING OPTIONS
