@@ -1,0 +1,185 @@
+; EssentialGNSS
+; Post Processing Options File
+;______________________________________________________________________________
+; FORMAT
+; 
+; OPTIONFIELD, COMMENT = VALUE ; POST_VALUE_COMMENT
+; OPTIONFIELD        - a valid identifier, no spaces
+; COMMENT            - a good place to put the units
+; VALUE              - the option value, a number, a string, an 
+;                      array, a boolean (yes/no, 1/0)
+; POST_VALUE_COMMENT - a comment following the value
+; 
+; Anything after a ';' is a comment.
+
+;______________________________________________________________________________
+; GENERAL PROCESSING OPTIONS
+;
+
+OutputFilePath,       (full or relative path)                 = results.txt
+
+StartGPSWeek,         (GPS week (0-1024+)                     = 1463
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0; 74480; 74660 ;72615
+EndGPSWeek,           (GPS week (0-1024+)                     = 1463
+EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 604800; 75750
+
+ElevationMask,        (decimal degrees)                       = 12.0
+CNoMask,              (decimal dB-Hz)                         = 0.0
+LockTimeMask,         (decimal seconds)                       = 0.0
+
+; Process only single difference measurements between 
+; reference and rover receivers. If no reference data is 
+; available at all, this defaults to disabled
+ProcessOnlyDGPS,      (enable(1),disable(0))                  = 1  
+
+;______________________________________________________________________________
+; PROCESSING METHOD
+;
+; LSQ: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
+; EKF: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated using 
+;      a non-sequential Kalman Filter.
+; RTK: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift and float 
+;      ambiguities are currently estimated using a 
+;      sequential Kalman Filter.
+;
+ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK 
+;______________________________________________________________________________
+; KALMAN FILTERING OPTIONS
+;
+; The model used is a Discrete Extended Kalman Filter.
+; The velocity/ClkDrift states are all treated as first order Guass-Markov 
+; processes. Thus, the position/Clk states are integrated Gauss-markov 
+; processes. This model (1D) is described in Example 5.3, p.200-201 from
+; "Brown, R.G. and P.Y.C. Hwang (1997). Introduction to Random Signals 
+; and Applied Kalman Filtering, Third Edition, John Wiley & Sons, Inc."
+; This model (1D) is also described on p. 78-82 of
+; "Grewal, M.S. and A.P. Andrews (2001). Kalman Filtering Theory and Practice 
+; using Matlab. 2nd Edition. John Wiley & Sons Inc."
+; 
+; These processes have autocorrelation: 
+; R(t)     = \sigma^2 * exp( -\Beta abs(t)     ). (continous time)
+; R(k2-k1) = \sigma^2 * exp( -\Beta abs(k2-k1) ). (discrete time) 
+; Let \alpha = (1 / \Beta) 
+; \alpha  is referred to as the correlation time of the process.
+; \sigma  is the standard deviation of the system noise.
+;
+alpha_Vn,       (correlation time Vn       [s])              = 0.01
+alpha_Ve,       (correlation time Ve       [s])              = 0.01
+alpha_Vup,      (correlation time Vup      [s])              = 0.01
+alpha_ClkDrift, (correlation time ClkDrift [s])              = 0.01
+sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.1
+sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.1
+sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.1
+sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 100.0
+
+
+;______________________________________________________________________________
+; IONOSPHERIC CORRECTION 
+;
+; Ionospheric parameters consist of the broadcast Klobuchar 
+; alpha and beta coefficients. (GPS ICD 200C, pp. 126-128)
+; These can be obtained from a RINEX navigation file, or 
+; specified directly. 
+; 
+; When specifying directly, you can obtain better than 
+; broadcast correction terms from CODE - The Center 
+; for Orbit Determination in Europe.
+; http://www.aiub-download.unibe.ch/CODE/
+; e.g. Download CGIM3280.07N from 
+; ftp://ftp.unibe.ch/aiub/CODE/2007/ for 2007-11-29
+; 
+
+; If yes to the following option, this is try to extract the 
+; parameters from Reference_NavDataPath. If no, the next five 
+; options can be used to specify the values.
+Iono_ObtainFromRINEXNavFile,    (yes/no)                        = yes  
+
+; The next option will override Iono_ObtainFromRINEXNavFile. 
+; It indicates if the following four parameters valid for use. 
+Iono_KlobucharIsValid,          (yes/no)                        = no   
+Iono_KlobucharReferenceWeek,    (GPS week (0-1024+)             = 0      
+Iono_KlobucharReferenceTime,    (0.0-604800.0 s)                = 0    
+Iono_KlobucharAlphaParameters,  (alpha0 alpha1 alpha2 alpha3)   = 
+Iono_KlobucharBetaParameters,   (beta0  beta1  beta2  beta3)    = 
+
+;______________________________________________________________________________
+; GLOBAL NAVIGATION EPHEMERIS INFORMATION    
+; 
+; if applicable, e.g. a RINEX GPS NAV file
+RINEXNavigationDataPath, full or relative path)               = KREF0200.08n
+
+
+;______________________________________________________________________________
+; ROVER STATION PROCESSING OPTIONS
+;
+; For stand-alone processing, indicate only the rover station
+; information.
+;
+; DataType's Supported
+; NovAtelOEM4
+; RINEX2.1
+; RINEX2.11
+;
+Rover_DataType,                                               = RINEX2.11
+Rover_DataPath,   (full or relative path)                     = KRVR0200.08o
+
+Rover_UseECEF,    (yes/no)                                    = no
+Rover_ECEF_X,     (WGS84 m)                                   = 
+Rover_ECEF_Y,     (WGS84 m)                                   = 
+Rover_ECEF_Z,     (WGS84 m)                                   = 
+ 
+Rover_UseLLH,     (yes/no)                                    = yes
+Rover_Latitude,   (decimal degrees or dd mm ss.ss)            = 51.0942482258
+Rover_Longitude,  (decimal degrees or dd mm ss.ss)            = -114.13777
+Rover_Height,     (m)                                         = 1092.940
+
+Rover_UncertaintyLatitude,   (1 sigma [m])                    = 20.0
+Rover_UncertaintyLongitude,  (1 sigma [m])                    = 20.0
+Rover_UncertaintyHeight,     (1 sigma [m])                    = 20.0
+
+Rover_EnableTropoCorrection, (enable(1)/disable(0))           = 1
+Rover_EnableIonoCorrection,  (enable(1)/disable(0))           = 1
+Rover_ExcludeSatellites,     (array of PRN's to exclude)      = ;29 2 5 21
+
+Rover_EnablePositionConstraint, (yes/no)                      = no
+Rover_EnableHeightConstraint,   (yes/no)                      = no
+
+; GDM - The hack to put in the UWB range data for the baseline constraint case.
+; GDM - Warning: do not seed the rover initial position with the reference position. This will destabilize the design Matrix!       
+Rover_UWBFilePath, (full or relative path)                    = ;FilteredUWBRangeData_CleanedManually.txt ;UWB1\msg0x15.csv
+
+; The following position is used as a datum to compute a position difference with the rover.
+; If none is specified (empty values), then the first computed rover position is used.
+Rover_IsStatic,       (yes/no)                                = no
+Rover_DatumLatitude,  (decimal degrees or dd mm ss.ss)        = 51.0942482158
+Rover_DatumLongitude, (decimal degrees or dd mm ss.ss)        = -114.1377699758
+Rover_DatumHeight,    (m)                                     = 1092.957
+
+;______________________________________________________________________________
+; REFERENCE STATION PROCESSING OPTIONS
+;
+; For differential processing, reference station information is
+; required. An empty "Reference_DataPath" value means there is
+; no reference station information.
+;
+; DataType's Supported
+; NovAtelOEM4
+; RINEX2.1
+; RINEX2.11
+;
+Reference_DataType,                                           = RINEX2.11
+Reference_DataPath,   (full or relative path)                 = KREF0200.08o
+
+Reference_UseECEF,    (yes/no)                                = no
+Reference_ECEF_X,     (WGS84 m)                               = 
+Reference_ECEF_Y,     (WGS84 m)                               = 
+Reference_ECEF_Z,     (WGS84 m)                               = 
+
+Reference_UseLLH,     (yes/no)                                = yes
+Reference_Latitude,   (decimal degrees or dd mm ss.ss)        = 51.0942482158
+Reference_Longitude,  (decimal degrees or dd mm ss.ss)        = -114.1377699758
+Reference_Height,     (m)                                     = 1092.957
+
+Reference_EnableTropoCorrection, (enable(1)/disable(0))       = 1
+Reference_EnableIonoCorrection,  (enable(1)/disable(0))       = 1
+Reference_ExcludeSatellites,     (array of PRN's to exclude)  = 
