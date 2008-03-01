@@ -43,6 +43,7 @@ SUCH DAMAGE.
 */
 
 #include <math.h>
+#include <float.h>
 #include "ionosphere.h"
 #include "constants.h"
 
@@ -121,6 +122,13 @@ BOOL IONOSPHERE_GetL1KlobucharCorrection(
   t = 4.32e4 * lon_i + gpstow;
   while( !(t >= 0.0 && t <= 86400.0) )
   {
+#ifdef WIN32 // trap infinite loop due to bad input
+    if( !_finite(t) )
+      return FALSE;
+#else
+    if( !isfinite(t) )
+      return FALSE; 
+#endif
     if( t < 0.0 )
       t += 86400.0;
     else

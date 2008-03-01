@@ -50,7 +50,7 @@ SUCH DAMAGE.
 #include "time_conversion.h"
 
 //#define DEBUG_THE_ESTIMATOR
-#define GNSS_CYCLESLIP_THREADHOLD 1.5
+#define GNSS_CYCLESLIP_THREADHOLD 8.0
 //#define KO_SECTION
 
 using namespace std;
@@ -159,13 +159,13 @@ namespace GNSS
     //Matrix r_v;      // The Doppler residuals vector,                               [nD x  1].
 
     double avf_p = 0; // The a-posteriori variance factor for the position solution.
-    //double avf_v = 0; // The a-posteriori variance factor for the velocity solution.
+    double avf_v = 0; // The a-posteriori variance factor for the velocity solution.
 
     bool isGlobalTestPassed_p = false; // This indicates if the Global Reliability Test passed for the position solution.
-    //bool isGlobalTestPassed_v = false; // This indicates if the Global Reliability Test passed for the velocity solution.
+    bool isGlobalTestPassed_v = false; // This indicates if the Global Reliability Test passed for the velocity solution.
 
     bool hasRejectionOccurred_p = false; // This indicates if a pseudorange measurement was rejected.
-    //bool hasRejectionOccurred_v = false; // This indicates if a Doppler measurement was rejected.
+    bool hasRejectionOccurred_v = false; // This indicates if a Doppler measurement was rejected.
 
     unsigned char indexOfRejected = 0; // The index into rxData.m_ObsArray of a rejected measurement.
     
@@ -543,30 +543,9 @@ namespace GNSS
     }
     wasPositionComputed = true;
 
-
-          
-
-    // compute the DOP
-    Matrix Q;
-    Q = m_posLSQ.H;
-    Q.Inplace_Transpose();
-    Q.Inplace_PostMultiply( m_posLSQ.H );
-    if( !Q.Inplace_Invert() )
+    // Compute the DOP values.
+    if( !ComputeDOP( rxData ) )
       return false;
-
-    rxData->m_pvt.dop.ndop = static_cast<float>( sqrt( Q[0][0] ) );
-    rxData->m_pvt.dop.edop = static_cast<float>( sqrt( Q[1][1] ) );
-    rxData->m_pvt.dop.vdop = static_cast<float>( sqrt( Q[2][2] ) );
-    rxData->m_pvt.dop.tdop = static_cast<float>( sqrt( Q[3][3] ) );
-    rxData->m_pvt.dop.hdop = rxData->m_pvt.dop.ndop * rxData->m_pvt.dop.ndop + rxData->m_pvt.dop.edop * rxData->m_pvt.dop.edop;
-    rxData->m_pvt.dop.pdop = rxData->m_pvt.dop.hdop + rxData->m_pvt.dop.vdop * rxData->m_pvt.dop.vdop;
-    rxData->m_pvt.dop.gdop = rxData->m_pvt.dop.pdop + rxData->m_pvt.dop.tdop * rxData->m_pvt.dop.tdop;
-    rxData->m_pvt.dop.hdop = sqrt(rxData->m_pvt.dop.hdop);
-    rxData->m_pvt.dop.pdop = sqrt(rxData->m_pvt.dop.pdop);
-    rxData->m_pvt.dop.gdop = sqrt(rxData->m_pvt.dop.gdop);
-    //
-    ////
-
 
     ////
     // Velocity
@@ -628,7 +607,6 @@ namespace GNSS
           return true;
         }
       }
-
 
       // Need to update the rxData->m_ObsArray[i].rangerate values.
       for( i = 0; i < rxData->m_nrValidObs; i++ )
@@ -807,16 +785,54 @@ namespace GNSS
 
       dtmp1 = fabs(m_velLSQ.dx[0]) + fabs(m_velLSQ.dx[1]) + fabs(m_velLSQ.dx[2]) + fabs(m_velLSQ.dx[3]);
       if( dtmp1 < 1.0e-10 )
-        break;
+      {
+        if( 1 )
+        {
+          // Test the residuals
+          result = PerformGlobalTestAndTestForMeasurementFaults( 
+            *rxData,
+            false,
+            m_velLSQ.H,
+            Ht_v,      
+            m_velLSQ.W,
+            m_velLSQ.R,
+            m_velLSQ.w, // misclosures at convergence are the residuals.
+            m_velLSQ.P,
+            n,
+            4,
+            avf_v,      
+            isGlobalTestPassed_v,
+            hasRejectionOccurred_v,
+            indexOfRejected
+            );
+          if( !result )
+            return false;
+
+          if( hasRejectionOccurred_v )
+          {
+            hasRejectionOccurred_v = false;
+            j = 0; // restart the iterative loop.
+            continue;
+          }
+          else
+          {
+            // converged to solution.
+            break;
+          }
+        }
+      }
     }
     wasVelocityComputed = true;
 
+    if( sqrt(vn*vn) + sqrt(ve*ve) + sqrt(vup*vup) > 20 )
+      int gag = 909;
+
 #ifdef GDM_UWB_RANGE_HACK
-    /* // Code for outputting UWB range misclosures from a position constrained solution.
+    // Code for outputting UWB range misclosures from a position constrained solution.
     for( i = 0; i < rxData->m_nrValidObs; i++ )
       if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
         printf( "%.3lf %.6lf\n", rxData->m_pvt.time.gps_tow, rxData->m_ObsArray[i].psr_misclosure ); 
-    */
+    
 #endif
 
     return true;
@@ -1197,6 +1213,7 @@ namespace GNSS
     double zenith_wet_delay = 0;
     double dtmp1 = 0;
     double dtmp2 = 0;
+    BOOL result;
 
     // Compute the tropospheric delays.
     TROPOSPHERE_DetermineZenithDelayValues_WAAS_Model(
@@ -1232,7 +1249,7 @@ namespace GNSS
             if( rxData.m_klobuchar.isValid )
             {
               // Always compute the ionospheric correction (it may not be applied though).
-              IONOSPHERE_GetL1KlobucharCorrection(
+              result = IONOSPHERE_GetL1KlobucharCorrection(
                 rxData.m_klobuchar.alpha0,
                 rxData.m_klobuchar.alpha1,
                 rxData.m_klobuchar.alpha2,
@@ -1248,6 +1265,8 @@ namespace GNSS
                 rxData.m_pvt.time.gps_tow,
                 &dtmp1
                 );
+              if( result == FALSE )
+                return false;
               rxData.m_ObsArray[i].corrections.prcIono = static_cast<float>(dtmp1);
             }
           }
@@ -1305,6 +1324,12 @@ namespace GNSS
             rxData.m_ObsArray[i].flags.isAboveLockTimeMask = 1;
           }
 
+          if( rxData.m_ObsArray[i].flags.isCodeLocked & 
+            rxData.m_ObsArray[i].flags.isPsrValid )
+          {
+            rxData.m_pvt.nrPsrObsAvailable++;
+          }            
+
           isGood = 
             rxData.m_ObsArray[i].flags.isCodeLocked         & 
             rxData.m_ObsArray[i].flags.isPsrValid           &
@@ -1317,16 +1342,27 @@ namespace GNSS
           if( isGood )
           {
             rxData.m_ObsArray[i].flags.isPsrUsedInSolution = 1;
-            nrUsablePseudoranges++;            
+            rxData.m_pvt.nrPsrObsUsed++;
           }
           else
           {
+            if( !rxData.m_ObsArray[i].flags.isNotUserRejected || !rxData.m_ObsArray[i].flags.isNotPsrRejected )
+            {
+              rxData.m_pvt.nrPsrObsRejected++;
+            }            
             rxData.m_ObsArray[i].flags.isPsrUsedInSolution = 0;
           }
         }
+#ifdef GDM_UWB_RANGE_HACK
+        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+          rxData.m_pvt.nrPsrObsAvailable++;
+          rxData.m_pvt.nrPsrObsUsed++;
+        }
+#endif
       }
     }
-    rxData.m_pvt.nrPsrObsAvailable = nrUsablePseudoranges;
+    nrUsablePseudoranges = rxData.m_pvt.nrPsrObsUsed;
     return true;
   }
 
@@ -1350,6 +1386,12 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
+          if( rxData.m_ObsArray[i].flags.isCodeLocked & 
+            rxData.m_ObsArray[i].flags.isDopplerValid )
+          {
+            rxData.m_pvt.nrDopplerObsAvailable++;
+          }
+            
           isGood = 
             rxData.m_ObsArray[i].flags.isCodeLocked         & 
             rxData.m_ObsArray[i].flags.isDopplerValid       &
@@ -1362,16 +1404,20 @@ namespace GNSS
           if( isGood )
           {
             rxData.m_ObsArray[i].flags.isDopplerUsedInSolution = 1;
-            nrUsableDopplers++;            
+            rxData.m_pvt.nrDopplerObsUsed++;            
           }
           else
           {
+            if( !rxData.m_ObsArray[i].flags.isNotUserRejected || !rxData.m_ObsArray[i].flags.isNotDopplerRejected )
+            {
+              rxData.m_pvt.nrDopplerObsRejected++;
+            }
             rxData.m_ObsArray[i].flags.isDopplerUsedInSolution = 0;
           }
         }
       }
     }
-    rxData.m_pvt.nrDopplerObsAvailable = nrUsableDopplers;
+    nrUsableDopplers = rxData.m_pvt.nrDopplerObsUsed;
     return true;
   }
 
@@ -1413,30 +1459,42 @@ namespace GNSS
           else
             rxData.m_ObsArray[i].flags.isAboveLockTimeMask = 1;
 
+          if( rxData.m_ObsArray[i].flags.isCodeLocked &
+            rxData.m_ObsArray[i].flags.isPhaseLocked  &
+            rxData.m_ObsArray[i].flags.isParityValid  & // if not, there is a half cycle amibiguity.
+            rxData.m_ObsArray[i].flags.isAdrValid )
+          {
+            rxData.m_pvt.nrAdrObsAvailable++;
+          }            
+
           isGood = 
-            rxData.m_ObsArray[i].flags.isCodeLocked         &
-            rxData.m_ObsArray[i].flags.isPhaseLocked        &
-            rxData.m_ObsArray[i].flags.isParityValid        & // if not, there is a half cycle amibiguity.
-            rxData.m_ObsArray[i].flags.isAdrValid           &
-            rxData.m_ObsArray[i].flags.isAboveElevationMask &
-            rxData.m_ObsArray[i].flags.isAboveCNoMask       &
-            rxData.m_ObsArray[i].flags.isAboveLockTimeMask  &
-            rxData.m_ObsArray[i].flags.isNotUserRejected    &
-            rxData.m_ObsArray[i].flags.isNotAdrRejected     &
+            rxData.m_ObsArray[i].flags.isCodeLocked          &
+            rxData.m_ObsArray[i].flags.isPhaseLocked         &
+            rxData.m_ObsArray[i].flags.isParityValid         & // if not, there is a half cycle amibiguity.
+            rxData.m_ObsArray[i].flags.isAdrValid            &
+            rxData.m_ObsArray[i].flags.isAboveElevationMask  &
+            rxData.m_ObsArray[i].flags.isAboveCNoMask        &
+            rxData.m_ObsArray[i].flags.isAboveLockTimeMask   &
+            rxData.m_ObsArray[i].flags.isNoCycleSlipDetected &
+            rxData.m_ObsArray[i].flags.isNotUserRejected     &
+            rxData.m_ObsArray[i].flags.isNotAdrRejected      &
             rxData.m_ObsArray[i].flags.isEphemerisValid;
           if( isGood )
           {
             rxData.m_ObsArray[i].flags.isAdrUsedInSolution = 1;
-            nrUsableAdr++;            
+            rxData.m_pvt.nrAdrObsUsed++;            
           }
           else
           {
+            if( !rxData.m_ObsArray[i].flags.isNotUserRejected || !rxData.m_ObsArray[i].flags.isNotAdrRejected )
+              rxData.m_pvt.nrAdrObsRejected++;
+            
             rxData.m_ObsArray[i].flags.isAdrUsedInSolution = 0;
           }
         }
       }
     }
-    rxData.m_pvt.nrAdrObsAvailable = nrUsableAdr;
+    nrUsableAdr = rxData.m_pvt.nrAdrObsUsed;
     return true;
   }
 
@@ -1470,7 +1528,7 @@ namespace GNSS
           }
         }
 #ifdef GDM_UWB_RANGE_HACK
-        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem )
+        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem && rxData.m_ObsArray[i].flags.isActive )
         {
           NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
             rxData.m_pvt.latitude,
@@ -1578,7 +1636,7 @@ namespace GNSS
           rxData->m_ObsArray[i].psr_misclosure = psr_measured - psr_computed;            
         }
 #ifdef GDM_UWB_RANGE_HACK
-        else if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
+        else if( rxData->m_ObsArray[i].system == GNSS_UWBSystem && rxData->m_ObsArray[i].flags.isActive )
         {
           psr_measured = rxData->m_ObsArray[i].psr;
           
@@ -4832,6 +4890,7 @@ namespace GNSS
         j++;
       }
     }
+    unsigned nrAmb = 0;
     for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add ADR
     {
       if( rxData->m_ObsArray[i].flags.isActive &&
@@ -4840,6 +4899,7 @@ namespace GNSS
         stdev = rxData->m_ObsArray[i].stdev_adr * GPS_WAVELENGTHL1;
         m_RTK.r[j] = stdev*stdev;
         j++;
+        nrAmb++;
       }
     }
     // Deal with constraints.
@@ -4885,6 +4945,103 @@ namespace GNSS
     if( nrDifferentialAdr > 0 )
       amb.Resize(nrDifferentialAdr);
 
+
+#ifdef ASDFASDFLKASDFASDFASDF
+    bool noUWB = false;
+
+    // Form the misclosure vector.
+    result = m_RTK.w.Resize( n );
+    if( !result )
+      return false;    
+    result = DeterminePseudorangeMisclosures_GPSL1( rxData, rxBaseData );
+    if( !result )
+      return false;
+    result = DetermineDopplerMisclosures_GPSL1( rxData, rxBaseData );
+    if( !result )
+      return false;
+    result = DetermineSingleDifferenceADR_Misclosures_GPSL1( rxData, rxBaseData );
+    if( !result )    
+      return false;
+    j = 0;
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add pseudoranges
+    {
+      if( rxData->m_ObsArray[i].flags.isActive &&
+        rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+      {
+        if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
+        {
+          if( fabs(rxData->m_ObsArray[i].psr_misclosure) > 20*0.009 )
+          {
+            rxData->m_ObsArray[i].flags.isActive = false;
+            rxData->m_ObsArray[i].flags.isPsrUsedInSolution = false;
+            noUWB = true;
+            continue;
+          }
+        }
+        m_RTK.w[j] = rxData->m_ObsArray[i].psr_misclosure;
+        j++;
+      }
+    }
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add Dopplers
+    {
+      if( rxData->m_ObsArray[i].flags.isActive &&
+        rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+      {
+        m_RTK.w[j] = rxData->m_ObsArray[i].doppler_misclosure;
+        j++;
+      }
+    }
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add ADR
+    {
+      if( rxData->m_ObsArray[i].flags.isActive &&
+        rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+      {
+        m_RTK.w[j] = rxData->m_ObsArray[i].adr_misclosure;
+        j++;
+      }
+    }    
+    // Add constraints to w if any.      
+    if( rxData->m_pvt.isPositionConstrained )
+    {
+      double w_lat = 0.0;
+      double w_lon = 0.0;
+      double w_hgt = 0.0;
+      result = DeterminePositionConstraintMisclosures( rxData, w_lat, w_lon, w_hgt );
+      if( !result )
+        return false;
+      m_RTK.w[j] = w_lat;
+      j++;
+      m_RTK.w[j] = w_lon;
+      j++;
+      m_RTK.w[j] = w_hgt;
+      j++;
+      m_RTK.w[j] = 0.0;
+      j++;
+      m_RTK.w[j] = 0.0;
+      j++;
+      m_RTK.w[j] = 0.0;
+      j++;
+    }
+    else if( rxData->m_pvt.isHeightConstrained )
+    {
+      double w_hgt = 0.0;       
+      result = DetermineHeightConstraintMisclosures( rxData, w_hgt );
+      if( !result )
+        return false;
+      m_RTK.w[j] = w_hgt;
+      j++;
+      m_RTK.w[j] = 0.0;
+      j++;
+    }
+    PrintMatToDebug( "RTK w", m_RTK.w );
+
+    if( noUWB )
+    {
+      m_RTK.w.Redim( n-1, 1 );
+      n--;
+    }
+#endif
+    
     bool recompute_H = true; // Should H be recomputed with every sequential update.
     bool recompute_w = true; // Should w be recomputed with every sequential update.
 
@@ -5051,6 +5208,14 @@ namespace GNSS
         PrintMatToDebug( "RTK w", m_RTK.w );
       }
 
+      /*
+      if( fabs(m_RTK.w[index]) > 30.0*m_RTK.r[index] )
+      {
+        // exclude this observation
+        continue;
+      }
+      */
+
       Matrix h(1,u);  // The i'th row of the design matrix, [ux1].
       Matrix ht(u,1); // The transpose of the i'th row of the design matrix, [ux1].
       Matrix pht;     // pht = P ht, [ux1].
@@ -5151,15 +5316,21 @@ namespace GNSS
       PrintMatToDebug( "amb", amb );
     }
 
+
+    // Compute the DOP values.
+    if( !ComputeDOP( rxData ) )
+      return false;
+
+
+#ifdef GDM_UWB_RANGE_HACK
+    // Code for outputting UWB range misclosures from a position constrained solution.
     for( i = 0; i < rxData->m_nrValidObs; i++ )
-    {
-      if( rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
-        rxData->m_pvt.nrPsrObsUsed++;
-      if( rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
-        rxData->m_pvt.nrDopplerObsUsed++;
-      if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-        rxData->m_pvt.nrAdrObsUsed++;
-    }
+      if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution && rxData->m_ObsArray[i].id == 30 )
+        printf( "%.3lf %.6lf\n", rxData->m_pvt.time.gps_tow, rxData->m_ObsArray[i].ambiguity ); 
+    
+#endif
+
+
 
     
 #ifdef DEBUG_THE_ESTIMATOR
@@ -5175,6 +5346,60 @@ namespace GNSS
     printf( supermsg );
 #endif
    
+    return true;
+  }
+
+  bool GNSS_Estimator::ComputeDOP( GNSS_RxData* rxData )
+  {
+    unsigned i = 0;
+    unsigned j = 0;
+    unsigned nrP = 0;
+
+    Matrix H;
+    Matrix Q;    
+
+    if( rxData == NULL )
+      return false;
+    
+    // Compute DOP    
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( rxData->m_ObsArray[i].flags.isActive && rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+        nrP++;
+    }
+    H.Redim( nrP, 4 );
+    j = 0;
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) 
+    {
+      if( rxData->m_ObsArray[i].flags.isActive && rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+      {
+        H[j][0] = rxData->m_ObsArray[i].H_p[0];
+        H[j][1] = rxData->m_ObsArray[i].H_p[1];
+        H[j][2] = rxData->m_ObsArray[i].H_p[2];
+        if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
+          H[j][3] = 0.0;
+        else
+          H[j][3] = 1.0;
+        j++;
+      }
+    }
+    Q = H;
+    Q.Inplace_Transpose();
+    Q.Inplace_PostMultiply( H );
+    if( !Q.Inplace_Invert() )
+      return false;
+    
+    rxData->m_pvt.dop.ndop = static_cast<float>( sqrt( Q[0][0] ) );
+    rxData->m_pvt.dop.edop = static_cast<float>( sqrt( Q[1][1] ) );
+    rxData->m_pvt.dop.vdop = static_cast<float>( sqrt( Q[2][2] ) );
+    rxData->m_pvt.dop.tdop = static_cast<float>( sqrt( Q[3][3] ) );
+    rxData->m_pvt.dop.hdop = rxData->m_pvt.dop.ndop * rxData->m_pvt.dop.ndop + rxData->m_pvt.dop.edop * rxData->m_pvt.dop.edop;
+    rxData->m_pvt.dop.pdop = rxData->m_pvt.dop.hdop + rxData->m_pvt.dop.vdop * rxData->m_pvt.dop.vdop;
+    rxData->m_pvt.dop.gdop = rxData->m_pvt.dop.pdop + rxData->m_pvt.dop.tdop * rxData->m_pvt.dop.tdop;
+    rxData->m_pvt.dop.hdop = sqrt(rxData->m_pvt.dop.hdop);
+    rxData->m_pvt.dop.pdop = sqrt(rxData->m_pvt.dop.pdop);
+    rxData->m_pvt.dop.gdop = sqrt(rxData->m_pvt.dop.gdop);
+    
     return true;
   }
 
@@ -5306,34 +5531,68 @@ namespace GNSS
       delete [] rows;      
     }
 
-      // The indices of the ambiguities in the list are now incorrect due to the removals and must be corrected.
-      // Update the ambiguities list first, then the state indices contained in rxData->m_ObsArray
+    if( remove_list.size() > 0 )
+    {
+      // The state indices are in order of the ambiguity list.
+      j = 0;
       for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
       {
-        for( list_iter = remove_list.begin(); list_iter != remove_list.end(); ++list_iter )
+        iter->state_index = 8+j;
+        j++;
+      }
+    }
+
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( rxData->m_ObsArray[i].flags.isActive && rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+      {
+        // find the new state index.
+        for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
         {
-          if( iter->state_index >= (int)(*list_iter) ) // GDM_BUG_FIX 20080125, changed > to >=
-          {
-            iter->state_index -= 1;
-          }
-        }
-        // Update the observation array with the new info.
-        for( i = 0; i < rxData->m_nrValidObs; i++ )
-        {
-          if( // iter->channel == rxData->m_ObsArray[i].channel  && // GDM - NO CHANNEL MATCHING FOR RINEX DATA!
-            iter->id        == rxData->m_ObsArray[i].id       &&
-            iter->system    == rxData->m_ObsArray[i].system   && 
-            iter->freqType  == rxData->m_ObsArray[i].freqType &&
-            rxData->m_ObsArray[i].flags.isAdrUsedInSolution   &&
-            rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
+          if( // iter->channel == rxData->m_ObsArray[i].channel && // GDM - NO CHANNEL MATCHING FOR RINEX DATA!
+            iter->id        == rxData->m_ObsArray[i].id &&
+            iter->system    == rxData->m_ObsArray[i].system && 
+            iter->freqType  == rxData->m_ObsArray[i].freqType )
           {
             rxData->m_ObsArray[i].index_ambiguity_state = iter->state_index;
-            break;
           }
-        }      
+        }
       }
-      remove_list.clear();
+    }
+    remove_list.clear();
     
+
+
+    /*
+    // The indices of the ambiguities in the list are now incorrect due to the removals and must be corrected.
+    // Update the ambiguities list first, then the state indices contained in rxData->m_ObsArray
+    for( iter = m_ActiveAmbiguitiesList.begin(); iter != m_ActiveAmbiguitiesList.end(); ++iter )
+    {
+      for( list_iter = remove_list.begin(); list_iter != remove_list.end(); ++list_iter )
+      {
+        if( iter->state_index >= (int)(*list_iter) ) // GDM_BUG_FIX 20080125, changed > to >=
+        {
+          iter->state_index -= 1;
+        }
+      }
+      // Update the observation array with the new info.
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( // iter->channel == rxData->m_ObsArray[i].channel  && // GDM - NO CHANNEL MATCHING FOR RINEX DATA!
+          iter->id        == rxData->m_ObsArray[i].id       &&
+          iter->system    == rxData->m_ObsArray[i].system   && 
+          iter->freqType  == rxData->m_ObsArray[i].freqType &&
+          rxData->m_ObsArray[i].flags.isAdrUsedInSolution   &&
+          rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
+        {
+          rxData->m_ObsArray[i].index_ambiguity_state = iter->state_index;
+          break;
+        }
+      }      
+    }
+    remove_list.clear();
+    */
+
 
 
     // Add new ambiguities if any.
@@ -5383,7 +5642,7 @@ namespace GNSS
                 return false;
 
               // Set the initial variance of the ambiguity state [m].
-              P[amb_info.state_index][amb_info.state_index] = 125; // KO Arbitrary value, to improve
+              P[amb_info.state_index][amb_info.state_index] = 25.0; // KO Arbitrary value, to improve
 
               // Initialize the ambiguity state [m].
               // Compute the single difference adr measurement [m].

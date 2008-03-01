@@ -19,9 +19,9 @@
 OutputFilePath,       (full or relative path)                 = results.txt
 
 StartGPSWeek,         (GPS week (0-1024+)                     = 1462
-StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0.0; 319600.0 ;320000.0;319300.0
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 319600.0 ;320000.0;319300.0
 EndGPSWeek,           (GPS week (0-1024+)                     = 1462
-EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 604800.0; 320760.0;321510.0
+EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 320760.0;321510.0
 
 ElevationMask,        (decimal degrees)                       = 3.0
 CNoMask,              (decimal dB-Hz)                         = 0.0
@@ -133,9 +133,9 @@ Rover_Latitude,   (decimal degrees or dd mm ss.ss)            = 51.079428117
 Rover_Longitude,  (decimal degrees or dd mm ss.ss)            = -114.132818611 
 Rover_Height,     (m)                                         = 1116.585
 
-Rover_UncertaintyLatitude,   (1 sigma [m])                    = 25.0 ;0.0001 ;1.0
-Rover_UncertaintyLongitude,  (1 sigma [m])                    = 25.0 ;0.0001 ;1.0
-Rover_UncertaintyHeight,     (1 sigma [m])                    = 25.0 ;0.0001 ;1.0
+Rover_UncertaintyLatitude,   (1 sigma [m])                    = 5.0 ;0.0001 ;1.0
+Rover_UncertaintyLongitude,  (1 sigma [m])                    = 5.0 ;0.0001 ;1.0
+Rover_UncertaintyHeight,     (1 sigma [m])                    = 5.0 ;0.0001 ;1.0
 
 Rover_EnableTropoCorrection, (enable(1)/disable(0))           = 1
 Rover_EnableIonoCorrection,  (enable(1)/disable(0))           = 1

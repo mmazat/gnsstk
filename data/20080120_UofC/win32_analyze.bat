@@ -1,4 +1,4 @@
-..\..\bin\plot2d.exe pvt.csv 1 12 1 13 1 14 -title "Solution Norhting, Easting, Up from Reference" -ylabel "Value (m)" -gpslabel 1 14 -xlabel "GPS Time of Week (s) - UTC Time (hh:mm:ss)" -slabel 1 "North(m)" -slabel 2 "East(m)" -slabel 3 "Up(m)" -scolor 1 blue -scolor 2 limegreen -scolor 3 red -out "Solution_NorthingEastingUp.bmp" -ylim -22 18 -sprecision 1 3 -sprecision 2 3 -sprecision 3 3
+..\..\bin\plot2d.exe pvt.csv 1 12 1 13 1 14 -title "Solution Northing, Easting, Up from Reference" -ylabel "Value (m)" -gpslabel 1 14 -xlabel "GPS Time of Week (s) - UTC Time (hh:mm:ss)" -slabel 1 "North(m)" -slabel 2 "East(m)" -slabel 3 "Up(m)" -scolor 1 blue -scolor 2 limegreen -scolor 3 red -out "Solution_NorthingEastingUp.bmp" -ylim -22 18 -sprecision 1 3 -sprecision 2 3 -sprecision 3 3
 
 ..\..\bin\plot2d.exe pvt.csv 13 12 -title "Plan View" -ylabel "Northing (m)" -xlabel "Easting (m)" -stats 0 -slabel 1 "data" -out "Solution_PlanView.bmp" -ylim -4 14 -xlim -18 -8
 

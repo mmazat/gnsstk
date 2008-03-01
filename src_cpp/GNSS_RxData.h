@@ -579,7 +579,6 @@ namespace GNSS
     /// The number of usable items in m_prevObsArray.
     unsigned char m_prev_nrValidObs;
 
-    
     /// The number of GPS L1 observations in m_ObsArray.
     unsigned char m_nrGPSL1Obs;
 
