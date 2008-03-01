@@ -52,6 +52,7 @@ namespace GNSS
 
   GNSS_OptionFile::GNSS_OptionFile()
     : m_processDGPSOnly(true),
+    m_RoverIsStatic(true),
     m_elevationMask(0.0),
     m_cnoMask(0.0),
     m_locktimeMask(0.0),
@@ -406,6 +407,45 @@ namespace GNSS
 
     GetValue( "Rover_EnableHeightConstraint", m_isHeightConstrained );
 
+
+    m_RoverDatum.isValid = true;
+    GetValueArray( "Rover_DatumLatitude", d, 4, n );
+    if( n == 1 )
+    {
+      m_RoverDatum.latitudeRads = d[0];
+      m_RoverDatum.latitudeRads *= DEG2RAD;
+    }
+    else if( n == 3 )
+    {
+      GetDMSValue( "Rover_DatumLatitude", m_RoverDatum.latitudeRads );
+      m_RoverDatum.latitudeRads *= DEG2RAD;
+    }
+    else
+    {
+      m_RoverDatum.isValid = false;
+    }
+
+    GetValueArray( "Rover_DatumLongitude", d, 4, n );
+    if( n == 1 )
+    {
+      m_RoverDatum.longitudeRads = d[0];
+      m_RoverDatum.longitudeRads *= DEG2RAD;
+    }
+    else if( n == 3 )
+    {
+      GetDMSValue( "Rover_DatumLatitude", m_RoverDatum.longitudeRads );
+      m_RoverDatum.longitudeRads *= DEG2RAD;
+    }
+    else
+    {
+      m_RoverDatum.isValid = false;
+    }
+    
+    if( !GetValue( "Rover_DatumHeight", m_RoverDatum.height ) )
+      m_RoverDatum.isValid = false;
+
+    GetValue( "Rover_IsStatic", m_RoverIsStatic );
+    
     m_Rover.isValid = true;
 
 #ifdef GDM_UWB_RANGE_HACK    

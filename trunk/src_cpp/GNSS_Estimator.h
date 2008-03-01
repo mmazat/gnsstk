@@ -110,6 +110,25 @@ namespace GNSS
       );  
 
 
+    /// \brief  Compute the DOP values for this epoch.
+    ///
+    /// \pre    The following must be valid:        \n
+    /// rxData->m_ObsArray[i].flags.isPsrUsedInSolution \n
+    /// \post   The following are set: \n
+    /// rxData->m_pvt.dop.ndop \n
+    /// rxData->m_pvt.dop.edop \n
+    /// rxData->m_pvt.dop.vdop \n
+    /// rxData->m_pvt.dop.tdop \n
+    /// rxData->m_pvt.dop.hdop \n
+    /// rxData->m_pvt.dop.pdop \n
+    /// rxData->m_pvt.dop.gdop \n
+    /// rxData->m_pvt.dop.hdop \n
+    /// rxData->m_pvt.dop.pdop \n
+    /// rxData->m_pvt.dop.gdop \n
+    /// return true if successful, false otherwise
+    bool ComputeDOP( GNSS_RxData* rxData );
+
+
     /// \brief    Determine the satellite clock corrections, positions, and 
     ///           velocities for the rover receiver and the reference
     ///           receiver if aviailable (!NULL). Also determine if the 

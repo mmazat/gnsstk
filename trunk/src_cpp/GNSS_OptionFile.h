@@ -157,6 +157,18 @@ namespace GNSS
       {}
     };
 
+    struct stRoverDatum
+    {
+      bool isValid;
+      double latitudeRads;
+      double longitudeRads;
+      double height;
+
+      stRoverDatum()
+        :isValid(false), latitudeRads(0), longitudeRads(0), height(0)
+      {}
+    };
+
     /// The Kalman filtering options.
     stKalmanOptions m_KalmanOptions;
 
@@ -181,6 +193,12 @@ namespace GNSS
 
     /// The rover station information.
     stStationInformation m_Rover;
+
+    /// A datum for the rover for which position difference calculations are performed.
+    stRoverDatum m_RoverDatum;
+
+    /// A boolean to indicate if the rover is static or dynamic.
+    bool m_RoverIsStatic;
 
     /// The start time for processing.
     stGPSTime m_StartTime;

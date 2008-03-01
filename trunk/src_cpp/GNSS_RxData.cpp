@@ -406,12 +406,6 @@ namespace GNSS
   {    
     unsigned i = 0;
     unsigned j = 0;
-    Matrix tmp;
-    if( filepath == NULL )
-      return false;
-
-    if( !tmp.ReadFromFile(filepath) )
-      return false;
 
     strcpy( m_UWB.filepath, filepath );
 
@@ -419,27 +413,40 @@ namespace GNSS
     m_UWB.y = y;
     m_UWB.z = z;
 
-    // Remove unnecessary data
-    for( i = 2; i < 14; i++ )
-      tmp.RemoveColumn( 2 );    
-    tmp.RemoveColumnsAfterIndex( 2 );
-
-    if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols() )  )
+#ifdef GDM_UWB_ALREADY_OUTLIER_REMOVED
+    if( !m_UWB.data.ReadFromFile(filepath) )
+      return false;
+#else
+    Matrix tmp;
+    if( filepath == NULL )
       return false;
 
-    // Remove bad data
+    if( !tmp.ReadFromFile(filepath) )
+      return false;
+
+    // Remove unnecessary data
+    for( i = 2; i < 13; i++ )
+      tmp.RemoveColumn( 2 );    
+    tmp.RemoveColumnsAfterIndex( 3 );
+
+    if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols()-1 )  )
+      return false;
+
+    // Convert to meters
     for( i = 0; i < tmp.nrows(); i++ )
     {
-      if( tmp[i][2] > 0.0 )
+      if( tmp[i][3] > 0.0 && fabs(tmp[i][2]) < 1e-06 )
       {
         m_UWB.data[j][0] = tmp[i][0];
         m_UWB.data[j][1] = tmp[i][1]; 
-        m_UWB.data[j][2] = tmp[i][2] * 0.3048 / 100.0; // convert to meters
+        m_UWB.data[j][2] = tmp[i][3] * 0.3048 / 100.0; // convert to meters
         j++;
       }
     }
     if( !m_UWB.data.Redim( j, 3 ) )
       return false;
+
+
 
     if( isStatic )
     {
@@ -507,6 +514,8 @@ namespace GNSS
         
     m_UWB.data.Print( "FilteredUWBRangeData.txt", 9 );
 
+#endif
+
     m_UWB.isHackOn = true;
 
     return true;
@@ -530,14 +539,22 @@ namespace GNSS
       if( uwb_time > epoch )
         break;
     }
+    if( i == m_UWB.data.nrows() )
+    {
+      m_UWB.isValidForThisEpoch = false;
+      m_UWB.index_in_obs_array = -1;      
+      return true; // no measurement;
+    }
+
     tdiff = fabs(uwb_time-epoch);
-    if( tdiff > 60.0 )
+    if( tdiff > 10.0 )
     {
       m_UWB.isValidForThisEpoch = false;
       m_UWB.index_in_obs_array = -1;
       return true; // no measurement
     }
     m_UWB.isValidForThisEpoch = true;
+
     
     uwb_range = m_UWB.data[i][2];
 
@@ -698,6 +715,15 @@ namespace GNSS
         break;
       }
     }
+
+//#define GDM_HACK_TO_REMOVE_DOPPLER 
+#ifdef GDM_HACK_TO_REMOVE_DOPPLER 
+    for( i = 0; i < m_nrValidObs; i++ )
+    {
+      m_ObsArray[i].flags.isDopplerValid = false;
+      m_ObsArray[i].flags.isDopplerUsedInSolution = false;      
+    }
+#endif
 
     // Check for millisecond jumps in the data.
     // First determine the index of the corresponding measurement in the previous epoch
@@ -893,7 +919,7 @@ namespace GNSS
       {
         m_ObsArray[i].stdev_psr     = 1.4f;  // [m]
         m_ObsArray[i].stdev_adr     = 0.05f; // these are in cycles!.
-        m_ObsArray[i].stdev_doppler = 0.5f;  // Hz
+        m_ObsArray[i].stdev_doppler = 1.0f;  // Hz // GDM_HACK //changed from 0.5 to 1.0 Hz
 
         // Check if ephemeris information is available
         if( !m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[i].id, isAvailable ) )
@@ -1496,7 +1522,7 @@ namespace GNSS
 
             if( fabs(phase_diff) > max_dif )
               max_dif = fabs(phase_diff);
-            if( fabs(phase_diff) > nrThresholdCycles )
+            if( fabs(phase_diff) > nrThresholdCycles*dt )
             {
               m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
             }
