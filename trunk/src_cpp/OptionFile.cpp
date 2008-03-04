@@ -685,7 +685,7 @@ bool OptionFile::GetDMSValue( const std::string Field, double &value )
       return false;
 
     if( degrees < 0 )
-      value = degrees - minutes/60.0 + seconds/3600.0;
+      value = degrees - minutes/60.0 - seconds/3600.0;
     else
       value = degrees + minutes/60.0 + seconds/3600.0;
 
