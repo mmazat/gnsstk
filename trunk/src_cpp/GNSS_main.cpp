@@ -316,6 +316,18 @@ int main( int argc, char* argv[] )
     if( !result )
       return 1; 
 
+    // GDM_HACK
+    // For comparing the computed rover position
+    if( opt.m_RoverDatum.isValid )
+    {
+      result = rxData.SetDatumPVT(
+        opt.m_RoverDatum.latitudeRads,
+        opt.m_RoverDatum.longitudeRads,
+        opt.m_RoverDatum.height );
+      if( !result )
+        return 1; 
+    }
+
 #ifdef GDM_UWB_RANGE_HACK
     if( !opt.m_UWBFilePath.empty() )
     {

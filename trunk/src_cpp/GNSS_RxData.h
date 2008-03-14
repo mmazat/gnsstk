@@ -48,6 +48,7 @@ SUCH DAMAGE.
 /// This is the fixed number of channels contained in the array 
 /// for one GNSS_RxData object.
 #define GNSS_RXDATA_NR_CHANNELS (48)
+#define GNSS_RXDATA_MAX_OBS (GNSS_RXDATA_NR_CHANNELS*3) // psr, doppler, adr
 
 /// This is the buffer length (in bytes) for a data message buffer used
 /// by the receiver object in decoding data.
@@ -624,7 +625,28 @@ namespace GNSS
 
     /// This boolean indicates that a negative millisecond jump (the psr decreased by 1 ms * c) occurred at this epoch.
     bool m_msJumpDetected_Negative;
+
+
+    /// This boolean indicates that a non modulo 1 millisecond jump occured at this epoch;
+    bool m_clockJumpDetected;
+
+    /// This is the value of the non modulo 1 millisecond jump [m].
+    double m_clockJump;
+
     
+    // GDM_HACK
+
+    /// A datum point for which to compute the Northing, Easting, and Vertical corresponding to the receiver's position and velocity information.
+    GNSS_structPVT  m_datum_pvt;    
+
+    /// \brief  Set the datum point for which to compute the Northing, 
+    ///         Easting, and Vertical corresponding to the receiver's 
+    ///         position and velocity information.
+    bool SetDatumPVT( 
+      const double latitudeRads,
+      const double longitudeRads,
+      const double height 
+      );
 
 #ifdef GDM_UWB_RANGE_HACK
 
