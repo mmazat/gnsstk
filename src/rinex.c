@@ -747,7 +747,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
     }
     case 5:
     {
-      count = sscanf( line_buffer, "%14Lf%c%c%14Lf%c%c%14Lf%c%c%14Lf%c%c%14Lf%c%c", 
+      count = sscanf( line_buffer, "%14c%c%c%14c%c%c%14c%c%c%14c%c%c%14c%c%c", 
         str_a,
         &RINEX_obs[0].loss_of_lock_indicator, 
         &RINEX_obs[0].signal_strength,
@@ -2176,7 +2176,7 @@ BOOL RINEX_GetNextObservationSet(
       if( RINEX_obs[RINEX_obs_index].type == RINEX_OBS_TYPE_S2 && RINEX_obs[RINEX_obs_index].isValid )
       {
         obsArray[obsArray_index].system   = RINEX_obs[RINEX_obs_index].system;
-        obsArray[obsArray_index].freqType = GNSS_GPSL1; 
+        obsArray[obsArray_index].freqType = GNSS_GPSL2; 
         obsArray[obsArray_index].id       = RINEX_obs[RINEX_obs_index].id;
 
         overwriteCNoL2 = FALSE;
