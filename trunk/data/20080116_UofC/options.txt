@@ -1,4 +1,4 @@
-	; EssentialGNSS
+; EssentialGNSS
 ; Post Processing Options File
 ;______________________________________________________________________________
 ; FORMAT
@@ -66,11 +66,11 @@ ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
 alpha_Vn,       (correlation time Vn       [s])              = 60.0
 alpha_Ve,       (correlation time Ve       [s])              = 60.0
 alpha_Vup,      (correlation time Vup      [s])              = 60.0
-alpha_ClkDrift, (correlation time ClkDrift [s])              = 1.0
-sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.0001
-sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.0001
-sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.0001
-sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 100.0
+alpha_ClkDrift, (correlation time ClkDrift [s])              = 60.0
+sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.1
+sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.1
+sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.1
+sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 0.1
 
 
 ;______________________________________________________________________________
@@ -133,20 +133,20 @@ Rover_Latitude,   (decimal degrees or dd mm ss.ss)            = 51.079428117
 Rover_Longitude,  (decimal degrees or dd mm ss.ss)            = -114.132818611 
 Rover_Height,     (m)                                         = 1116.585
 
-Rover_UncertaintyLatitude,   (1 sigma [m])                    = 5.0 ;0.0001 ;1.0
-Rover_UncertaintyLongitude,  (1 sigma [m])                    = 5.0 ;0.0001 ;1.0
-Rover_UncertaintyHeight,     (1 sigma [m])                    = 5.0 ;0.0001 ;1.0
+Rover_UncertaintyLatitude,   (1 sigma [m])                    = 0.0001 ;1.0
+Rover_UncertaintyLongitude,  (1 sigma [m])                    = 0.0001 ;1.0
+Rover_UncertaintyHeight,     (1 sigma [m])                    = 0.0001 ;1.0
 
 Rover_EnableTropoCorrection, (enable(1)/disable(0))           = 1
 Rover_EnableIonoCorrection,  (enable(1)/disable(0))           = 1
 Rover_ExcludeSatellites,     (array of PRN's to exclude)      = 
 
-Rover_EnablePositionConstraint, (yes/no)                      = no
+Rover_EnablePositionConstraint, (yes/no)                      = yes
 Rover_EnableHeightConstraint,   (yes/no)                      = no
 
 ; GDM - The hack to put in the UWB range data for the baseline constraint case.
 ; GDM - Warning: do not seed the rover initial position with the reference position. This will destabilize the design Matrix!       
-Rover_UWBFilePath, (full or relative path)                    = UWB2\msg0x15.csv
+Rover_UWBFilePath, (full or relative path)                    = ;UWB2\msg0x15.csv
 
 ; The following position is used as a datum to compute a position difference with the rover.
 ; If none is specified (empty values), then the first computed rover position is used.

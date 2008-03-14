@@ -130,6 +130,24 @@ typedef enum
   GNSS_ReservedSystem
 } GNSS_enumSystem;
 
+
+/// \brief    An enumeration for a GNSS measurement type.
+typedef enum 
+{
+  GNSS_PSR_MEASUREMENT        = 0,
+  GNSS_DOPPLER_MEASUREMENT    = 1,
+  GNSS_ADR_MEASUREMENT        = 2,  
+  GNSS_LAT_CONSTRAINT         = 3,
+  GNSS_LON_CONSTRAINT         = 4,
+  GNSS_HGT_CONSTRAINT         = 5,
+  GNSS_VN_CONSTRAINT          = 6,
+  GNSS_VE_CONSTRAINT          = 7,
+  GNSS_VUP_CONSTRAINT         = 8,  
+  GNSS_RESERVED_MEASUREMENT_TYPE
+} GNSS_enumMeasurementType;
+
+
+
 /// \brief    Correction data associated with a single receiver measurement channel.
 ///           PRC is PseudRange Correction, RRC is RangeRate Correction.
 ///

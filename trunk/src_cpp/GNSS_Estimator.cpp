@@ -83,7 +83,7 @@ namespace GNSS
     }
   }
 
-  bool GNSS_Estimator::DealWithMillisecondClockJumps(
+  bool GNSS_Estimator::DealWithClockJumps(
     GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
     GNSS_RxData *rxBaseData   //!< A pointer to the reference receiver data if available. NULL if not available.
     )
@@ -99,6 +99,12 @@ namespace GNSS
     {
       rxData->m_pvt.clockOffset -= ONE_MS_IN_M;
     }
+    else if( rxData->m_clockJumpDetected ) 
+    {
+      // A large arbitrary clock jump was detected.
+      // compensate for it as best as possible.
+      rxData->m_pvt.clockOffset += rxData->m_clockJump; 
+    }
 
     if( rxBaseData )
     {
@@ -109,6 +115,12 @@ namespace GNSS
       else if( rxBaseData->m_msJumpDetected_Negative )
       {
         rxData->m_pvt.clockOffset += ONE_MS_IN_M;
+      }
+      else if( rxBaseData->m_clockJumpDetected ) 
+      {
+        // A large arbitrary clock jump was detected on the base station receiver.
+        // compensate for it as best as possible.
+        rxData->m_pvt.clockOffset -= rxBaseData->m_clockJump;
       }
     }
 
@@ -175,7 +187,7 @@ namespace GNSS
       return false;
 
     // Compensate the clock offset for pure 1 ms clock jumps.
-    if( !DealWithMillisecondClockJumps( rxData, rxBaseData ) )
+    if( !DealWithClockJumps( rxData, rxBaseData ) )
       return false;
    
     // Store the current input pvt as the previous pvt since we are updating.
@@ -1386,6 +1398,9 @@ namespace GNSS
       {
         if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
         {
+          if( !rxData.m_ObsArray[i].flags.isPsrUsedInSolution )
+            rxData.m_ObsArray[i].flags.isDopplerValid = false; // GDM - not optimal but safe to do this.
+
           if( rxData.m_ObsArray[i].flags.isCodeLocked & 
             rxData.m_ObsArray[i].flags.isDopplerValid )
           {
@@ -1500,6 +1515,56 @@ namespace GNSS
 
 
 
+  bool GNSS_Estimator::DetermineDesignMatrixElement_GPSL1_Psr( GNSS_RxData &rxData, const unsigned int index )
+  {
+    // Check the index.
+    if( index < 0 || index >= GNSS_RXDATA_NR_CHANNELS )
+      return false;
+
+    // Compute the design matrix for the position solution.
+    if( rxData.m_ObsArray[index].flags.isActive )
+    {
+      if( rxData.m_ObsArray[index].system == GNSS_GPS && rxData.m_ObsArray[index].freqType == GNSS_GPSL1 )
+      {
+        if( rxData.m_ObsArray[index].flags.isPsrUsedInSolution )
+        {
+          NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
+            rxData.m_pvt.latitude,
+            rxData.m_pvt.longitude, 
+            rxData.m_pvt.height,
+            rxData.m_ObsArray[index].satellite.x,
+            rxData.m_ObsArray[index].satellite.y,
+            rxData.m_ObsArray[index].satellite.z,
+            &(rxData.m_ObsArray[index].H_p[0]),
+            &(rxData.m_ObsArray[index].H_p[1]),
+            &(rxData.m_ObsArray[index].H_p[2]),
+            &rxData.m_ObsArray[index].range
+            );
+        }
+      }
+#ifdef GDM_UWB_RANGE_HACK
+      else if( rxData.m_ObsArray[index].system == GNSS_UWBSystem && rxData.m_ObsArray[index].flags.isActive )
+      {
+        NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
+          rxData.m_pvt.latitude,
+          rxData.m_pvt.longitude, 
+          rxData.m_pvt.height,
+          rxData.m_ObsArray[index].satellite.x,
+          rxData.m_ObsArray[index].satellite.y,
+          rxData.m_ObsArray[index].satellite.z,
+          &(rxData.m_ObsArray[index].H_p[0]),
+          &(rxData.m_ObsArray[index].H_p[1]),
+          &(rxData.m_ObsArray[index].H_p[2]),
+          &rxData.m_ObsArray[index].range
+          );
+        rxData.m_ObsArray[index].flags.isPsrUsedInSolution = true;
+      }
+#endif      
+    }
+    return true;
+  }
+
+
   bool GNSS_Estimator::DetermineDesignMatrixElements_GPSL1_Psr( GNSS_RxData &rxData )
   {
     unsigned i = 0;
@@ -1507,48 +1572,128 @@ namespace GNSS
     // Compute the design matrix for the position solution.
     for( i = 0; i < rxData.m_nrValidObs; i++ )
     {
-      if( rxData.m_ObsArray[i].flags.isActive )
+      if( DetermineDesignMatrixElement_GPSL1_Psr( rxData, i ) == false )
       {
-        if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          if( rxData.m_ObsArray[i].flags.isPsrUsedInSolution )
-          {
-            NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
-              rxData.m_pvt.latitude,
-              rxData.m_pvt.longitude, 
-              rxData.m_pvt.height,
-              rxData.m_ObsArray[i].satellite.x,
-              rxData.m_ObsArray[i].satellite.y,
-              rxData.m_ObsArray[i].satellite.z,
-              &(rxData.m_ObsArray[i].H_p[0]),
-              &(rxData.m_ObsArray[i].H_p[1]),
-              &(rxData.m_ObsArray[i].H_p[2]),
-              &rxData.m_ObsArray[i].range
-              );
-          }
-        }
-#ifdef GDM_UWB_RANGE_HACK
-        else if( rxData.m_ObsArray[i].system == GNSS_UWBSystem && rxData.m_ObsArray[i].flags.isActive )
-        {
-          NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
-            rxData.m_pvt.latitude,
-            rxData.m_pvt.longitude, 
-            rxData.m_pvt.height,
-            rxData.m_ObsArray[i].satellite.x,
-            rxData.m_ObsArray[i].satellite.y,
-            rxData.m_ObsArray[i].satellite.z,
-            &(rxData.m_ObsArray[i].H_p[0]),
-            &(rxData.m_ObsArray[i].H_p[1]),
-            &(rxData.m_ObsArray[i].H_p[2]),
-            &rxData.m_ObsArray[i].range
-            );
-          rxData.m_ObsArray[i].flags.isPsrUsedInSolution = true;
-        }
-#endif
+        return false;
       }
     }
     return true;
   }
+
+
+  bool GNSS_Estimator::DeterminePseudorangeMisclosure_GPSL1( 
+    GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
+    const unsigned int index, //!< The index of the observation in the receiver data.
+    GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
+    )
+  {
+    int k = 0;
+    double psr_base = 0;
+    double range_base = 0;
+    double psr_measured = 0;
+    double psr_computed = 0;
+
+    // Check the index.
+    if( index < 0 || index >= GNSS_RXDATA_NR_CHANNELS )
+      return false;
+    
+    // Check the pointers.
+    if( rxData == NULL || rxBaseData == NULL )
+      return false;
+
+    if( rxData->m_ObsArray[index].flags.isActive )
+    {
+      if( rxData->m_ObsArray[index].system == GNSS_GPS && rxData->m_ObsArray[index].freqType == GNSS_GPSL1 )
+      {
+        // allows compute the misclosure value (regardless of whether it is used in solution
+        psr_measured = rxData->m_ObsArray[index].psr;
+
+        // Add the satellite clock correction.
+        psr_measured += rxData->m_ObsArray[index].satellite.clk;
+
+        // Compensate for the ionospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index].flags.useBroadcastIonoCorrection )
+        {
+          // Compensate for the ionospheric delay
+          psr_measured -= rxData->m_ObsArray[index].corrections.prcIono;
+        }
+
+        // Compensate for the tropospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index].flags.useTropoCorrection )
+        {
+          // Compensate for the tropospheric delay
+          psr_measured -= rxData->m_ObsArray[index].corrections.prcTropoDry;
+          psr_measured -= rxData->m_ObsArray[index].corrections.prcTropoWet;
+        }
+
+        range_base = 0;
+        if( rxBaseData != NULL )
+        {    
+          if( rxData->m_ObsArray[index].flags.isDifferentialPsrAvailable )
+          {
+            k = rxData->m_ObsArray[index].index_differential;
+            if( k != -1 )
+            {
+              psr_base  = rxBaseData->m_ObsArray[k].psr;
+              psr_base += rxBaseData->m_ObsArray[k].satellite.clk;
+
+              // Compensate for the ionospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
+              {
+                // Compensate for the ionospheric delay
+                psr_base -= rxBaseData->m_ObsArray[k].corrections.prcIono;
+              }
+
+              // Compensate for the tropospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
+              {
+                // Compensate for the tropospheric delay
+                psr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
+                psr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
+              }                  
+
+              range_base = rxBaseData->m_ObsArray[k].range;
+
+              // Compute the differential pseudorange.
+              psr_measured -= psr_base;
+            }
+          }
+        }
+
+        // Calculate the computed pseudorange = geometric range + clock offset (m)
+        // The range value and the clock offset must be determined beforehand.
+        // If differential, range_base != 0, it is the computed psuedorange difference.
+        psr_computed = rxData->m_ObsArray[index].range - range_base + rxData->m_pvt.clockOffset;
+
+        // The misclosure is the corrected measured value minus the computed valid.
+        rxData->m_ObsArray[index].psr_misclosure = psr_measured - psr_computed;            
+      }
+#ifdef GDM_UWB_RANGE_HACK
+      else if( rxData->m_ObsArray[index].system == GNSS_UWBSystem && rxData->m_ObsArray[index].flags.isActive )
+      {
+        psr_measured = rxData->m_ObsArray[index].psr;
+        
+        // Calculate the computed uwbrange = geometric range only (m)
+        psr_computed = rxData->m_ObsArray[index].range;
+
+        // The misclosure is the corrected measured value minus the computed valid.
+        rxData->m_ObsArray[index].psr_misclosure = psr_measured - psr_computed;            
+        
+        rxData->m_ObsArray[index].flags.isPsrUsedInSolution = true; // GDM_HACK
+      }
+#endif
+      else
+      {
+        rxData->m_ObsArray[index].psr_misclosure = 0.0;            
+      }
+    }
+    return true;
+  }
+
  
   bool GNSS_Estimator::DeterminePseudorangeMisclosures_GPSL1( 
     GNSS_RxData *rxData,    //!< The pointer to the receiver data.    
@@ -1556,103 +1701,12 @@ namespace GNSS
     )
   {
     unsigned i = 0;
-    int k = 0;
-    double psr_base = 0;
-    double range_base = 0;
-    double psr_measured = 0;
-    double psr_computed = 0;
-
+    
     for( i = 0; i < rxData->m_nrValidObs; i++ )
     {
-      if( rxData->m_ObsArray[i].flags.isActive )
+      if( GNSS_Estimator::DeterminePseudorangeMisclosure_GPSL1( rxData, i, rxBaseData ) == false )
       {
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          // allows compute the misclosure value (regardless of whether it is used in solution
-          psr_measured = rxData->m_ObsArray[i].psr;
-
-          // Add the satellite clock correction.
-          psr_measured += rxData->m_ObsArray[i].satellite.clk;
-
-          // Compensate for the ionospheric delay if indicated.
-          // The corrections must be determined beforehand.
-          if( rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection )
-          {
-            // Compensate for the ionospheric delay
-            psr_measured -= rxData->m_ObsArray[i].corrections.prcIono;
-          }
-
-          // Compensate for the tropospheric delay if indicated.
-          // The corrections must be determined beforehand.
-          if( rxData->m_ObsArray[i].flags.useTropoCorrection )
-          {
-            // Compensate for the tropospheric delay
-            psr_measured -= rxData->m_ObsArray[i].corrections.prcTropoDry;
-            psr_measured -= rxData->m_ObsArray[i].corrections.prcTropoWet;
-          }
-
-          range_base = 0;
-          if( rxBaseData != NULL )
-          {    
-            if( rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable )
-            {
-              k = rxData->m_ObsArray[i].index_differential;
-              if( k != -1 )
-              {
-                psr_base  = rxBaseData->m_ObsArray[k].psr;
-                psr_base += rxBaseData->m_ObsArray[k].satellite.clk;
-
-                // Compensate for the ionospheric delay if indicated.
-                // The corrections must be determined beforehand.
-                if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
-                {
-                  // Compensate for the ionospheric delay
-                  psr_base -= rxBaseData->m_ObsArray[k].corrections.prcIono;
-                }
-
-                // Compensate for the tropospheric delay if indicated.
-                // The corrections must be determined beforehand.
-                if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
-                {
-                  // Compensate for the tropospheric delay
-                  psr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
-                  psr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
-                }                  
-
-                range_base = rxBaseData->m_ObsArray[k].range;
-
-                // Compute the differential pseudorange.
-                psr_measured -= psr_base;
-              }
-            }
-          }
-
-          // Calculate the computed pseudorange = geometric range + clock offset (m)
-          // The range value and the clock offset must be determined beforehand.
-          // If differential, range_base != 0, it is the computed psuedorange difference.
-          psr_computed = rxData->m_ObsArray[i].range - range_base + rxData->m_pvt.clockOffset;
-
-          // The misclosure is the corrected measured value minus the computed valid.
-          rxData->m_ObsArray[i].psr_misclosure = psr_measured - psr_computed;            
-        }
-#ifdef GDM_UWB_RANGE_HACK
-        else if( rxData->m_ObsArray[i].system == GNSS_UWBSystem && rxData->m_ObsArray[i].flags.isActive )
-        {
-          psr_measured = rxData->m_ObsArray[i].psr;
-          
-          // Calculate the computed uwbrange = geometric range only (m)
-          psr_computed = rxData->m_ObsArray[i].range;
-
-          // The misclosure is the corrected measured value minus the computed valid.
-          rxData->m_ObsArray[i].psr_misclosure = psr_measured - psr_computed;            
-          
-          rxData->m_ObsArray[i].flags.isPsrUsedInSolution = true; // GDM_HACK
-        }
-#endif
-        else
-        {
-          rxData->m_ObsArray[i].psr_misclosure = 0.0;            
-        }
+        return false;
       }
     }
     return true;
@@ -1818,9 +1872,10 @@ namespace GNSS
   }
 
 
-  bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosures_GPSL1( 
-    GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-    GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
+  bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosure_GPSL1( 
+    GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
+    const unsigned int index, //!< The index of the observation in the receiver data.
+    GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
     )
   {
     unsigned i = 0;
@@ -1830,89 +1885,114 @@ namespace GNSS
     double adr_measured = 0;
     double adr_computed = 0;
 
-    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    // Check the index.
+    if( index < 0 || index >= GNSS_RXDATA_NR_CHANNELS )
+      return false;
+    
+    // Check the pointers.
+    if( rxData == NULL || rxBaseData == NULL )
+      return false;
+
+    if( rxData->m_ObsArray[index].flags.isActive )
     {
-      if( rxData->m_ObsArray[i].flags.isActive )
+      if( rxData->m_ObsArray[index].system == GNSS_GPS && rxData->m_ObsArray[index].freqType == GNSS_GPSL1 )
       {
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
+        // allows computation of the misclosure value (regardless of whether it is used in solution
+        adr_measured = rxData->m_ObsArray[index].adr * GPS_WAVELENGTHL1;
+
+        // Add the satellite clock correction.
+        adr_measured += rxData->m_ObsArray[index].satellite.clk;
+
+        // Compensate for the ionospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index].flags.useBroadcastIonoCorrection )
         {
-          // allows computation of the misclosure value (regardless of whether it is used in solution
-          adr_measured = rxData->m_ObsArray[i].adr * GPS_WAVELENGTHL1;
+          // Compensate for the ionospheric delay
+          adr_measured += rxData->m_ObsArray[index].corrections.prcIono;
+        }
 
-          // Add the satellite clock correction.
-          adr_measured += rxData->m_ObsArray[i].satellite.clk;
+        // Compensate for the tropospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index].flags.useTropoCorrection )
+        {
+          // Compensate for the tropospheric delay
+          adr_measured -= rxData->m_ObsArray[index].corrections.prcTropoDry;
+          adr_measured -= rxData->m_ObsArray[index].corrections.prcTropoWet;
+        }
 
-          // Compensate for the ionospheric delay if indicated.
-          // The corrections must be determined beforehand.
-          if( rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection )
+        range_base = 0;
+        if( rxBaseData != NULL )
+        {    
+          if( rxData->m_ObsArray[index].flags.isDifferentialAdrAvailable )
           {
-            // Compensate for the ionospheric delay
-            adr_measured += rxData->m_ObsArray[i].corrections.prcIono;
-          }
-
-          // Compensate for the tropospheric delay if indicated.
-          // The corrections must be determined beforehand.
-          if( rxData->m_ObsArray[i].flags.useTropoCorrection )
-          {
-            // Compensate for the tropospheric delay
-            adr_measured -= rxData->m_ObsArray[i].corrections.prcTropoDry;
-            adr_measured -= rxData->m_ObsArray[i].corrections.prcTropoWet;
-          }
-
-          range_base = 0;
-          if( rxBaseData != NULL )
-          {    
-            if( rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable )
+            k = rxData->m_ObsArray[index].index_differential;
+            if( k != -1 )
             {
-              k = rxData->m_ObsArray[i].index_differential;
-              if( k != -1 )
+              adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
+              adr_base += rxBaseData->m_ObsArray[k].satellite.clk;
+
+              // Compensate for the ionospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
               {
-                adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
-                adr_base += rxBaseData->m_ObsArray[k].satellite.clk;
-                
-                // Compensate for the ionospheric delay if indicated.
-                // The corrections must be determined beforehand.
-                if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
-                {
-                  // Compensate for the ionospheric delay
-                  adr_base += rxBaseData->m_ObsArray[k].corrections.prcIono;
-                }
-
-                // Compensate for the tropospheric delay if indicated.
-                // The corrections must be determined beforehand.
-                if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
-                {
-                  // Compensate for the tropospheric delay
-                  adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
-                  adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
-                }                  
-
-                range_base = rxBaseData->m_ObsArray[k].range;
-
-                // Compute the differential adr.
-                adr_measured -= adr_base;
+                // Compensate for the ionospheric delay
+                adr_base += rxBaseData->m_ObsArray[k].corrections.prcIono;
               }
+
+              // Compensate for the tropospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
+              {
+                // Compensate for the tropospheric delay
+                adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
+                adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
+              }                  
+
+              range_base = rxBaseData->m_ObsArray[k].range;
+
+              // Compute the differential adr.
+              adr_measured -= adr_base;
             }
           }
-
-          // Calculate the computed adr = geometric range + clock offset (m)
-          // The range value and the clock offset must be determined beforehand.
-          // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
-          adr_computed = rxData->m_ObsArray[i].range - range_base;
-          adr_computed += rxData->m_pvt.clockOffset;          
-          adr_computed += rxData->m_ObsArray[i].ambiguity; 
-
-          // The misclosure is the corrected measured value minus the computed valid.
-          rxData->m_ObsArray[i].adr_misclosure = adr_measured - adr_computed;            
         }
-        else
-        {
-          rxData->m_ObsArray[i].adr_misclosure = 0.0;            
-        }
+
+        // Calculate the computed adr = geometric range + clock offset (m)
+        // The range value and the clock offset must be determined beforehand.
+        // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
+        adr_computed = rxData->m_ObsArray[index].range - range_base;
+        adr_computed += rxData->m_pvt.clockOffset;          
+        adr_computed += rxData->m_ObsArray[index].ambiguity; 
+
+        // The misclosure is the corrected measured value minus the computed valid.
+        rxData->m_ObsArray[index].adr_misclosure = adr_measured - adr_computed;            
+      }
+      else
+      {
+        rxData->m_ObsArray[index].adr_misclosure = 0.0;            
+      }
+    }    
+    return true;
+  }
+
+
+
+  bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosures_GPSL1( 
+    GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
+    )
+  {
+    unsigned i = 0;
+
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( DetermineSingleDifferenceADR_Misclosure_GPSL1(rxData, i, rxBaseData) == false )
+      {
+        return false;
       }
     }
     return true;
   }
+
 
   bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
     GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
@@ -2066,58 +2146,119 @@ namespace GNSS
     return true;
   }
 
-  bool GNSS_Estimator::DetermineDopplerMisclosures_GPSL1( 
-    GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-    GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
+
+  bool GNSS_Estimator::DetermineDopplerMisclosure_GPSL1( 
+    GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
+    const unsigned int index, //!< The index of the observation in the receiver data.
+    GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
     )
   {
-    unsigned i = 0;
     int k = 0;
     double doppler_base = 0;
     double rangerate_base = 0;
     double doppler_measured = 0;
     double doppler_computed = 0;
 
-    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    // Check the index.
+    if( index < 0 || index >= GNSS_RXDATA_NR_CHANNELS )
+      return false;
+    
+    // Check the pointers.
+    if( rxData == NULL || rxBaseData == NULL )
+      return false;
+
+    if( rxData->m_ObsArray[index].flags.isActive )
     {
-      if( rxData->m_ObsArray[i].flags.isActive )
+      rxData->m_ObsArray[index].doppler_misclosure = 0.0;            
+
+      if( rxData->m_ObsArray[index].system == GNSS_GPS && rxData->m_ObsArray[index].freqType == GNSS_GPSL1 )
       {
-        rxData->m_ObsArray[i].doppler_misclosure = 0.0;            
+        // always compute the misclosure regardless of whether it is used in solution.
 
-        if( rxData->m_ObsArray[i].system == GNSS_GPS && rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
+        // Compute the pseudorange misclosures in meters/second!
+        doppler_measured = rxData->m_ObsArray[index].doppler * GPS_WAVELENGTHL1;
+
+        // Add the satellite clock drift.        
+        doppler_measured += rxData->m_ObsArray[index].satellite.clkdrift;
+
+        rangerate_base = 0;
+        if( rxBaseData != NULL )
         {
-          // always compute the misclosure regardless of whether it is used in solution.
-          
-          // Compute the pseudorange misclosures in meters/second!
-          doppler_measured = rxData->m_ObsArray[i].doppler * GPS_WAVELENGTHL1;
-
-          // Add the satellite clock drift.        
-          doppler_measured += rxData->m_ObsArray[i].satellite.clkdrift;
-          
-          rangerate_base = 0;
-          if( rxBaseData != NULL )
+          doppler_base = 0;
+          if( rxData->m_ObsArray[index].flags.isDifferentialDopplerAvailable )
           {
-            doppler_base = 0;
-            if( rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable )
+            k = rxData->m_ObsArray[index].index_differential;
+            if( k != -1 )
             {
-              k = rxData->m_ObsArray[i].index_differential;
-              if( k != -1 )
-              {
-                doppler_base   = rxBaseData->m_ObsArray[k].doppler * GPS_WAVELENGTHL1;
-                rangerate_base = rxBaseData->m_ObsArray[k].rangerate;
-              }
-              doppler_measured -= doppler_base;
+              doppler_base   = rxBaseData->m_ObsArray[k].doppler * GPS_WAVELENGTHL1;
+              rangerate_base = rxBaseData->m_ObsArray[k].rangerate;
             }
+            doppler_measured -= doppler_base;
           }
-
-          // Calculate the computed doppler = geometric range rate + rx clock drift [m/s]
-          doppler_computed = rxData->m_ObsArray[i].rangerate - rangerate_base + rxData->m_pvt.clockDrift;
-
-          // The misclosure is the corrected measured value minus the computed valid.            
-          rxData->m_ObsArray[i].doppler_misclosure = doppler_measured - doppler_computed;
         }
+
+        // Calculate the computed doppler = geometric range rate + rx clock drift [m/s]
+        doppler_computed = rxData->m_ObsArray[index].rangerate - rangerate_base + rxData->m_pvt.clockDrift;
+
+        // The misclosure is the corrected measured value minus the computed valid.            
+        rxData->m_ObsArray[index].doppler_misclosure = doppler_measured - doppler_computed;
       }
     }
+    return true;
+  }
+
+  bool GNSS_Estimator::DetermineDopplerMisclosures_GPSL1( 
+    GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
+    )
+  {
+    unsigned i = 0;
+
+    for( i = 0; i < rxData->m_nrValidObs; i++ )
+    {
+      if( DetermineDopplerMisclosure_GPSL1( rxData, i, rxBaseData ) == false )
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
+  bool GNSS_Estimator::DetermineDesignMatrixElement_GPSL1_Doppler( 
+    GNSS_RxData &rxData, 
+    const unsigned int index 
+    )
+  {
+    // Check the index.
+    if( index < 0 || index >= GNSS_RXDATA_NR_CHANNELS )
+      return false;
+    
+    // Compute the design matrix row for the velocity solution.
+    if( rxData.m_ObsArray[index].flags.isActive )
+    {
+      if( rxData.m_ObsArray[index].system == GNSS_GPS && rxData.m_ObsArray[index].freqType == GNSS_GPSL1 )
+      {
+        if( rxData.m_ObsArray[index].flags.isDopplerUsedInSolution )
+        {
+          NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
+            rxData.m_pvt.latitude,
+            rxData.m_pvt.longitude, 
+            rxData.m_pvt.height,
+            rxData.m_ObsArray[index].satellite.x,
+            rxData.m_ObsArray[index].satellite.y,
+            rxData.m_ObsArray[index].satellite.z,
+            &(rxData.m_ObsArray[index].H_v[0]),
+            &(rxData.m_ObsArray[index].H_v[1]),
+            &(rxData.m_ObsArray[index].H_v[2]),
+            &rxData.m_ObsArray[index].range
+            );
+          rxData.m_ObsArray[index].H_v[0] *= -1.0; // Doppler sign convention, NovAtel convention, increasing psr means negative Doppler
+          rxData.m_ObsArray[index].H_v[1] *= -1.0;
+          rxData.m_ObsArray[index].H_v[2] *= -1.0;
+        }
+      }
+    }    
     return true;
   }
 
@@ -2128,29 +2269,9 @@ namespace GNSS
     // Compute the design matrix for the position solution.
     for( i = 0; i < rxData.m_nrValidObs; i++ )
     {
-      if( rxData.m_ObsArray[i].flags.isActive )
+      if( DetermineDesignMatrixElement_GPSL1_Doppler( rxData, i ) == false )
       {
-        if( rxData.m_ObsArray[i].system == GNSS_GPS && rxData.m_ObsArray[i].freqType == GNSS_GPSL1 )
-        {
-          if( rxData.m_ObsArray[i].flags.isDopplerUsedInSolution )
-          {
-            NAVIGATION_ComputeDerivativesOf_Range_WithRespectToLatitudeLongitudeHeight(
-              rxData.m_pvt.latitude,
-              rxData.m_pvt.longitude, 
-              rxData.m_pvt.height,
-              rxData.m_ObsArray[i].satellite.x,
-              rxData.m_ObsArray[i].satellite.y,
-              rxData.m_ObsArray[i].satellite.z,
-              &(rxData.m_ObsArray[i].H_v[0]),
-              &(rxData.m_ObsArray[i].H_v[1]),
-              &(rxData.m_ObsArray[i].H_v[2]),
-              &rxData.m_ObsArray[i].range
-              );
-            rxData.m_ObsArray[i].H_v[0] *= -1.0; // Doppler sign convention, NovAtel convention, increasing psr means negative Doppler
-            rxData.m_ObsArray[i].H_v[1] *= -1.0;
-            rxData.m_ObsArray[i].H_v[2] *= -1.0;
-          }
-        }
+        return false;
       }
     }
     return true;
@@ -4702,6 +4823,15 @@ namespace GNSS
     bool setToUseOnlyDifferential = true;
     bool hasAmbiguityChangeOccurred = false;
 
+    struct stIndex
+    {
+      GNSS_enumMeasurementType type; // The observation type.
+      unsigned intoRxData; // The index into observation array of the rxData object.
+      int intoH;           // The index (row) of the design matrix corresponding to this observation. -1 if invalid. 
+    };
+
+    stIndex smart_index[GNSS_RXDATA_MAX_OBS]; // An array of indices
+
     double lat = 0;
     double lon = 0;
     double hgt = 0;
@@ -4722,8 +4852,10 @@ namespace GNSS
     Matrix tmpMatP;
     Matrix I;
 
+    memset( &smart_index, 0, sizeof(stIndex)*GNSS_RXDATA_MAX_OBS);
+
     // Compensate the clock offset for pure 1 ms clock jumps.
-    if( !DealWithMillisecondClockJumps( rxData, rxBaseData ) )
+    if( !DealWithClockJumps( rxData, rxBaseData ) )
       return false;
    
     lat = rxData->m_pvt.latitude;
@@ -4820,6 +4952,9 @@ namespace GNSS
       nrDifferentialDoppler = 0;
       for( i = 0; i < rxData->m_nrValidObs; i++ )
       {
+        if( !rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          rxData->m_ObsArray[i].flags.isDopplerUsedInSolution = false;
+
         if( rxData->m_ObsArray[i].flags.isActive &&                    
           rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
         {
@@ -4866,11 +5001,109 @@ namespace GNSS
       int gg=99; // place breakpoint here to debug issues related to changes in ambiguities.
 
 
+    // Form smart_index 
+    j = 0;
+    // Deal with constraints first.
+    if( rxData->m_pvt.isPositionConstrained )
+    {
+      smart_index[j].type = GNSS_LAT_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+      smart_index[j].type = GNSS_LON_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+      smart_index[j].type = GNSS_HGT_CONSTRAINT;
+      smart_index[j].intoH = j;
+      j++;
+      smart_index[j].type = GNSS_VN_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+      smart_index[j].type = GNSS_VE_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+      smart_index[j].type = GNSS_VUP_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+    }
+    else if( rxData->m_pvt.isHeightConstrained )
+    {
+      smart_index[j].type = GNSS_HGT_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+      smart_index[j].type = GNSS_VUP_CONSTRAINT;
+      smart_index[j].intoRxData = 0; // GDM_TODO, use -1 here?
+      smart_index[j].intoH = j;
+      j++;
+    }
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add pseudoranges
+    {
+      if( rxData->m_ObsArray[i].flags.isActive &&
+        rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+      {
+        smart_index[j].type = GNSS_PSR_MEASUREMENT;
+        smart_index[j].intoRxData = i;
+        smart_index[j].intoH = j;
+        j++;
+      }
+    }
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add Dopplers
+    {
+      if( rxData->m_ObsArray[i].flags.isActive &&
+        rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
+      {
+        smart_index[j].type = GNSS_DOPPLER_MEASUREMENT;
+        smart_index[j].intoRxData = i;
+        smart_index[j].intoH = j;
+        j++;
+      }
+    }
+    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add ADR
+    {
+      if( rxData->m_ObsArray[i].flags.isActive &&
+        rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+      {
+        smart_index[j].type = GNSS_ADR_MEASUREMENT;
+        smart_index[j].intoRxData = i;
+        smart_index[j].intoH = j;
+        j++;
+      }
+    }   
+    
+
     // Form r, the combined measurement variance-covariance matrix diagonal.
     result = m_RTK.r.Resize( n );
     if( !result )
       return false;
     j = 0;
+    // Deal with constraints first.
+    if( rxData->m_pvt.isPositionConstrained )
+    {
+      m_RTK.r[j] = rxData->m_pvt.std_lat*rxData->m_pvt.std_lat; 
+      j++;
+      m_RTK.r[j] = rxData->m_pvt.std_lon*rxData->m_pvt.std_lon; 
+      j++;
+      m_RTK.r[j] = rxData->m_pvt.std_hgt*rxData->m_pvt.std_hgt; 
+      j++; 
+      m_RTK.r[j] = 1E-10; 
+      j++;
+      m_RTK.r[j] = 1E-10; 
+      j++;
+      m_RTK.r[j] = 1E-10;      
+      j++;      
+    }
+    else if( rxData->m_pvt.isHeightConstrained )
+    {
+      m_RTK.r[j] = rxData->m_pvt.std_hgt*rxData->m_pvt.std_hgt; 
+      j++;
+      m_RTK.r[j] = 1E-10;      
+      j++;   
+    }
     for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add pseudoranges
     {
       if( rxData->m_ObsArray[i].flags.isActive &&
@@ -4901,32 +5134,9 @@ namespace GNSS
         j++;
         nrAmb++;
       }
-    }
-    // Deal with constraints.
-    if( rxData->m_pvt.isPositionConstrained )
-    {
-      m_RTK.r[j] = rxData->m_pvt.std_lat*rxData->m_pvt.std_lat; 
-      j++;
-      m_RTK.r[j] = rxData->m_pvt.std_lon*rxData->m_pvt.std_lon; 
-      j++;
-      m_RTK.r[j] = rxData->m_pvt.std_hgt*rxData->m_pvt.std_hgt; 
-      j++; 
-      m_RTK.r[j] = 0.0; 
-      j++;
-      m_RTK.r[j] = 0.0; 
-      j++;
-      m_RTK.r[j] = 0.0;      
-      j++;      
-    }
-    else if( rxData->m_pvt.isHeightConstrained )
-    {
-      m_RTK.r[j] = rxData->m_pvt.std_hgt*rxData->m_pvt.std_hgt; 
-      j++;
-      m_RTK.r[j] = 0.0;      
-      j++;   
-    }
+    }    
     PrintMatToDebug( "RTK r", m_RTK.r );
-
+    
 
     // The corrections for lat and lon, dx_p, must be converted to [rad] from [m].
     GEODESY_ComputePrimeVerticalRadiusOfCurvature(
@@ -4945,285 +5155,172 @@ namespace GNSS
     if( nrDifferentialAdr > 0 )
       amb.Resize(nrDifferentialAdr);
 
+    u = 8 + nrDifferentialAdr;
 
-#ifdef ASDFASDFLKASDFASDFASDF
-    bool noUWB = false;
+    result = m_RTK.H.Resize( n, u );
+    if( !result )
+      return false;    
 
-    // Form the misclosure vector.
     result = m_RTK.w.Resize( n );
     if( !result )
       return false;    
-    result = DeterminePseudorangeMisclosures_GPSL1( rxData, rxBaseData );
-    if( !result )
-      return false;
-    result = DetermineDopplerMisclosures_GPSL1( rxData, rxBaseData );
-    if( !result )
-      return false;
-    result = DetermineSingleDifferenceADR_Misclosures_GPSL1( rxData, rxBaseData );
-    if( !result )    
-      return false;
-    j = 0;
-    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add pseudoranges
-    {
-      if( rxData->m_ObsArray[i].flags.isActive &&
-        rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
-      {
-        if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
-        {
-          if( fabs(rxData->m_ObsArray[i].psr_misclosure) > 20*0.009 )
-          {
-            rxData->m_ObsArray[i].flags.isActive = false;
-            rxData->m_ObsArray[i].flags.isPsrUsedInSolution = false;
-            noUWB = true;
-            continue;
-          }
-        }
-        m_RTK.w[j] = rxData->m_ObsArray[i].psr_misclosure;
-        j++;
-      }
-    }
-    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add Dopplers
-    {
-      if( rxData->m_ObsArray[i].flags.isActive &&
-        rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
-      {
-        m_RTK.w[j] = rxData->m_ObsArray[i].doppler_misclosure;
-        j++;
-      }
-    }
-    for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add ADR
-    {
-      if( rxData->m_ObsArray[i].flags.isActive &&
-        rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-      {
-        m_RTK.w[j] = rxData->m_ObsArray[i].adr_misclosure;
-        j++;
-      }
-    }    
-    // Add constraints to w if any.      
+
+    Matrix h(1,u);  // The i'th row of the design matrix, [ux1].
+    Matrix ht(u,1); // The transpose of the i'th row of the design matrix, [ux1].
+    Matrix pht;     // pht = P ht, [ux1].
+    Matrix C;       // C = (h P ht + R_{ii}), [1x1].
+    Matrix k_i;     // The i'th kalman gain. k_i = pht/C
+    Matrix D;       // D = k_i h * P.      
+
+    double w_lat = 0.0;
+    double w_lon = 0.0;
+    double w_hgt = 0.0;
+
+    // Determine constraint misclosures if applicable.
     if( rxData->m_pvt.isPositionConstrained )
     {
-      double w_lat = 0.0;
-      double w_lon = 0.0;
-      double w_hgt = 0.0;
       result = DeterminePositionConstraintMisclosures( rxData, w_lat, w_lon, w_hgt );
       if( !result )
         return false;
-      m_RTK.w[j] = w_lat;
-      j++;
-      m_RTK.w[j] = w_lon;
-      j++;
-      m_RTK.w[j] = w_hgt;
-      j++;
-      m_RTK.w[j] = 0.0;
-      j++;
-      m_RTK.w[j] = 0.0;
-      j++;
-      m_RTK.w[j] = 0.0;
-      j++;
     }
     else if( rxData->m_pvt.isHeightConstrained )
     {
-      double w_hgt = 0.0;       
       result = DetermineHeightConstraintMisclosures( rxData, w_hgt );
       if( !result )
         return false;
-      m_RTK.w[j] = w_hgt;
-      j++;
-      m_RTK.w[j] = 0.0;
-      j++;
     }
-    PrintMatToDebug( "RTK w", m_RTK.w );
 
-    if( noUWB )
-    {
-      m_RTK.w.Redim( n-1, 1 );
-      n--;
-    }
-#endif
-    
-    bool recompute_H = true; // Should H be recomputed with every sequential update.
-    bool recompute_w = true; // Should w be recomputed with every sequential update.
-
-    u = 8 + nrDifferentialAdr;
     // Now the sequential measurement update section
     // For each measurement
     for( index = 0; index < n; index++ )
     {
-      if( index == 0 || recompute_H ) // compute once or with every sequential update.
+      switch( smart_index[index].type )
       {
-        // Build the design matrix, H.
-        result = DetermineDesignMatrixElements_GPSL1_Psr( *rxData );
-        if( !result )
-          return false;
-        result = DetermineDesignMatrixElements_GPSL1_Doppler( *rxData );
-        if( !result )
-          return false;
-        result = m_RTK.H.Resize( n, 8 + nrDifferentialAdr ); // n = nrPseudoranges + nrDopplers + nrConstraints, u = 8 + nrDifferentialAdr.
-        if( !result )
-          return false;
-        j = 0;
-        for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add pseudoranges
+      case GNSS_LAT_CONSTRAINT:
         {
-          if( rxData->m_ObsArray[i].flags.isActive &&
-            rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+          m_RTK.H[index][0] = 1.0;
+          m_RTK.w[index] = w_lat;
+          break;
+        }
+      case GNSS_LON_CONSTRAINT:
+        {
+          m_RTK.H[index][1] = 1.0;
+          m_RTK.w[index] = w_lon;
+          break;
+        }
+      case GNSS_HGT_CONSTRAINT:
+        {
+          m_RTK.H[index][2] = 1.0;
+          m_RTK.w[index] = w_hgt;
+          break;
+        }
+      case GNSS_VN_CONSTRAINT:
+        {
+          m_RTK.H[index][3] = 1.0;
+          m_RTK.w[index] = 0;
+          break;
+        }
+      case GNSS_VE_CONSTRAINT:
+        {
+          m_RTK.H[index][4] = 1.0;
+          m_RTK.w[index] = 0;
+          break;
+        }
+      case GNSS_VUP_CONSTRAINT:
+        {
+          m_RTK.H[index][5] = 1.0;
+          m_RTK.w[index] = 0;
+          break;
+        }
+      case GNSS_PSR_MEASUREMENT:
+        {
+          if( rxData->m_ObsArray[smart_index[index].intoRxData].flags.isActive &&
+            rxData->m_ObsArray[smart_index[index].intoRxData].flags.isPsrUsedInSolution )
           {
-            m_RTK.H[j][0] = rxData->m_ObsArray[i].H_p[0];
-            m_RTK.H[j][1] = rxData->m_ObsArray[i].H_p[1];
-            m_RTK.H[j][2] = rxData->m_ObsArray[i].H_p[2];
-            if( rxData->m_ObsArray[i].system == GNSS_UWBSystem )
-              m_RTK.H[j][6] = 0.0;
+            result = DetermineDesignMatrixElement_GPSL1_Psr( *rxData, smart_index[index].intoRxData );
+            if( !result )
+              return false;      
+
+            m_RTK.H[index][0] = rxData->m_ObsArray[smart_index[index].intoRxData].H_p[0];
+            m_RTK.H[index][1] = rxData->m_ObsArray[smart_index[index].intoRxData].H_p[1];
+            m_RTK.H[index][2] = rxData->m_ObsArray[smart_index[index].intoRxData].H_p[2];
+            if( rxData->m_ObsArray[smart_index[index].intoRxData].system == GNSS_UWBSystem )
+              m_RTK.H[index][6] = 0.0;
             else
-              m_RTK.H[j][6] = 1.0;
-            j++;
-          }
-        }
-        for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add Dopplers
-        {
-          if( rxData->m_ObsArray[i].flags.isActive &&
-            rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
-          {
-            m_RTK.H[j][3] = rxData->m_ObsArray[i].H_v[0];
-            m_RTK.H[j][4] = rxData->m_ObsArray[i].H_v[1];
-            m_RTK.H[j][5] = rxData->m_ObsArray[i].H_v[2];
-            m_RTK.H[j][7] = 1.0;
-            j++;
-          }
-        }
-        for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add ADR
-        {
-          if( rxData->m_ObsArray[i].flags.isActive &&
-            rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-          {
-            m_RTK.H[j][0] = rxData->m_ObsArray[i].H_p[0];
-            m_RTK.H[j][1] = rxData->m_ObsArray[i].H_p[1];
-            m_RTK.H[j][2] = rxData->m_ObsArray[i].H_p[2];
-            m_RTK.H[j][6] = 1.0;
-            m_RTK.H[j][rxData->m_ObsArray[i].index_ambiguity_state] = 1.0;
-            j++;
-          }
-        }
-        if( rxData->m_pvt.isPositionConstrained )
-        {
-          m_RTK.H[j][0] = 1.0;
-          j++;
-          m_RTK.H[j][1] = 1.0;
-          j++;
-          m_RTK.H[j][2] = 1.0;
-          j++;
+              m_RTK.H[index][6] = 1.0;
 
-          m_RTK.H[j][3] = 1.0;
-          j++;
-          m_RTK.H[j][4] = 1.0;
-          j++;
-          m_RTK.H[j][5] = 1.0;
-          j++;
-        }
-        else if( rxData->m_pvt.isHeightConstrained )
-        {
-          m_RTK.H[j][2] = 1.0;
-          j++;
-          m_RTK.H[j][5] = 1.0;
-          j++;
-        }
-        PrintMatToDebug( "RTK H", m_RTK.H );
-      }
+            result = DeterminePseudorangeMisclosure_GPSL1( rxData, smart_index[index].intoRxData, rxBaseData );
+            if( !result )
+              return false;      
 
-      if( index == 0 || recompute_H  )// compute once or with every sequential update.
-      {
-        // Form the misclosure vector.
-        result = m_RTK.w.Resize( n );
-        if( !result )
-          return false;    
-        result = DeterminePseudorangeMisclosures_GPSL1( rxData, rxBaseData );
-        if( !result )
-          return false;
-        result = DetermineDopplerMisclosures_GPSL1( rxData, rxBaseData );
-        if( !result )
-          return false;
-        result = DetermineSingleDifferenceADR_Misclosures_GPSL1( rxData, rxBaseData );
-        if( !result )    
-          return false;
-        j = 0;
-        for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add pseudoranges
-        {
-          if( rxData->m_ObsArray[i].flags.isActive &&
-            rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
+            m_RTK.w[index] = rxData->m_ObsArray[smart_index[index].intoRxData].psr_misclosure;
+          }        
+          else
           {
-            m_RTK.w[j] = rxData->m_ObsArray[i].psr_misclosure;
-            j++;
-          }
-        }
-        for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add Dopplers
-        {
-          if( rxData->m_ObsArray[i].flags.isActive &&
-            rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
-          {
-            m_RTK.w[j] = rxData->m_ObsArray[i].doppler_misclosure;
-            j++;
-          }
-        }
-        for( i = 0; i < rxData->m_nrValidObs; i++ ) // Add ADR
-        {
-          if( rxData->m_ObsArray[i].flags.isActive &&
-            rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
-          {
-            m_RTK.w[j] = rxData->m_ObsArray[i].adr_misclosure;
-            j++;
-          }
-        }    
-        // Add constraints to w if any.      
-        if( rxData->m_pvt.isPositionConstrained )
-        {
-          double w_lat = 0.0;
-          double w_lon = 0.0;
-          double w_hgt = 0.0;
-          result = DeterminePositionConstraintMisclosures( rxData, w_lat, w_lon, w_hgt );
-          if( !result )
             return false;
-          m_RTK.w[j] = w_lat;
-          j++;
-          m_RTK.w[j] = w_lon;
-          j++;
-          m_RTK.w[j] = w_hgt;
-          j++;
-          m_RTK.w[j] = 0.0;
-          j++;
-          m_RTK.w[j] = 0.0;
-          j++;
-          m_RTK.w[j] = 0.0;
-          j++;
+          }
+          break;
         }
-        else if( rxData->m_pvt.isHeightConstrained )
+      case GNSS_DOPPLER_MEASUREMENT:
         {
-          double w_hgt = 0.0;       
-          result = DetermineHeightConstraintMisclosures( rxData, w_hgt );
-          if( !result )
+          if( rxData->m_ObsArray[smart_index[index].intoRxData].flags.isActive &&
+            rxData->m_ObsArray[smart_index[index].intoRxData].flags.isDopplerUsedInSolution )
+          {
+            result = DetermineDesignMatrixElement_GPSL1_Doppler( *rxData, smart_index[index].intoRxData );
+            if( !result )
+              return false;
+
+            m_RTK.H[index][3] = rxData->m_ObsArray[smart_index[index].intoRxData].H_v[0];
+            m_RTK.H[index][4] = rxData->m_ObsArray[smart_index[index].intoRxData].H_v[1];
+            m_RTK.H[index][5] = rxData->m_ObsArray[smart_index[index].intoRxData].H_v[2];
+            m_RTK.H[index][7] = 1.0;        
+
+            result = DetermineDopplerMisclosure_GPSL1( rxData, smart_index[index].intoRxData, rxBaseData );
+            if( !result )
+              return false;      
+
+            m_RTK.w[index] = rxData->m_ObsArray[smart_index[index].intoRxData].doppler_misclosure;
+          }
+          else
+          {
             return false;
-          m_RTK.w[j] = w_hgt;
-          j++;
-          m_RTK.w[j] = 0.0;
-          j++;
+          }
+          break;
         }
-        PrintMatToDebug( "RTK w", m_RTK.w );
+      case GNSS_ADR_MEASUREMENT:
+        {
+          if( rxData->m_ObsArray[smart_index[index].intoRxData].flags.isActive &&
+            rxData->m_ObsArray[smart_index[index].intoRxData].flags.isAdrUsedInSolution )
+          {
+            m_RTK.H[index][0] = rxData->m_ObsArray[smart_index[index].intoRxData].H_p[0];
+            m_RTK.H[index][1] = rxData->m_ObsArray[smart_index[index].intoRxData].H_p[1];
+            m_RTK.H[index][2] = rxData->m_ObsArray[smart_index[index].intoRxData].H_p[2];
+            m_RTK.H[index][6] = 1.0;
+            m_RTK.H[index][rxData->m_ObsArray[smart_index[index].intoRxData].index_ambiguity_state] = 1.0;          
+
+            result = DetermineSingleDifferenceADR_Misclosure_GPSL1( rxData, smart_index[index].intoRxData, rxBaseData );
+            if( !result )    
+              return false;        
+
+            m_RTK.w[index] = rxData->m_ObsArray[smart_index[index].intoRxData].adr_misclosure;
+          }
+          else
+          {
+            return false;
+          }
+          break;
+        }
+      default:
+        {
+          return false;
+          break;
+        }
       }
 
-      /*
-      if( fabs(m_RTK.w[index]) > 30.0*m_RTK.r[index] )
-      {
-        // exclude this observation
-        continue;
-      }
-      */
+      PrintMatToDebug( "RTK H", m_RTK.H );
+      PrintMatToDebug( "RTK w", m_RTK.w );
 
-      Matrix h(1,u);  // The i'th row of the design matrix, [ux1].
-      Matrix ht(u,1); // The transpose of the i'th row of the design matrix, [ux1].
-      Matrix pht;     // pht = P ht, [ux1].
-      Matrix C;       // C = (h P ht + R_{ii}), [1x1].
-      Matrix k_i;     // The i'th kalman gain. k_i = pht/C
-      Matrix D;       // D = k_i h * P.
-      
-      // Copy out a row of the design matrix.
+      // Copy out the row of the design matrix.
       for( j = 0; j < u; j++ )
       {
         h[0][j] = m_RTK.H[index][j];
@@ -5339,9 +5436,9 @@ namespace GNSS
     rxData->Debug_WriteSuperMsg80CharsWide( 
       supermsg,
       8192,
-      51.0916666667*DEG2RAD,
-      -114.0000000000*DEG2RAD,
-      1000.000,
+      rxData->m_datum_pvt.latitude,
+      rxData->m_datum_pvt.longitude,
+      rxData->m_datum_pvt.height,
       nrBytesInBuffer );
     printf( supermsg );
 #endif
