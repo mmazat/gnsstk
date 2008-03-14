@@ -103,8 +103,27 @@ namespace GNSS
       );
 
 
-    /// GDM_TODO add comments here
-    bool DealWithMillisecondClockJumps(
+    /**
+    \brief  Deal with any millisecond clock jumps or any large arbitrary clock jumps
+            detected in the receiver data. The jumps are compensated only by adjusting
+            the estimate of the clock offset.
+
+    \pre  The following must be determined before this function is called: \n
+    rxData->m_msJumpDetected_Positive \n
+    rxData->m_msJumpDetected_Negative \n
+    rxData->m_clockJumpDetected \n
+    rxData->m_clockJump \n
+    rxBaseData->m_msJumpDetected_Positive \n
+    rxBaseData->m_msJumpDetected_Negative \n
+    rxBaseData->m_clockJumpDetected \n
+    rxBaseData->m_clockJump \n
+
+    \post  The clock offset state is adjusted if needed: \n
+    rxData->m_pvt.clockOffset \n
+    
+    \return true if successful, false otherwise
+    */
+    bool DealWithClockJumps(
       GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
       GNSS_RxData *rxBaseData   //!< A pointer to the reference receiver data if available. NULL if not available.
       );  
@@ -125,7 +144,7 @@ namespace GNSS
     /// rxData->m_pvt.dop.hdop \n
     /// rxData->m_pvt.dop.pdop \n
     /// rxData->m_pvt.dop.gdop \n
-    /// return true if successful, false otherwise
+    /// \return true if successful, false otherwise
     bool ComputeDOP( GNSS_RxData* rxData );
 
 
@@ -275,21 +294,48 @@ namespace GNSS
       );
 
 
-    /// \brief    Determine the design matrix elements for the GPS L1 
-    ///           position solution based on pseudroange measurements.
-    ///
-    /// \pre      The following must be valid:
-    /// rxData.m_pvt
-    /// rxData.m_ObsArray[i].satellite
-    /// rxData.m_ObsArray[i].flags.isPsrUsedInSolution
-    /// \post     The following are set.
-    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_p[0]
-    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_p[1]
-    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_p[2]
-    /// 
-    /// \return   true if successful, false if error.            
-    bool GNSS_Estimator::DetermineDesignMatrixElements_GPSL1_Psr( GNSS_RxData &rxData );
 
+    /**
+    \brief    Determine a single design matrix element for the GPS L1 
+               position solution based on its pseudroange measurement.
+    
+    \pre      The following must be valid: \n
+    rxData.m_pvt \n
+    rxData.m_ObsArray[index].satellite \n
+    rxData.m_ObsArray[index].flags.isPsrUsedInSolution \n
+
+    \post     The following are set. \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[0] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[1] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[2] \n
+    rxData.m_ObsArray[indexi].range \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDesignMatrixElement_GPSL1_Psr( GNSS_RxData &rxData, const unsigned int index );
+
+
+    /**
+    \brief    Determine the design matrix elements for the GPS L1 
+              position solution based on pseudroange measurements.
+    
+    \pre      The following must be valid: \n
+    rxData.m_pvt \n
+    rxData.m_ObsArray[index].satellite \n
+    rxData.m_ObsArray[index].flags.isPsrUsedInSolution \n
+
+    \post     The following are set. \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[0] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[1] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[2] \n
+    rxData.m_ObsArray[indexi].range \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDesignMatrixElements_GPSL1_Psr( GNSS_RxData &rxData );
+
+
+    
 
    
 
@@ -327,22 +373,49 @@ namespace GNSS
       );
   
 
-    /// \brief    Compute the GPS L1 pseudroange misclosures.
-    ///
-    /// \pre      The following must be valid:           \n
-    /// rxData->m_ObsArray[i].flags.isPsrUsedInSolution  \n
-    /// rxData->m_ObsArray[i].satellite.clkdrift         \n
-    /// rxData->m_ObsArray[i].corrections.prcTropoDry    \n
-    /// rxData->m_ObsArray[i].corrections.prcTropoWet    \n
-    /// rxData->m_ObsArray[i].corrections.prcIono        \n
-    /// rxData->m_ObsArray[i].range                      \n
-    /// rxData->m_pvt.clockOffset                        \n
-    /// if diffential, the same above for rxBaseData.
-    /// 
-    /// \post     The following is set:     \n
-    /// rxData.m_ObsArray[i].psr_misclosure \n
-    ///
-    /// \return   true if successful, false if error.
+    /**
+    \brief    Compute a single GPS L1 pseudroange misclosures.
+
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[index].flags.isPsrUsedInSolution  \n
+    rxData->m_ObsArray[index].satellite.clkdrift         \n
+    rxData->m_ObsArray[index].corrections.prcTropoDry    \n
+    rxData->m_ObsArray[index].corrections.prcTropoWet    \n
+    rxData->m_ObsArray[index].corrections.prcIono        \n
+    rxData->m_ObsArray[index].range                      \n
+    rxData->m_pvt.clockOffset                        \n
+    if diffential, the same above for rxBaseData.
+
+    \post     The following is set:     \n
+    rxData.m_ObsArray[index].psr_misclosure \n
+
+    \return   true if successful, false if error.    
+    */
+    bool GNSS_Estimator::DeterminePseudorangeMisclosure_GPSL1( 
+      GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
+      const unsigned int index, //!< The index of the observation in the receiver data.
+      GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
+      );
+  
+
+    /**
+    \brief    Compute all the GPS L1 pseudroange misclosures.
+
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[i].flags.isPsrUsedInSolution  \n
+    rxData->m_ObsArray[i].satellite.clkdrift         \n
+    rxData->m_ObsArray[i].corrections.prcTropoDry    \n
+    rxData->m_ObsArray[i].corrections.prcTropoWet    \n
+    rxData->m_ObsArray[i].corrections.prcIono        \n
+    rxData->m_ObsArray[i].range                      \n
+    rxData->m_pvt.clockOffset                        \n
+    if diffential, the same above for rxBaseData.
+
+    \post     The following is set:     \n
+    rxData.m_ObsArray[i].psr_misclosure \n
+
+    \return   true if successful, false if error.    
+    */    
     bool DeterminePseudorangeMisclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
       GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
@@ -387,25 +460,49 @@ namespace GNSS
       );
   
   
+    /**
+    \brief    Compute one single difference GPS L1 ADR misclosure.
+    
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[index].flags.isAdrUsedInSolution  \n
+    rxData->m_ObsArray[index].satellite.clkdrift         \n
+    rxData->m_ObsArray[index].corrections.prcTropoDry    \n
+    rxData->m_ObsArray[index].corrections.prcTropoWet    \n
+    rxData->m_ObsArray[index].corrections.prcIono        \n
+    rxData->m_ObsArray[index].range                      \n
+    rxData->m_pvt.clockOffset                        \n
+    if diffential, the same above for rxBaseData.
+    
+    \post     The following is set:     \n
+    rxData.m_ObsArray[index].adr_misclosure \n
+    
+    \return   true if successful, false if error.    
+    */
+    bool DetermineSingleDifferenceADR_Misclosure_GPSL1( 
+      GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
+      const unsigned int index, //!< The index of the observation in the receiver data.
+      GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.      
+      );
   
-
-    /// \brief    Compute the differntial GPS L1 ADR misclosures.
-    ///
-    /// \pre      The following must be valid:           \n
-    /// rxData->m_ObsArray[i].flags.isAdrUsedInSolution  \n
-    /// rxData->m_ObsArray[i].satellite.clkdrift         \n
-    /// rxData->m_ObsArray[i].corrections.prcTropoDry    \n
-    /// rxData->m_ObsArray[i].corrections.prcTropoWet    \n
-    /// rxData->m_ObsArray[i].corrections.prcIono        \n
-    /// rxData->m_ObsArray[i].range                      \n
-    /// rxData->m_pvt.clockOffset                        \n
-    /// if diffential, the same above for rxBaseData.
-    /// 
-    /// \post     The following is set:     \n
-    /// rxData.m_ObsArray[i].adr_misclosure \n
-    ///
-    /// \return   true if successful, false if error.    
-    bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosures_GPSL1( 
+    /**
+    \brief    Compute all the single difference GPS L1 ADR misclosures.
+    
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[index].flags.isAdrUsedInSolution  \n
+    rxData->m_ObsArray[index].satellite.clkdrift         \n
+    rxData->m_ObsArray[index].corrections.prcTropoDry    \n
+    rxData->m_ObsArray[index].corrections.prcTropoWet    \n
+    rxData->m_ObsArray[index].corrections.prcIono        \n
+    rxData->m_ObsArray[index].range                      \n
+    rxData->m_pvt.clockOffset                        \n
+    if diffential, the same above for rxBaseData.
+    
+    \post     The following is set:     \n
+    rxData.m_ObsArray[index].adr_misclosure \n
+    
+    \return   true if successful, false if error.    
+    */
+    bool DetermineSingleDifferenceADR_Misclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
       GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
       );
@@ -455,22 +552,86 @@ namespace GNSS
       );
 
 
-    /// \brief    Compute the GPS L1 Doppler misclosures.
-    ///
-    /// \pre      The folloing must be valid:           \n
-    /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution  \n
-    /// rxData.m_ObsArray[i].satellite.clkdrift         \n
-    /// rxData.m_ObsArray[i].rangerate                  \n
-    /// rxData.m_pvt.clockDrift                         \n
-    ///
-    /// \post     The following is set:     \n
-    /// rxData.m_ObsArray[i].doppler_misclosure \n
-    ///
-    /// \return   true if successful, false if error.    
-    bool GNSS_Estimator::DetermineDopplerMisclosures_GPSL1( 
+    /**
+    \brief    Compute a single GPS L1 Doppler misclosure.
+    
+    \pre      The folloing must be valid: \n
+    rxData.m_ObsArray[index].flags.isDopplerUsedInSolution  \n
+    rxData.m_ObsArray[index].satellite.clkdrift \n
+    rxData.m_ObsArray[index].rangerate \n
+    rxData.m_pvt.clockDrift \n
+    
+    \post     The following is set: \n
+    rxData.m_ObsArray[index].doppler_misclosure \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDopplerMisclosure_GPSL1( 
+      GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
+      const unsigned int index, //!< The index of the observation in the receiver data.
+      GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
+      );
+
+    /**
+    \brief    Compute all the GPS L1 Doppler misclosures.
+    
+    \pre      The folloing must be valid: \n
+    rxData.m_ObsArray[index].flags.isDopplerUsedInSolution  \n
+    rxData.m_ObsArray[index].satellite.clkdrift \n
+    rxData.m_ObsArray[index].rangerate \n
+    rxData.m_pvt.clockDrift \n
+    
+    \post     The following is set: \n
+    rxData.m_ObsArray[index].doppler_misclosure \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDopplerMisclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
       GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
       );
+
+
+    /**
+    \brief    Determine a row of the design matrix for the GPS L1 
+              velocity solution based on Doppler measurement.
+    
+    \pre      The following must be valid: \n
+    rxData.m_pvt \n
+    rxData.m_ObsArray[index].satellite \n
+    rxData.m_ObsArray[index].flags.isDopplerUsedInSolution \n
+    
+    \post     The following are set: \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_v[0] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_v[1] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_v[2] \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDesignMatrixElement_GPSL1_Doppler( 
+      GNSS_RxData &rxData,      //!< The receiver data.
+      const unsigned int index  //!< The index of the observation in the receiver data.
+      );  
+
+    /**
+    \brief    Determine all rows of the design matrix for the GPS L1 
+              velocity solution based on Doppler measurement.
+    
+    \pre      The following must be valid: \n
+    rxData.m_pvt \n
+    rxData.m_ObsArray[index].satellite \n
+    rxData.m_ObsArray[index].flags.isDopplerUsedInSolution \n
+    
+    \post     The following are set: \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_v[0] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_v[1] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_v[2] \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDesignMatrixElement_GPSL1_Doppler( 
+      GNSS_RxData &rxData  //!< The receiver data.
+      );  
 
   
     /// \brief    Determine the design matrix for the GPS L1 
