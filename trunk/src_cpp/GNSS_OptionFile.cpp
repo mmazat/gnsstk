@@ -433,7 +433,7 @@ namespace GNSS
     }
     else if( n == 3 )
     {
-      GetDMSValue( "Rover_DatumLatitude", m_RoverDatum.longitudeRads );
+      GetDMSValue( "Rover_DatumLongitude", m_RoverDatum.longitudeRads );
       m_RoverDatum.longitudeRads *= DEG2RAD;
     }
     else
