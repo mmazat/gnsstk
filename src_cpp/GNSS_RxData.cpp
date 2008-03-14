@@ -603,6 +603,7 @@ namespace GNSS
   {
     memset( &m_pvt, 0, sizeof(GNSS_structPVT) );
     memset( &m_prev_pvt, 0, sizeof(GNSS_structPVT) );
+    memset( &m_datum_pvt, 0, sizeof(GNSS_structPVT) );
     return true;
   }
 
@@ -691,6 +692,8 @@ namespace GNSS
     // Reset the millisecond jump detectors.
     m_msJumpDetected_Positive = false;
     m_msJumpDetected_Negative = false;
+    m_clockJumpDetected = false;
+    m_clockJump = 0.0;
 
     switch( m_rxDataType )
     {
@@ -763,6 +766,48 @@ namespace GNSS
             }
           }
         }
+      }
+    }
+
+    if( !m_msJumpDetected_Positive && !m_msJumpDetected_Negative )
+    {
+      int mean_n = 0;
+      double mean_val = 0.0;
+
+      // Check for large clock corrections that are not modulo 1 ms.
+      for( i = 0; i < m_nrValidObs; i++ )
+      {
+        m_ObsArray[i].index_time_differential = -1;
+        if( m_ObsArray[i].flags.isActive && 
+          m_ObsArray[i].flags.isPsrValid )
+        {
+          for( j = 0; j < m_prev_nrValidObs; j++ )
+          {
+            if( m_prev_ObsArray[j].flags.isActive && 
+              m_prev_ObsArray[j].flags.isPsrValid )
+            {
+              if( m_ObsArray[i].id == m_prev_ObsArray[j].id )
+              {
+                m_ObsArray[i].index_time_differential = j;
+                psr_difference = m_ObsArray[i].psr - m_prev_ObsArray[j].psr;
+
+                // Look for any arbitrary clock jumps larger than 1/2 millisecond
+                if( fabs(psr_difference) > ONE_MS_IN_M/2.0 )
+                {
+                  mean_n++;
+                  mean_val += psr_difference;
+                  m_clockJumpDetected = true;                  
+                }              
+                break;
+              }
+            }
+          }
+        }
+      }
+      if( m_clockJumpDetected )
+      {
+        mean_val /= double(mean_n);
+        m_clockJump = mean_val;
       }
     }
 
@@ -1376,6 +1421,53 @@ namespace GNSS
     m_pvt.std_hgt = std_hgt;
     m_pvt.std_clk = std_clk;
     
+    return true;
+  }
+
+  bool GNSS_RxData::SetDatumPVT( 
+    const double latitudeRads,
+    const double longitudeRads,
+    const double height 
+    )
+  {
+    bool result;
+    m_datum_pvt.latitude   = latitudeRads;
+    m_datum_pvt.longitude  = longitudeRads;
+    m_datum_pvt.height     = height;
+    
+    m_datum_pvt.latitudeDegs  = latitudeRads*RAD2DEG;
+    m_datum_pvt.longitudeDegs = longitudeRads*RAD2DEG;
+
+    result = GetDMS( 
+      m_datum_pvt.latitudeDegs, 
+      m_datum_pvt.lat_dms.degrees, 
+      m_datum_pvt.lat_dms.minutes, 
+      m_datum_pvt.lat_dms.seconds, 
+      (char*)m_pvt.lat_dms.dms_str, 24 );
+    if( result == false )
+      return false;
+
+    result = GetDMS( 
+      m_datum_pvt.longitudeDegs, 
+      m_datum_pvt.lon_dms.degrees, 
+      m_datum_pvt.lon_dms.minutes, 
+      m_datum_pvt.lon_dms.seconds, 
+      (char*)m_datum_pvt.lon_dms.dms_str, 24 );
+    if( result == false )
+      return false;
+
+    if( GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
+      GEODESY_REFERENCE_ELLIPSE_WGS84,
+      m_datum_pvt.latitude,
+      m_datum_pvt.longitude,
+      m_datum_pvt.height,
+      &m_datum_pvt.x,
+      &m_datum_pvt.y,
+      &m_datum_pvt.z ) == FALSE )
+    {
+      return false;
+    }
+   
     return true;
   }
 
