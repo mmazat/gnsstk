@@ -38,6 +38,7 @@ SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include "gnss_error.h"
 #include "novatel.h"
 #include "gps.h"
 #include "constants.h"
@@ -133,7 +134,10 @@ BOOL NOVATEL_CheckCRC32(
   unsigned crc = 0; // The calculated crc.
 
   if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
     return FALSE;
+  }
   
   // Calculate the crc.
   crc = NOVATEL_CalculateCRC32( message, messageLength-4 );
@@ -183,11 +187,15 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
   
   // Ensure that the file pointer is valid.
   if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
     return FALSE;
+  }
 
   // Ensure that the maximum message length is appropriate.
   if( maxMessageLength < 32 ) // at least 3 sync bytes plus 25 header bytes plus the 4 byte CRC.
   {
+    GNSS_ERROR_MSG( "if( maxMessageLength < 32 )" );
     return FALSE;
   }
   
@@ -241,6 +249,7 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
       fpos = ftell(fid);
       if( fpos < 2 ) // check less than 2 because we are at least 3 bytes into the file
       {
+        GNSS_ERROR_MSG( "if( fpos < 2 )" );
         return FALSE;
       }
       *filePosition = fpos - 3; // The start of the message sync.
@@ -288,6 +297,7 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
         if( fseek( fid, fpos, SEEK_SET ) != 0 )
         {
           // The seek failed.
+          GNSS_ERROR_MSG( "fseek failed." );            
           return FALSE;
         }
         startSearch = TRUE;
@@ -307,6 +317,7 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
         if( fseek( fid, fpos, SEEK_SET ) != 0 )
         {
           // The seek failed.
+          GNSS_ERROR_MSG( "fseek failed." );
           return FALSE;
         }
         startSearch = TRUE;
@@ -333,6 +344,7 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
       // Compare the received message CRC with the calculated CRC.
       if( !NOVATEL_CheckCRC32( message, msgLength, messageCRC, &isCRCValid ) )
       {
+        GNSS_ERROR_MSG( "NOVATEL_CheckCRC32 returned FALSE." );
         return FALSE;
       }
       if( !isCRCValid )
@@ -344,6 +356,7 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
         if( fseek( fid, fpos, SEEK_SET ) != 0 )
         {
           // The seek failed.
+          GNSS_ERROR_MSG( "fseek failed." );          
           return FALSE;
         }
         startSearch = TRUE;
@@ -376,18 +389,29 @@ BOOL NOVATELOEM4_DecodeBinaryMessageHeader(
 
   // sanity checks
   if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
     return FALSE;
+  }
   if( header == NULL )
+  {
+    GNSS_ERROR_MSG( "if( header == NULL )" );
     return FALSE;
+  }
 
   if( messageLength < 4 ) // at least the sync bytes and the header length
+  {
+    GNSS_ERROR_MSG( "if( messageLength < 4 )" );
     return FALSE;
-
+  }
   
   // Get the header length;
   header->headerLength = message[3];
   if( messageLength < header->headerLength )
+  {
+    GNSS_ERROR_MSG( "if( messageLength < header->headerLength )" );
     return FALSE;
+  }
   
   header->messageID  = message[4];
   header->messageID |= message[5] << 8;
@@ -449,15 +473,27 @@ BOOL NOVATELOEM4_DecodeRANGECMPB(
   
   // Perform sanity checks.
   if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
     return FALSE;
+  }
   if( obsArray == NULL )
+  {
+    GNSS_ERROR_MSG( "if( obsArray == NULL )" );
     return FALSE;
+  }
   if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x12 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync is not present" );
     return FALSE;
+  }
 
   // Decode the binary header.
   if( !NOVATELOEM4_DecodeBinaryMessageHeader( message, messageLength, header ) )
+  {
+    GNSS_ERROR_MSG( "NOVATELOEM4_DecodeBinaryMessageHeader returned FALSE." );
     return FALSE;
+  }
 
   // Get the header length.
   headerLength = message[3];
@@ -469,7 +505,10 @@ BOOL NOVATELOEM4_DecodeRANGECMPB(
   // Check that the data length + header length + 4 (crc) == messageLength provided.
   msgLength = dataLength + headerLength + 4;
   if( msgLength != messageLength )
+  {
+    GNSS_ERROR_MSG( "if( msgLength != messageLength )" );
     return FALSE;
+  }
 
   // Get the number of observations.
   index = headerLength;
@@ -483,12 +522,18 @@ BOOL NOVATELOEM4_DecodeRANGECMPB(
 
   // Check that there is enough room in the array provided.
   if( maxNrObs < *nrObs )
+  {
+    GNSS_ERROR_MSG( "if( maxNrObs < *nrObs )" );
     return FALSE;
+  }
 
   // Check that the number of observations fits the data length given.
   testLength = (unsigned short)(*nrObs*24 + 4);
   if( testLength != dataLength )
-   return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( testLength != dataLength )" );
+    return FALSE;
+  }
 
   // Decode the data.
   index = headerLength+4;
@@ -511,7 +556,10 @@ BOOL NOVATELOEM4_DecodeRANGECMPB(
     obsArray[i].rawTrackingStatus |= message[index] << 24; index++;
 
     if( !NOVATELOEM4_DecodeTrackingStatus( obsArray[i].rawTrackingStatus, &obsArray[i].trackingStatus ) )    
+    {
+      GNSS_ERROR_MSG( "NOVATELOEM4_DecodeTrackingStatus returned FALSE." );
       return FALSE;    
+    }
   
     // Doppler Frequency (28 bits 32-59)
     rangecmp_doppler_freq |=  message[index];        index++;
@@ -646,15 +694,27 @@ BOOL NOVATELOEM4_DecodeRANGEB(
   
   // Perform sanity checks.
   if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
     return FALSE;
+  }
   if( obsArray == NULL )
+  {
+    GNSS_ERROR_MSG( "if( obsArray == NULL )" );
     return FALSE;
+  }
   if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x12 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );
     return FALSE;
+  }
 
   // Decode the binary header.
   if( !NOVATELOEM4_DecodeBinaryMessageHeader( message, messageLength, header ) )
+  {
+    GNSS_ERROR_MSG( "NOVATELOEM4_DecodeBinaryMessageHeader returned FALSE." );
     return FALSE;
+  }
 
   // Get the header length.
   headerLength = message[3];
@@ -666,7 +726,10 @@ BOOL NOVATELOEM4_DecodeRANGEB(
   // Check that the data length + header length + 4 (crc) == messageLength provided.
   msgLength = dataLength + headerLength + 4;
   if( msgLength != messageLength )
+  {
+    GNSS_ERROR_MSG( "if( msgLength != messageLength )" );
     return FALSE;
+  }
 
   // Get the number of observations.
   index = headerLength;
@@ -680,12 +743,18 @@ BOOL NOVATELOEM4_DecodeRANGEB(
 
   // Check that there is enough room in the array provided.
   if( maxNrObs < *nrObs )
+  {
+    GNSS_ERROR_MSG( "if( maxNrObs < *nrObs )" );
     return FALSE;
+  }
 
   // Check that the number of observations fits the data length given.
   testLength = (unsigned short)(*nrObs*44 + 4);
   if( testLength != dataLength )
+  {
+    GNSS_ERROR_MSG( "if( testLength != dataLength )" );
     return FALSE;
+  }
 
   // Decode the data.
   index = headerLength+4;
@@ -730,7 +799,10 @@ BOOL NOVATELOEM4_DecodeRANGEB(
     obsArray[i].rawTrackingStatus |= message[index] << 24; index++;
 
     if( !NOVATELOEM4_DecodeTrackingStatus( obsArray[i].rawTrackingStatus, &obsArray[i].trackingStatus ) )    
+    {
+      GNSS_ERROR_MSG( "NOVATELOEM4_DecodeTrackingStatus returned FALSE." );
       return FALSE;    
+    }
   }
  
   return TRUE;
@@ -768,7 +840,10 @@ BOOL NOVATELOEM4_DecodeTrackingStatus(
   NOVATELOEM4_channelStatusBitField *ptrBitField;
 
   if( trackingStatus == NULL )
+  {
+    GNSS_ERROR_MSG( "if( trackingStatus == NULL )" );
     return FALSE;
+  }
 
   ptrBitField = (NOVATELOEM4_channelStatusBitField *)&rawTrackingStatus;
   bitField = *ptrBitField;
@@ -840,18 +915,30 @@ BOOL NOVATELOEM4_DecodeRAWEPHEMB(
 
   // Perform sanity checks.
   if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
     return FALSE;
+  }
   if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x12 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );    
     return FALSE;
+  }
 
   // Decode the binary header.
   if( !NOVATELOEM4_DecodeBinaryMessageHeader( message, messageLength, header ) )
+  {
+    GNSS_ERROR_MSG( "NOVATELOEM4_DecodeBinaryMessageHeader returned FALSE." );
     return FALSE;
+  }
 
   // Check that the length of the message matches the header information.
   msgLength = header->headerLength + header->dataLength + 4;
   if( msgLength != messageLength )
+  {
+    GNSS_ERROR_MSG( "if( msgLength != messageLength )" );
     return FALSE;
+  }
 
   index = header->headerLength;
   *prn  = message[index];       index++;
@@ -909,7 +996,10 @@ BOOL NOVATELOEM4_DecodeRAWEPHEMB(
     cis                
     );
   if( !result )
+  {
+    GNSS_ERROR_MSG( "GPS_DecodeRawGPSEphemeris returned FALSE." );    
     return FALSE;
+  }
 
   return TRUE;
 }

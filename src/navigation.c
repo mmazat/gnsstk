@@ -35,6 +35,7 @@ SUCH DAMAGE.
 */
 
 #include <math.h>
+#include "gnss_error.h"
 #include "constants.h"
 #include "geodesy.h"
 #include "navigation.h"
@@ -277,6 +278,7 @@ int NAVIGATION_PerformClosedFormPositionSolution_FromPseuodrangeMeasurements(
   if( tmp1 < 0 )
   {
     // not good, there is no solution
+    GNSS_ERROR_MSG( "There is no solution." );
     return FALSE;
   }
 
@@ -317,6 +319,7 @@ int NAVIGATION_PerformClosedFormPositionSolution_FromPseuodrangeMeasurements(
   if( *height < -1500.0 || *height > 18000.0 )
   {
     // height is out of the likely range for terrestrial users
+    GNSS_ERROR_MSG( "The height is out of the likely range for terrestrial users." );
     return FALSE;
   }
   

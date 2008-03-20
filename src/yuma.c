@@ -36,6 +36,7 @@ SUCH DAMAGE.
 
 #include <stdio.h>
 #include <string.h>
+#include "gnss_error.h"
 #include "yuma.h"
 
 #ifndef WIN32
@@ -62,17 +63,35 @@ BOOL YUMA_ReadAlmanacDataFromFile(
 
   // check stupid error
   if( max_to_read < 1 )
+  {
+    GNSS_ERROR_MSG( "if( max_to_read < 1 )" );
     return FALSE;
+  }
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
   if( fopen_s( &in, yumaFilePath, "r" ) != 0 )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", yumaFilePath );
+    GNSS_ERROR_MSG( msg );
     return FALSE;
+  }
   if( !in )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", yumaFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
 #else
   in = fopen( yumaFilePath, "r" );
   if( !in )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", yumaFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
 #endif
 
   // sync with the first "ID" found in the file
@@ -93,6 +112,7 @@ BOOL YUMA_ReadAlmanacDataFromFile(
   if( !syncFound )
   {
     fclose(in);
+    GNSS_ERROR_MSG( "if( !syncFound )" );
     return FALSE;
   }
 
@@ -180,13 +200,28 @@ BOOL YUMA_WriteAlmanacDataToFile(
   FILE* out;
 #ifndef _CRT_SECURE_NO_DEPRECATE
   if( fopen_s( &out, yumaFilePath, "w") != 0 )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", yumaFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
   if( !out )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", yumaFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
 #else
   out = fopen(yumaFilePath, "w");
   if( !out )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", yumaFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
 #endif
 
   for( i = 0; i < number_to_write; i++ )
@@ -213,26 +248,28 @@ BOOL YUMA_WriteSingleAlmanacElementToBuffer(
   if( bufferSize < 1024 )
   {
     sprintf_s( buffer, bufferSize, "" );
+    GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }                                                         
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "******** Week %03d almanac for PRN-%02d ********\n", alm.week, alm.prn ); if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "ID:                        % 03d\n",  alm.prn );       if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Health:                    % 04d\n",  alm.health );    if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Eccentricity:              % .10g\n", alm.ecc );       if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Time of Applicability(s):  % .4f\n",  alm.toa );       if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Orbital Inclination(rad):  % .10g\n", alm.i0 );        if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Rate of Right Ascen(r/s):  % .10g\n", alm.omegadot );  if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "SQRT(A)  (m 1/2):          % .6f\n",  alm.sqrta );     if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Right Ascen at Week(rad):  % .10g\n", alm.omega0 );    if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Argument of Perigee(rad):  % .10g\n", alm.w );         if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Mean Anom(rad):            % .10g\n", alm.m0 );        if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Af0(s):                    % .10g\n", alm.af0 );       if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Af1(s/s):                  % .10g\n", alm.af1 );       if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "week:                      % 03d\n\n",alm.week );      if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "******** Week %03d almanac for PRN-%02d ********\n", alm.week, alm.prn ); if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "ID:                        % 03d\n",  alm.prn );       if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Health:                    % 04d\n",  alm.health );    if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Eccentricity:              % .10g\n", alm.ecc );       if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Time of Applicability(s):  % .4f\n",  alm.toa );       if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Orbital Inclination(rad):  % .10g\n", alm.i0 );        if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Rate of Right Ascen(r/s):  % .10g\n", alm.omegadot );  if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "SQRT(A)  (m 1/2):          % .6f\n",  alm.sqrta );     if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Right Ascen at Week(rad):  % .10g\n", alm.omega0 );    if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Argument of Perigee(rad):  % .10g\n", alm.w );         if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Mean Anom(rad):            % .10g\n", alm.m0 );        if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Af0(s):                    % .10g\n", alm.af0 );       if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "Af1(s/s):                  % .10g\n", alm.af1 );       if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "week:                      % 03d\n\n",alm.week );      if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
 #else
   if( bufferSize < 1024 )
   {
     sprintf( buffer, "" );
+    GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }
   scount += sprintf( buffer+scount, "******** Week %03d almanac for PRN-%02d ********\n", alm.week, alm.prn );

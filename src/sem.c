@@ -36,6 +36,7 @@ SUCH DAMAGE.
 
 #include <stdio.h>
 #include <string.h>
+#include "gnss_error.h"
 #include "sem.h"
 #include "constants.h"
 
@@ -66,43 +67,73 @@ BOOL SEM_ReadAlmanacDataFromFile(
 
   // check stupid error
   if( max_to_read < 1 )
+  {
+    GNSS_ERROR_MSG( "if( max_to_read < 1 )" );
     return FALSE;
+  }
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
   if( fopen_s( &in, semFilePath, "r" ) != 0 )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", semFilePath );
+    GNSS_ERROR_MSG( msg );
     return FALSE;
+  }
   if( !in )
+  {    
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", semFilePath );
+    GNSS_ERROR_MSG( msg );
     return FALSE;
+  }
 
-  n = fscanf_s( in, "%u", &number_of_records ); if(n != 1){return FALSE;}
+  n = fscanf_s( in, "%u", &number_of_records ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
   if( number_of_records < 1 )
+  {
+    GNSS_ERROR_MSG( "if( number_of_records < 1 )" );
     return FALSE;
+  }
 
-  n = fscanf_s( in, "%s", &description ); if(n != 1){return FALSE;}
-  n = fscanf_s( in, "%u", &week ); if(n != 1){return FALSE;}
-  n = fscanf_s( in, "%u", &toa );  if(n != 1){return FALSE;}
-
+  n = fscanf_s( in, "%s", &description ); 
+  if(n != 1)
+  {
+    GNSS_ERROR_MSG( "fscanf failed." );
+    return FALSE;
+  }
+  n = fscanf_s( in, "%u", &week ); 
+  if(n != 1)
+  {
+    GNSS_ERROR_MSG( "fscanf failed." );
+    return FALSE;
+  }
+  n = fscanf_s( in, "%u", &toa );  
+  if(n != 1)
+  {
+    GNSS_ERROR_MSG( "fscanf failed." );
+    return FALSE;
+  }
 
   for( i = 0; i < number_of_records && i < max_to_read; i++ )
   {
     alm[i].week = (unsigned short) week;
     alm[i].toa  = toa;
-    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].prn = (unsigned short)utmp; if(n != 1){return FALSE;}
-    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].svn = (unsigned short)utmp; if(n != 1){return FALSE;}
-    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].ura = (unsigned char)utmp;  if(n != 1){return FALSE;}
+    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].prn = (unsigned short)utmp; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
+    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].svn = (unsigned short)utmp; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
+    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].ura = (unsigned char)utmp;  if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
     
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].ecc      = dtmp;    if(n != 1){return FALSE;}
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].i0       = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omegadot = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].sqrta    = dtmp;    if(n != 1){return FALSE;}
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omega0   = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].w        = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].m0       = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af0      = dtmp;    if(n != 1){return FALSE;}
-    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af1      = dtmp;    if(n != 1){return FALSE;}
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].ecc      = dtmp;    if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].i0       = dtmp*PI; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;} // convert to radians
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omegadot = dtmp*PI; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;} // convert to radians
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].sqrta    = dtmp;    if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omega0   = dtmp*PI; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;} // convert to radians
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].w        = dtmp*PI; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;} // convert to radians
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].m0       = dtmp*PI; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;} // convert to radians
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af0      = dtmp;    if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
+    n = fscanf_s( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af1      = dtmp;    if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
 
-    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].health      = (unsigned char)utmp; if(n != 1){return FALSE;}
-    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].config_code = (unsigned char)utmp; if(n != 1){return FALSE;}
+    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].health      = (unsigned char)utmp; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
+    n = fscanf_s( in, "%u", &utmp );  if(n != 1){break;} alm[i].config_code = (unsigned char)utmp; if(n != 1){GNSS_ERROR_MSG( "fscanf failed." );return FALSE;}
 
     *number_read = (unsigned char)(i+1);
   }
@@ -111,37 +142,45 @@ BOOL SEM_ReadAlmanacDataFromFile(
 #else
   in = fopen( semFilePath, "r" );
   if( !in )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", semFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
 
-  n = fscanf( in, "%u", &number_of_records ); if(n != 1){return FALSE;}
+  n = fscanf( in, "%u", &number_of_records ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
   if( number_of_records < 1 )
+  {
+    GNSS_ERROR_MSG( "if( number_of_records < 1 )" );
     return FALSE;
+  }
 
-  n = fscanf( in, "%s", &description ); if(n != 1){return FALSE;}
-  n = fscanf( in, "%u", &week ); if(n != 1){return FALSE;}
-  n = fscanf( in, "%u", &toa );  if(n != 1){return FALSE;}
+  n = fscanf( in, "%s", &description ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+  n = fscanf( in, "%u", &week ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+  n = fscanf( in, "%u", &toa );  if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
 
 
   for( i = 0; i < number_of_records && i < max_to_read; i++ )
   {
     alm[i].week = (unsigned short) week;
     alm[i].toa  = toa;
-    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].prn = (unsigned short)utmp; if(n != 1){return FALSE;}
-    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].svn = (unsigned short)utmp; if(n != 1){return FALSE;}
-    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].ura = (unsigned char)utmp;  if(n != 1){return FALSE;}
+    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].prn = (unsigned short)utmp; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].svn = (unsigned short)utmp; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].ura = (unsigned char)utmp;  if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
     
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].ecc      = dtmp;    if(n != 1){return FALSE;}
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].i0       = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omegadot = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].sqrta    = dtmp;    if(n != 1){return FALSE;}
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omega0   = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].w        = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].m0       = dtmp*PI; if(n != 1){return FALSE;} // convert to radians
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af0      = dtmp;    if(n != 1){return FALSE;}
-    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af1      = dtmp;    if(n != 1){return FALSE;}
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].ecc      = dtmp;    if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].i0       = dtmp*PI; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;} // convert to radians
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omegadot = dtmp*PI; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;} // convert to radians
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].sqrta    = dtmp;    if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].omega0   = dtmp*PI; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;} // convert to radians
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].w        = dtmp*PI; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;} // convert to radians
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].m0       = dtmp*PI; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;} // convert to radians
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af0      = dtmp;    if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+    n = fscanf( in, "%lf", &dtmp ); if(n != 1){break;} alm[i].af1      = dtmp;    if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
 
-    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].health      = (unsigned char)utmp; if(n != 1){return FALSE;}
-    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].config_code = (unsigned char)utmp; if(n != 1){return FALSE;}
+    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].health      = (unsigned char)utmp; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+    n = fscanf( in, "%u", &utmp );  if(n != 1){break;} alm[i].config_code = (unsigned char)utmp; if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
 
     *number_read = (unsigned char)(i+1);
   }
@@ -166,13 +205,28 @@ BOOL SEM_WriteAlmanacDataToFile(
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
   if( fopen_s( &out, semFilePath, "w") != 0 )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", semFilePath );
+    GNSS_ERROR_MSG( msg );        
     return FALSE;
+  }
   if( !out )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", semFilePath );
+    GNSS_ERROR_MSG( msg );        
     return FALSE;
+  }
 #else
   out = fopen(semFilePath, "w");
   if( !out )
+  {
+    char msg[128];
+    sprintf( msg, "Unable to open %s.", semFilePath );
+    GNSS_ERROR_MSG( msg );    
     return FALSE;
+  }
 #endif
 
   fprintf( out, "%d %s\n", number_to_write, "CURRENT.ALM" );
@@ -202,17 +256,19 @@ BOOL SEM_WriteSingleAlmanacElementToBuffer(
   if( bufferSize < 1024 )
   {
     sprintf_s( buffer, bufferSize, "" );
+    GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%d\n%d\n%d\n", alm.prn, alm.svn, alm.ura );                          if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%-23.14g %23.14g %23.14g\n", alm.ecc, alm.i0/PI, alm.omegadot/PI );  if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%-23.14g %23.14g %23.14g\n", alm.sqrta, alm.omega0/PI, alm.w/PI );   if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%-23.14g %23.14g %23.14g\n", alm.m0/PI, alm.af0, alm.af1 );          if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }  
-  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%d\n%d\n\n", alm.health, alm.config_code );                          if( dcount < 0 ){ return FALSE; }else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%d\n%d\n%d\n", alm.prn, alm.svn, alm.ura );                          if( dcount < 0 ){ GNSS_ERROR_MSG("sprintf failed.");return FALSE; }else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%-23.14g %23.14g %23.14g\n", alm.ecc, alm.i0/PI, alm.omegadot/PI );  if( dcount < 0 ){ GNSS_ERROR_MSG("sprintf failed.");return FALSE; }else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%-23.14g %23.14g %23.14g\n", alm.sqrta, alm.omega0/PI, alm.w/PI );   if( dcount < 0 ){ GNSS_ERROR_MSG("sprintf failed.");return FALSE; }else{ scount += dcount; }
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%-23.14g %23.14g %23.14g\n", alm.m0/PI, alm.af0, alm.af1 );          if( dcount < 0 ){ GNSS_ERROR_MSG("sprintf failed.");return FALSE; }else{ scount += dcount; }  
+  dcount = sprintf_s( buffer+scount, bufferSize-scount, "%d\n%d\n\n", alm.health, alm.config_code );                          if( dcount < 0 ){ GNSS_ERROR_MSG("sprintf failed.");return FALSE; }else{ scount += dcount; }
 #else
   if( bufferSize < 1024 )
   {
     sprintf( buffer, "" );
+    GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }
   scount += sprintf( buffer+scount, "%d\n%d\n%d\n", alm.prn, alm.svn, alm.ura );

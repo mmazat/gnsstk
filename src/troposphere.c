@@ -45,6 +45,7 @@ SUCH DAMAGE.
 */
 
 #include <math.h>
+#include "gnss_error.h"
 #include "troposphere.h"
 #include "constants.h"
 
