@@ -42,6 +42,7 @@ SUCH DAMAGE.
 #include <memory.h>
 #include <math.h>
 #include "rinex.h"
+#include "gnss_error.h"
 #include "time_conversion.h"
 #include "constants.h"
 
@@ -180,16 +181,28 @@ BOOL RINEX_trim_left_right(
   int start = 0;
   size_t length = 0;
   if( str == NULL )
+  {
+    GNSS_ERROR_MSG( "if( str == NULL )" );
     return FALSE;
+  }
   if( str_length == NULL )
+  {
+    GNSS_ERROR_MSG( "if( str_length == NULL )" );
     return FALSE;
+  }
 
   // Remove leading whitesapce
   length = strlen( str );
   if( length > max_length )
+  {
+    GNSS_ERROR_MSG( "if( length > max_length )" );
     return FALSE;
+  }
   if( length == 0 )
+  {
+    GNSS_ERROR_MSG( "if( length == 0 )" );
     return TRUE;
+  }
 
   for( i = 0; i < (int)length; i++ )
   {
@@ -256,18 +269,36 @@ BOOL RINEX_get_header_lines(
   char buffer[RINEX_HEADER_SIZE];
 
   if( header_buffer == NULL )
+  {
+    GNSS_ERROR_MSG( "if( header_buffer == NULL )" );
     return FALSE;
+  }
   if( header_size == 0 )
+  {
+    GNSS_ERROR_MSG( "if( header_size == 0 )" );
     return FALSE;
+  }
   if( record_desciptor == NULL )
+  {
+    GNSS_ERROR_MSG( "if( record_desciptor == NULL )" );
     return FALSE;
+  }
   if( lines_buffer == NULL )
+  {
+    GNSS_ERROR_MSG( "if( lines_buffer == NULL )" );
     return FALSE;
+  }
   if( nr_lines == NULL )
+  {
+    GNSS_ERROR_MSG( "if( nr_lines == NULL )" );
     return FALSE;
+  }
 
   if( header_size+1 > RINEX_HEADER_SIZE )
+  {
+    GNSS_ERROR_MSG( "if( header_size+1 > RINEX_HEADER_SIZE )" );
     return FALSE;
+  }
 
   memcpy( buffer, header_buffer, header_size );
   buffer[header_size] = '\0';
@@ -276,11 +307,16 @@ BOOL RINEX_get_header_lines(
 
   length_record_desciptor = strlen( record_desciptor );
   if( length_record_desciptor == 0 )
+  {
+    GNSS_ERROR_MSG( "if( length_record_desciptor == 0 )" );
     return FALSE;
+  }
 
   strptr = strstr( header_buffer, record_desciptor );
   if( strptr == NULL )
+  {
     return TRUE; // No line found with this descriptor at all.
+  }
 
   // Tokenize the copied input buffer.
   pch = strtok( buffer,"\r\n");
@@ -301,7 +337,10 @@ BOOL RINEX_get_header_lines(
   nr_valid_header_lines = i;
 
   if( nr_valid_header_lines == 0 )
+  {
+    GNSS_ERROR_MSG( "if( nr_valid_header_lines == 0 )" );
     return FALSE;
+  }
 
   // Search the tokenized strings (lines) for the record descriptor.
   for( i = 0; i < nr_valid_header_lines; i++ )
@@ -359,7 +398,10 @@ BOOL RINEX_get_header_lines(
 
       // Add this line to the lines_buffer.
       if( (scount + token[i].length + 1) >= max_lines_buffer )
+      {
+        GNSS_ERROR_MSG( "if( (scount + token[i].length + 1) >= max_lines_buffer )" );
         return FALSE;
+      }
 
       scount += sprintf( lines_buffer+scount, "%s\n", token[i].str );
       *nr_lines += 1;
@@ -381,9 +423,15 @@ BOOL RINEX_erase(
   size_t len_erase_me = 0;
 
   if( erase_me == NULL )
+  {
+    GNSS_ERROR_MSG( "if( erase_me == NULL )" );
     return FALSE;
+  }
   if( str == NULL )
+  {
+    GNSS_ERROR_MSG( "if( str == NULL )" );
     return FALSE;
+  }
   
   len_erase_me = strlen( erase_me );
   if( len_erase_me == 0 )
@@ -444,20 +492,32 @@ BOOL RINEX_GetObservationTypes(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;  
+  }
   // strip the record description from the string
   result = RINEX_erase( "# / TYPES OF OBSERV", lines_buffer );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_erase returned FALSE." );
     return FALSE;
+  }
   
   // Determine the number of observation types.
   if( sscanf( lines_buffer, "%u", &(header->nr_obs_types) ) != 1 )
+  {
+    GNSS_ERROR_MSG( "sscanf failed." );
     return FALSE;
+  }
   
   // Clean up the string a little.
   result = RINEX_trim_left_right( lines_buffer, RINEX_LINEBUF_SIZE, &len );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
     return FALSE;
+  }
 
   // Tokenize the string.
   pch = strtok( lines_buffer, " \t\r\n\f" );
@@ -468,7 +528,10 @@ BOOL RINEX_GetObservationTypes(
       strcpy( token, pch );
       result = RINEX_trim_left_right( token, 128, &len );
       if( result == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
         return FALSE;
+      }
       if( strlen(token) > 0 )
       {
         if( strcmp( token, "L1" ) == 0 )
@@ -504,7 +567,10 @@ BOOL RINEX_GetObservationTypes(
   }
 
   if( count != header->nr_obs_types )
+  {
+    GNSS_ERROR_MSG( "if( count != header->nr_obs_types )" );
     return FALSE;
+  }
 
   return TRUE;
 }
@@ -524,13 +590,25 @@ BOOL RINEX_DealWithSpecialRecords(
   unsigned i = 0;
 
   if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
     return FALSE;
+  }
   if( RINEX_header == NULL )
+  {
+    GNSS_ERROR_MSG( "if( RINEX_header == NULL )" );
     return FALSE;
+  }
   if( wasEndOfFileReached == NULL )
+  {
+    GNSS_ERROR_MSG( "if( wasEndOfFileReached == NULL )" );
     return FALSE;
+  }
   if( filePosition == NULL )
+  {
+    GNSS_ERROR_MSG( "if( filePosition == NULL )" );
     return FALSE;
+  }
 
   // check nothing to do.
   if( nr_special_records == 0 )
@@ -548,6 +626,7 @@ BOOL RINEX_DealWithSpecialRecords(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected" );
         return FALSE;
       }
     }
@@ -568,16 +647,23 @@ BOOL RINEX_DealWithSpecialRecords(
       // The marker name has changed.
       result = RINEX_erase("MARKER NAME", line_buffer);
       if( result == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_erase returned FALSE." );
         return FALSE;
+      }
       result = RINEX_trim_left_right(line_buffer, RINEX_LINEBUF_SIZE, &length );
       if( result == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
         return FALSE;
+      }
       if( length < 64 )
       {
         strcpy(RINEX_header->marker_name, line_buffer);
       }
       else
       {
+        GNSS_ERROR_MSG( "length > 64" );
         return FALSE;
       }
     }
@@ -592,6 +678,7 @@ BOOL RINEX_DealWithSpecialRecords(
         &(RINEX_header->antenna_ecc_e), 
         &(RINEX_header->antenna_ecc_n) ) != 3 )
       {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE;
       }
     }
@@ -602,6 +689,7 @@ BOOL RINEX_DealWithSpecialRecords(
         &(RINEX_header->y), 
         &(RINEX_header->z) ) != 3 )
       {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE;
       }
     }
@@ -644,21 +732,45 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
 
   // Check input
   if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
     return FALSE;
+  }
   if( RINEX_header == NULL )
+  {
+    GNSS_ERROR_MSG( "if( RINEX_header == NULL )" );
     return FALSE;
+  }
   if( wasEndOfFileReached == NULL )
+  {
+    GNSS_ERROR_MSG( "if( wasEndOfFileReached == NULL )" );
     return FALSE;
+  }
   if( filePosition == NULL )
+  {
+    GNSS_ERROR_MSG( "if( filePosition == NULL )" );
     return FALSE;
+  }
   if( RINEX_obs == NULL )
+  {
+    GNSS_ERROR_MSG( "if( RINEX_obs == NULL )" );
     return FALSE;
+  }
   if( RINEX_max_nr_obs == 0 )
+  {
+    GNSS_ERROR_MSG( "if( RINEX_max_nr_obs == 0 )" );
     return FALSE;
+  }
   if( RINEX_nr_obs == NULL )
+  {
+    GNSS_ERROR_MSG( "if( RINEX_nr_obs == NULL )" );
     return FALSE;
+  }
   if( RINEX_header->nr_obs_types >= RINEX_max_nr_obs )
+  {
+    GNSS_ERROR_MSG( "if( RINEX_header->nr_obs_types >= RINEX_max_nr_obs )" );
     return FALSE;
+  }
 
 
   // Get the next line from the file.
@@ -671,6 +783,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
     }
     else
     {
+      GNSS_ERROR_MSG( "unexpected" );
       return FALSE;
     }
   }
@@ -817,6 +930,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         }
         else
         {
+          GNSS_ERROR_MSG( "unexpected" );
           return FALSE;
         }      
       }
@@ -915,6 +1029,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         }
       default:
         {
+          GNSS_ERROR_MSG( "unexpected default case" );
           return FALSE;
           break;
         }
@@ -962,6 +1077,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         }
         else
         {
+          GNSS_ERROR_MSG( "unexpected" );
           return FALSE;
         }            
       }
@@ -1001,6 +1117,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         }
         else
         {
+          GNSS_ERROR_MSG( "unexpected" );
           return FALSE;
         }            
       }
@@ -1015,6 +1132,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
     }
   default:
     {
+      GNSS_ERROR_MSG( "unexpected default case" );
       return FALSE;
       break;
     }
@@ -1105,7 +1223,10 @@ BOOL RINEX_ConvertSignalStrengthToUsableCNo(
   )
 {
   if( cno == NULL )
+  {
+    GNSS_ERROR_MSG( "if( cno == NULL )" );
     return FALSE;
+  }
 
   if( signal_strength > 0 && signal_strength < 10 )
   {
@@ -1135,24 +1256,39 @@ BOOL RINEX_GetHeader(
 
   fid = fopen( filepath, "r" );
   if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
     return FALSE;
+  }
 
   // The first line of the file must be the RINEX VERSION / TYPE
   if( fgets( line_buffer, 1024, fid ) == NULL )
+  {
+    GNSS_ERROR_MSG( "fgets failed" );
     return FALSE;
+  }
   strptr = strstr( line_buffer, "RINEX VERSION / TYPE" );
   if( strptr == NULL )
+  {
+    GNSS_ERROR_MSG( "strstr failed." );
     return FALSE;
+  }
 
   // Add the first line to the buffer
   line_length = strlen( line_buffer );
   if( scount+line_length >= buffer_max_size )    
+  {
+    GNSS_ERROR_MSG( "if( scount+line_length >= buffer_max_size )" );
     return FALSE;    
+  }
   scount += sprintf( buffer+scount, "%s", line_buffer );
 
   // Extract the RINEX version and type.
   if( sscanf( line_buffer, "%Lf %c", version, &type_char ) != 2 )
+  {
+    GNSS_ERROR_MSG( "sscanf failed" );
     return FALSE;
+  }
   *file_type = (RINEX_enumFileType)type_char;
 
   do
@@ -1168,7 +1304,10 @@ BOOL RINEX_GetHeader(
     // Add the line of the buffer.
     line_length = strlen( line_buffer );
     if( scount+line_length >= buffer_max_size )   
+    {
+      GNSS_ERROR_MSG( "if( scount+line_length >= buffer_max_size )" );
       return FALSE;    
+    }
     scount += sprintf( buffer+scount, "%s", line_buffer );
 
   }while( !end_of_header_found );
@@ -1180,6 +1319,7 @@ BOOL RINEX_GetHeader(
   }
   else
   {
+    GNSS_ERROR_MSG( "End of RINEX header not found." );
     return FALSE;
   }
 }
@@ -1201,11 +1341,20 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   int itmp[5];  
   
   if( header_buffer == NULL )
+  {
+    GNSS_ERROR_MSG( "if( header_buffer == NULL )" );
     return FALSE;
+  }
   if( header_buffer_size == 0 )
+  {
+    GNSS_ERROR_MSG( "if( header_buffer_size == 0 )" );
     return FALSE;
+  }
   if( header == NULL )
+  {
+    GNSS_ERROR_MSG( "if( header == NULL )" );
     return FALSE;
+  }
 
   memset( header, 0, sizeof(RINEX_structDecodedHeader) );
 
@@ -1218,11 +1367,20 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;
+  }
   if( nr_lines != 1 )
+  {
+    GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
     return FALSE;
+  }
   if( sscanf( lines_buffer, "%Lf %c", &(header->version), &rinex_type_char ) != 2 )
+  {
+    GNSS_ERROR_MSG( "sscanf failed" );
     return FALSE;
+  }
   header->type = (RINEX_enumFileType)rinex_type_char;
 
 
@@ -1235,21 +1393,34 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;
+  }
   if( nr_lines != 1 )
+  {
+    GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
     return FALSE;
+  }
   result = RINEX_erase("MARKER NAME", lines_buffer);
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_erase returned FALSE." );
     return FALSE;
+  }
   result = RINEX_trim_left_right(lines_buffer, RINEX_LINEBUF_SIZE, &len );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE" );
     return FALSE;
+  }
   if( len < 64 )
   {
     strcpy(header->marker_name, lines_buffer);
   }
   else
   {
+    GNSS_ERROR_MSG( "if( len < 64 )" );
     return FALSE;
   }
 
@@ -1262,11 +1433,17 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines" );
     return FALSE;  
+  }
   if( nr_lines == 1 )
   {    
     if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->x), &(header->y), &(header->z) ) != 3 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed" );
       return FALSE;
+    }
   }
 
   result = RINEX_get_header_lines(
@@ -1278,11 +1455,20 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;
+  }
   if( nr_lines != 1 )
+  {
+    GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
     return FALSE;
+  }
   if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->antenna_delta_h), &(header->antenna_ecc_e), &(header->antenna_ecc_n) ) != 3 )
+  {
+    GNSS_ERROR_MSG( "sscanf failed." );
     return FALSE;
+  }
 
   
   result = RINEX_get_header_lines(
@@ -1294,25 +1480,37 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;  
+  }
   if( nr_lines == 1 )
   {
     // Only default values specified.
     if( sscanf( lines_buffer, "%d %d", &(header->default_wavefactor_L1), &(header->default_wavefactor_L2) ) != 2 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
   }
   else
   {
     // First read the default values specified.
     if( sscanf( lines_buffer, "%d %d", &(header->default_wavefactor_L1), &(header->default_wavefactor_L2) ) != 2 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
 
     //GDM_TODO deal with multiline WAVELENTH FACT L1/2
   }
 
   result = RINEX_GetObservationTypes( header_buffer, header_buffer_size, header );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_GetObservationTypes returned FALSE." );
     return FALSE;
+  }
 
 
 
@@ -1325,15 +1523,19 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;
+  }
   if( nr_lines == 1 )
   {    
     if( sscanf( lines_buffer, "%Lf", &(header->interval) ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
-
+    }
     if( header->interval <= 0 )
       header->interval = -1;  // Set to unknown value.
-
   }
   else
   {
@@ -1351,7 +1553,10 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE; 
+  }
 
   if( sscanf( lines_buffer, "%d %d %d %d %d %f %s", 
     &(itmp[0]),
@@ -1362,6 +1567,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     &(header->time_of_first_obs.seconds),
     time_system_str ) != 7 )
   {
+    GNSS_ERROR_MSG( "sscanf failed." );
     return FALSE;
   }  
   header->time_of_first_obs.year   = (unsigned short)itmp[0];
@@ -1373,7 +1579,10 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     
   result = RINEX_trim_left_right( time_system_str, 128, &len );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
     return FALSE; 
+  }
   if( strcmp( time_system_str, "TIME") == 0  ) // no string present, defaults to GPS
     header->time_of_first_obs.time_system = RINEX_TIME_SYSTEM_GPS;
   else if( strcmp( time_system_str, "GPS" ) == 0 )
@@ -1453,19 +1662,40 @@ BOOL RINEX_GetNextObservationSet(
 
   // Check the input.
   if( fid == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
+    return FALSE; 
+  }    
   if( wasEndOfFileReached == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( wasEndOfFileReached == NULL )" );
+    return FALSE; 
+  }    
   if( wasObservationFound == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( wasObservationFound == NULL )" );
+    return FALSE; 
+  }    
   if( filePosition == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( filePosition == NULL )" );
+    return FALSE; 
+  }    
   if( obsArray == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( obsArray == NULL )" );
+    return FALSE; 
+  }    
   if( nrObs == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( nrObs == NULL )" );
+    return FALSE; 
+  }    
   if( RINEX_header->type != RINEX_FILE_TYPE_OBS )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( RINEX_header->type != RINEX_FILE_TYPE_OBS )" );
+    return FALSE; 
+  }    
 
   *wasObservationFound = FALSE;
   *wasEndOfFileReached = FALSE; 
@@ -1482,6 +1712,7 @@ BOOL RINEX_GetNextObservationSet(
   if( epoch.time_system != RINEX_TIME_SYSTEM_GPS )
   {
     // Not supported for now!
+    GNSS_ERROR_MSG( "if( epoch.time_system != RINEX_TIME_SYSTEM_GPS ) - NOT SUPPORTED YET." );
     return FALSE;
   }
 
@@ -1499,16 +1730,23 @@ BOOL RINEX_GetNextObservationSet(
         }
         else
         {
+          GNSS_ERROR_MSG( "unexpected" );
           return FALSE;
         }
       }
       result = RINEX_trim_left_right( line_buffer, RINEX_LINEBUF_SIZE, &length );
       if( result == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
         return FALSE;
+      }
     }while( length == 0 );
   
     if( length == 0 )
+    {
+      GNSS_ERROR_MSG( "if( length == 0 )" );
       return FALSE;
+    }
 
     // To make life easier later:
     // Search and replace "G ", "R ", "T ", "S " with
@@ -1538,6 +1776,7 @@ BOOL RINEX_GetNextObservationSet(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected." );
         return FALSE;
       }
 
@@ -1546,6 +1785,7 @@ BOOL RINEX_GetNextObservationSet(
     }
     if( nr_tokens >= 64 )
     {
+      GNSS_ERROR_MSG( "if( nr_tokens >= 64 )" );
       return FALSE;
     }
 
@@ -1559,11 +1799,17 @@ BOOL RINEX_GetNextObservationSet(
       // This can only indicate a epoch flag with a number of special records to follow.
       // Read in the epoch flag and the number of special records to follow.
       if( sscanf( token[0].str, "%d", &itmp ) != 1 )
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE;
+      }
       epoch_flag = (RINEX_enumEpochFlag)itmp;        
 
       if( sscanf( token[1].str, "%d", &nr_special_records ) != 1 )
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE;
+      }
 
       // Deal with special records if any
       result = RINEX_DealWithSpecialRecords(
@@ -1582,35 +1828,59 @@ BOOL RINEX_GetNextObservationSet(
       // year month day hour minute seconds epoch_flag --other stuff--,
       // --other stuff-- depending on the epoch flag
       if( nr_tokens < 8 )
+      {
+        GNSS_ERROR_MSG( "if( nr_tokens < 8 )" );
         return FALSE;  
+      }
 
       // Exract the epoch information from the tokenized line buffer.
       i = 0;
       if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       epoch.year = (unsigned short)itmp;
       i++;
       if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       epoch.month = (unsigned char)itmp;
       i++;
       if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       epoch.day = (unsigned char)itmp;
       i++;
       if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       epoch.hour = (unsigned char)itmp;
       i++;
       if( sscanf( token[i].str, "%d", &itmp ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       epoch.minute = (unsigned char)itmp;
       i++;
       if( sscanf( token[i].str, "%f", &(epoch.seconds) ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       i++;
       if( sscanf( token[i].str, "%d", &(itmp) ) != 1 ) 
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE; 
+      }
       i++;
       epoch_flag = (RINEX_enumEpochFlag)itmp;
 
@@ -1623,7 +1893,10 @@ BOOL RINEX_GetNextObservationSet(
       else if( epoch_flag > 1 )
       {
         if( sscanf( token[i].str, "%d", &nr_special_records ) != 1 )
+        {
+          GNSS_ERROR_MSG( "sscanf failed." );
           return FALSE;       
+        }
 
         // Deal with special records if any
         result = RINEX_DealWithSpecialRecords(
@@ -1644,7 +1917,10 @@ BOOL RINEX_GetNextObservationSet(
   }while( !isEpochValidToDecode );
 
   if( token[7].length == 0 )
+  {
+    GNSS_ERROR_MSG( "if( token[7].length == 0 )" );
     return FALSE;
+  }
   
   // The eighth token contains the number of satellites and there id's
   for( i = 0; i < (int)token[7].length; i++ )
@@ -1664,6 +1940,7 @@ BOOL RINEX_GetNextObservationSet(
     if( token[7].str[i] == '-' || token[7].str[i] == '+' || token[7].str[i] == '.' || token[7].str[i] == 'E' || token[7].str[i] == 'e' )
     {
       // Any float numbers should not be present on this line.
+      GNSS_ERROR_MSG( "float numbers should not be present on this line." );
       return FALSE;
     }
 
@@ -1679,6 +1956,7 @@ BOOL RINEX_GetNextObservationSet(
         token[7].str[i] != RINEX_SATELLITE_SYSTEM_GEO && 
         token[7].str[i] != RINEX_SATELLITE_SYSTEM_NSS )
       {
+        GNSS_ERROR_MSG( "unexpected" );
         return FALSE;
       }
 
@@ -1686,7 +1964,10 @@ BOOL RINEX_GetNextObservationSet(
       j = 0;
       // A number always precedes a non-number here. Decode the number.
       if( sscanf( numstr, "%d", &itmp ) != 1 )
+      {
+        GNSS_ERROR_MSG( "sscanf failed." );
         return FALSE;
+      }
       if( count == 0 )
       {
         // This is the number of observations        
@@ -1699,6 +1980,7 @@ BOOL RINEX_GetNextObservationSet(
 
         if( RINEX_nr_satellites >= 64 )
         {
+          GNSS_ERROR_MSG( "if( RINEX_nr_satellites >= 64 )" );
           return FALSE; // a very unlikely error condition.
         }
       }
@@ -1711,6 +1993,7 @@ BOOL RINEX_GetNextObservationSet(
       count++;
       if( count > RINEX_nr_satellites+1 )
       {
+        GNSS_ERROR_MSG( "if( count > RINEX_nr_satellites+1 )" );
         return FALSE; // a very unlikely error condition.
       }
       next_sat_type = (RINEX_enumSatelliteSystemType)token[7].str[i];
@@ -1718,6 +2001,7 @@ BOOL RINEX_GetNextObservationSet(
   }
   if( count == 0 )
   {
+    GNSS_ERROR_MSG( "if( count == 0 )" );
     return FALSE;
   }
 
@@ -1725,7 +2009,10 @@ BOOL RINEX_GetNextObservationSet(
   numstr[j] = '\0';
   j = 0;
   if( sscanf( numstr, "%d", &itmp ) != 1 )
+  {
+    GNSS_ERROR_MSG( "sscanf failed" );
     return FALSE;
+  }
   RINEX_sat[count-1].id = (unsigned short)itmp;
   RINEX_sat[count-1].type = next_sat_type;
   count++;
@@ -1733,6 +2020,7 @@ BOOL RINEX_GetNextObservationSet(
   if( count > RINEX_nr_satellites+1 )
   {
     // Error in number of satellite ids read compared to RINEX_nr_obs.
+    GNSS_ERROR_MSG( "if( count > RINEX_nr_satellites+1 )" );
     return FALSE;
   }
 
@@ -1741,6 +2029,7 @@ BOOL RINEX_GetNextObservationSet(
   {
     if( RINEX_nr_satellites <= 12 )
     {
+      GNSS_ERROR_MSG( "if( RINEX_nr_satellites <= 12 )" );
       return FALSE;
     }
     else
@@ -1755,16 +2044,23 @@ BOOL RINEX_GetNextObservationSet(
         }
         else
         {
+          GNSS_ERROR_MSG( "unexpected" );
           return FALSE;
         }
       }
 
       length = strlen(line_buffer);
       if( length == 0 )
+      {
+        GNSS_ERROR_MSG( "if( length == 0 )" );
         return FALSE;
+      }
 
       if( RINEX_trim_left_right( line_buffer, RINEX_LINEBUF_SIZE, &length ) == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
         return FALSE;
+      }
 
       for( i = 0; i < (int)length; i++ )
       {
@@ -1775,6 +2071,7 @@ BOOL RINEX_GetNextObservationSet(
         if( line_buffer[i] == '-' || line_buffer[i] == '+' || line_buffer[i] == '.' || line_buffer[i] == 'E' || line_buffer[i] == 'e' )
         {
           // Any float numbers should not be present on this line.
+          GNSS_ERROR_MSG( "float numbers should not be present on this line." );
           return FALSE;
         }
 
@@ -1786,6 +2083,7 @@ BOOL RINEX_GetNextObservationSet(
             line_buffer[i] != RINEX_SATELLITE_SYSTEM_NSS &&
             line_buffer[i] != RINEX_SATELLITE_SYSTEM_MIXED )
           {
+            GNSS_ERROR_MSG( "unexpected" );
             return FALSE;
           }
 
@@ -1795,6 +2093,7 @@ BOOL RINEX_GetNextObservationSet(
             j = 0;
             if( sscanf( numstr, "%d", &itmp ) != 1 )
             {
+              GNSS_ERROR_MSG( "sscanf failed." );
               return FALSE;
             }
             RINEX_sat[count-1].id = (unsigned short)itmp;
@@ -1803,6 +2102,7 @@ BOOL RINEX_GetNextObservationSet(
             count++;
             if( count > RINEX_nr_satellites+1 )
             {
+              GNSS_ERROR_MSG( "if( count > RINEX_nr_satellites+1 )" );
               return FALSE; // a very unlikely error condition.
             }
           }          
@@ -1820,6 +2120,7 @@ BOOL RINEX_GetNextObservationSet(
     j = 0;
     if( sscanf( numstr, "%d", &itmp ) != 1 )
     {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     RINEX_sat[count-1].id = (unsigned short)itmp;
@@ -1828,12 +2129,16 @@ BOOL RINEX_GetNextObservationSet(
 
     if( count != RINEX_nr_satellites+1 )
     {
+      GNSS_ERROR_MSG( "if( count != RINEX_nr_satellites+1 )" );
       return FALSE;
     }
   }
 
   if( RINEX_header->nr_obs_types >= 64 )    
+  {
+    GNSS_ERROR_MSG( "if( RINEX_header->nr_obs_types >= 64 )" );
     return FALSE; // A very unlikely condition.
+  }
 
 
 
@@ -1854,6 +2159,7 @@ BOOL RINEX_GetNextObservationSet(
   }
   else
   {
+    GNSS_ERROR_MSG( "unexpected" );
     return FALSE;
   }
   TIMECONV_GetGPSTimeFromRinexTime(
@@ -1895,7 +2201,10 @@ BOOL RINEX_GetNextObservationSet(
       RINEX_sat[RINEX_sat_index].id
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_GetNextObserationSetForOneSatellite returned FALSE." );
       return FALSE;
+    }
 
     if( epoch_flag == 6 ) 
     {
@@ -2049,7 +2358,10 @@ BOOL RINEX_GetNextObservationSet(
           {
             result = RINEX_ConvertSignalStrengthToUsableCNo( &(obsArray[obsArray_index].cno), RINEX_obs[RINEX_obs_index].signal_strength );
             if( result == FALSE )
+            {
+              GNSS_ERROR_MSG( "RINEX_ConvertSignalStrengthToUsableCNo returned FALSE." );
               return FALSE;
+            }
           }
 
           break;  
@@ -2076,7 +2388,10 @@ BOOL RINEX_GetNextObservationSet(
           {
             result = RINEX_ConvertSignalStrengthToUsableCNo( &(obsArray[obsArray_index].cno), RINEX_obs[RINEX_obs_index].signal_strength );
             if( result == FALSE )
+            {
+              GNSS_ERROR_MSG( "RINEX_ConvertSignalStrengthToUsableCNo returned FALSE." );
               return FALSE;
+            }
           }
 
           break;
@@ -2104,7 +2419,10 @@ BOOL RINEX_GetNextObservationSet(
           {
             result = RINEX_ConvertSignalStrengthToUsableCNo( &(obsArray[obsArray_index].cno), RINEX_obs[RINEX_obs_index].signal_strength );
             if( result == FALSE )
+            {
+              GNSS_ERROR_MSG( "RINEX_ConvertSignalStrengthToUsableCNo returned FALSE." );
               return FALSE;
+            }
           }
 
           break;
@@ -2136,7 +2454,10 @@ BOOL RINEX_GetNextObservationSet(
 
       obsArray_index++;
       if( obsArray_index >= maxNrObs )
+      {
+        GNSS_ERROR_MSG( "if( obsArray_index >= maxNrObs )" );
         return FALSE;
+      }
       
       // Set measurement data default to 0.
       memset( &(obsArray[obsArray_index]), 0, sizeof(GNSS_structMeasurement) );
@@ -2280,7 +2601,10 @@ BOOL RINEX_GetNextObservationSet(
           {
             result = RINEX_ConvertSignalStrengthToUsableCNo( &(obsArray[obsArray_index].cno), RINEX_obs[RINEX_obs_index].signal_strength );
             if( result == FALSE )
+            {
+              GNSS_ERROR_MSG( "RINEX_ConvertSignalStrengthToUsableCNo returned FALSE." );
               return FALSE;
+            }
           }
 
           break;  
@@ -2307,7 +2631,10 @@ BOOL RINEX_GetNextObservationSet(
           {
             result = RINEX_ConvertSignalStrengthToUsableCNo( &(obsArray[obsArray_index].cno), RINEX_obs[RINEX_obs_index].signal_strength );
             if( result == FALSE )
+            {
+              GNSS_ERROR_MSG( "RINEX_ConvertSignalStrengthToUsableCNo returned FALSE." );
               return FALSE;
+            }
           }
 
           break;
@@ -2340,7 +2667,10 @@ BOOL RINEX_GetNextObservationSet(
 
       obsArray_index++;
       if( obsArray_index >= maxNrObs )
+      {
+        GNSS_ERROR_MSG( "if( obsArray_index >= maxNrObs )" );
         return FALSE;
+      }
     }
 
     // Note that T1 and T2 measurements are not supported.
@@ -2398,15 +2728,30 @@ BOOL RINEX_DecodeGPSNavigationFile(
   epoch.time_system = RINEX_TIME_SYSTEM_GPS;
   
   if( filepath == NULL )
+  {
+    GNSS_ERROR_MSG( "if( filepath == NULL )" );
     return FALSE;
+  }
   if( iono_model == NULL )
+  {
+    GNSS_ERROR_MSG( "if( iono_model == NULL )" );
     return FALSE;
+  }
   if( ephemeris_array == NULL )
+  {
+    GNSS_ERROR_MSG( "if( ephemeris_array == NULL )" );
     return FALSE;
+  }
   if( length_ephemeris_array == NULL )
+  {
+    GNSS_ERROR_MSG( "if( length_ephemeris_array == NULL )" );
     return FALSE;
+  }
   if( max_length_ephemeris_array == 0 )
+  {
+    GNSS_ERROR_MSG( "if( max_length_ephemeris_array == 0 )" );
     return FALSE;
+  }
 
   iono_model->isValid = FALSE;
 
@@ -2419,10 +2764,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
     &file_type
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_GetHeader returned FALSE." );
     return FALSE;
+  }
 
   if( file_type != RINEX_FILE_TYPE_GPS_NAV )
+  {
+    GNSS_ERROR_MSG( "if( file_type != RINEX_FILE_TYPE_GPS_NAV )" );
     return FALSE;
+  }
 
   if( fabs( version - 2.1 ) < 1e-06 || 
     fabs( version - 2.0 ) < 1e-06 ||
@@ -2432,6 +2783,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
   }
   else
   {    
+    GNSS_ERROR_MSG( "RINEX version not supported." );
     return FALSE;
   }
 
@@ -2444,12 +2796,18 @@ BOOL RINEX_DecodeGPSNavigationFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;
+  }
   if( nr_lines == 1 )
   {
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
       &(iono_model->alpha0), 
@@ -2457,6 +2815,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       &(iono_model->alpha2),
       &(iono_model->alpha3) ) != 4 )
     {
+      GNSS_ERROR_MSG( "sscanf returned FALSE." );
       return FALSE; // bad header?
     }
     result = RINEX_get_header_lines(
@@ -2468,13 +2827,22 @@ BOOL RINEX_DecodeGPSNavigationFile(
       &nr_lines
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
       return FALSE;
+    }
     if( nr_lines != 1 )
+    {
+      GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
       return FALSE; // weird header
+    }
 
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
       &(iono_model->beta0), 
@@ -2482,6 +2850,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       &(iono_model->beta2),
       &(iono_model->beta3) ) != 4 )
     {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE; // bad header?
     }
 
@@ -2494,12 +2863,18 @@ BOOL RINEX_DecodeGPSNavigationFile(
       &nr_lines
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
       return FALSE;
+    }
     if( nr_lines == 1 )
     {
       result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
       if( result == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
         return FALSE;
+      }
 
       if( sscanf( line_buffer, "%Lf %Lf %d %d",
         &header_A0,
@@ -2526,7 +2901,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
           &dtmp
           );
         if( result == FALSE )
+        {
+          GNSS_ERROR_MSG( "TIMECONV_GetGPSTimeFromYearAndDayOfYear returned FALSE." );
           return FALSE;
+        }
         iono_model->tow = (unsigned)dtmp;
         iono_model->isValid = TRUE;
       }
@@ -2540,7 +2918,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
 
   fid = fopen( filepath, "r" );
   if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
     return FALSE;
+  }
 
   do
   {
@@ -2553,6 +2934,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected" );
         return FALSE;
       }
     }
@@ -2571,6 +2953,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected" );
         return FALSE;
       }
     }
@@ -2586,7 +2969,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
 
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)length );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%2c%*c%2c%*c%2c%*c%2c%*c%2c%*c%2c%5c%19c%19c%19c",
@@ -2603,44 +2989,77 @@ BOOL RINEX_DecodeGPSNavigationFile(
       );
 
     if( count != 10 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE; // bad record
+    }
 
     i = 0;
     if( sscanf( str[i], "%d", &itmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     eph.prn = (unsigned short)itmp;
     i++;
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     epoch.year = (unsigned short)itmp;
     i++;
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     epoch.month = (unsigned char)itmp;
     i++;
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     epoch.day = (unsigned char)itmp;
     i++;
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     epoch.hour = (unsigned char)itmp;
     i++;
     if( sscanf( str[i], "%d", &epoch.minute ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     epoch.minute = (unsigned char)itmp;
     i++;
     if( sscanf( str[i], "%f", &epoch.seconds ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.af0 ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.af1 ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.af2 ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
+    }
 
     if( epoch.year >= 80 && epoch.year < 2000 )
     {
@@ -2652,6 +3071,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
     else
     {
+      GNSS_ERROR_MSG( "unexpected." );    
       return FALSE;
     }
     result = TIMECONV_GetGPSTimeFromRinexTime(
@@ -2665,7 +3085,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
       &tow 
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "TIMECONV_GetGPSTimeFromRinexTime returned FALSE." );    
       return FALSE;
+    }
     eph.toc = (unsigned)tow;
 
 
@@ -2681,12 +3104,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected." );
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
@@ -2696,21 +3123,36 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[3]
       );
     if( count != 4 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     eph.iode = (unsigned char)dtmp;
     i++;
     if( sscanf( str[i], "%Lf", &eph.crs ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.delta_n ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.m0 ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
 
     // -------------------
@@ -2725,12 +3167,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected." );
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
@@ -2740,20 +3186,35 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[3]
       );
     if( count != 4 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &eph.cuc ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;    
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.ecc ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.cus ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.sqrta ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
+    }
     i++;
 
 
@@ -2769,12 +3230,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected." );      
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );      
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
@@ -2784,21 +3249,36 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[3]
       );
     if( count != 4 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;    
+    }
     eph.toe = (unsigned)dtmp;
     i++;
     if( sscanf( str[i], "%Lf", &eph.cic ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.omega0 ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.cis ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
 
 
@@ -2814,12 +3294,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected." );
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
@@ -2829,20 +3313,35 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[3]
       );
     if( count != 4 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &eph.i0 ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;    
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.crc ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.w ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &eph.omegadot ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     i++;
 
 
@@ -2858,12 +3357,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected." );
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
@@ -2873,22 +3376,37 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[3]
       );
     if( count != 4 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &eph.idot ) != 1 )
-      return FALSE;    
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
+      return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     eph.code_on_L2 = (unsigned char)dtmp;
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
-      return FALSE;    
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
+      return FALSE;
+    }
     eph.week = (unsigned short)dtmp;
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     eph.L2_P_data_flag = (unsigned char)dtmp;
     i++;
 
@@ -2904,12 +3422,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected" );
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c%19c%19c",
@@ -2919,26 +3441,44 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[3]
       );
     if( count != 4 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
-      return FALSE;    
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
+      return FALSE;
+    }
     i++;
     // This ura is in meters and the GPS_ephemeris is a ura index. Convert it.
     result = RINEX_ConvertURA_meters_to_URA_index( dtmp, &eph.ura ); 
     if( result == FALSE )
-      return FALSE;  
+    {
+      GNSS_ERROR_MSG( "RINEX_ConvertURA_meters_to_URA_index returned FALSE." );
+      return FALSE;
+    }
 
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     eph.health = (unsigned char)dtmp;
     i++;
     if( sscanf( str[i], "%Lf", &eph.tgd ) != 1 )
-      return FALSE;    
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
+      return FALSE;
+    }
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
+    }
     eph.iodc = (unsigned short)dtmp;
     i++;
 
@@ -2954,12 +3494,16 @@ BOOL RINEX_DecodeGPSNavigationFile(
       }
       else
       {
+        GNSS_ERROR_MSG( "unexpected" );
         return FALSE;
       }
     }
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     memset( str, 0, sizeof(char)*10*20 );  
     count = sscanf( line_buffer, "%*3c%19c%19c",
@@ -2967,11 +3511,17 @@ BOOL RINEX_DecodeGPSNavigationFile(
       str[1]
       );
     if( count != 2 )
+    {
+      GNSS_ERROR_MSG( "sscanf returned FALSE." );
       return FALSE;
+    }
 
     i = 0;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    {
+      GNSS_ERROR_MSG( "sscanf returned FALSE." );
       return FALSE;    
+    }
     
     eph.tow = (unsigned)dtmp;
     itmp  = (int)eph.tow;
@@ -2987,7 +3537,10 @@ BOOL RINEX_DecodeGPSNavigationFile(
 
     i++;
     if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
-      return FALSE;
+    {
+      GNSS_ERROR_MSG( "sscanf returned FALSE." );
+      return FALSE;    
+    }
     itmp = (int)dtmp;
     if( itmp <= 4 )
       eph.fit_interval_flag = 0;
@@ -3017,9 +3570,15 @@ BOOL RINEX_ReplaceDwithE( char *str, const unsigned length )
 {
   unsigned i = 0;
   if( str == NULL )
-    return FALSE;
+  {
+    GNSS_ERROR_MSG( "if( str == NULL )" );
+    return FALSE;    
+  }
   if( length == 0 )
+  {
+    GNSS_ERROR_MSG( "if( length == 0 )" );
     return FALSE;
+  }
 
   for( i = 0; i < length; i++ )
   {
@@ -3038,7 +3597,10 @@ BOOL RINEX_ConvertURA_meters_to_URA_index(
   unsigned char i = 0;
 
   if( ura == FALSE )
+  {
+    GNSS_ERROR_MSG( "if( ura == FALSE )" );
     return FALSE;
+  }
 
   *ura = 15; // by default.
 
@@ -3074,23 +3636,44 @@ BOOL RINEX_DecodeFileName(
 
   // Check input.
   if( filepath == NULL )
+  {
+    GNSS_ERROR_MSG( "if( filepath == NULL )" );
     return FALSE;
+  }
   if( station_name == NULL )
+  {
+    GNSS_ERROR_MSG( "if( station_name == NULL )" );
     return FALSE;
+  }
   if( dayofyear == NULL )
+  {
+    GNSS_ERROR_MSG( "if( dayofyear == NULL )" );
     return FALSE;
+  }
   if( file_sequence_nr == NULL )
+  {
+    GNSS_ERROR_MSG( "if( file_sequence_nr == NULL )" );
     return FALSE;
+  }
   if( year == NULL )
+  {
+    GNSS_ERROR_MSG( "if( year == NULL )" );
     return FALSE;
+  }
   if( filetype == NULL )
+  {
+    GNSS_ERROR_MSG( "if( filetype == NULL )" );
     return FALSE;
+  }
 
   station_name[0] = station_name[1] = station_name[2] = station_name[3] = station_name[4]  = '\0';
 
   length = strlen( filepath );
   if( length >= RINEX_LINEBUF_SIZE )
+  {
+    GNSS_ERROR_MSG( "if( length >= RINEX_LINEBUF_SIZE )" );
     return FALSE;
+  }
 
   // Copy the file path.
   strcpy( str, filepath );
@@ -3105,7 +3688,10 @@ BOOL RINEX_DecodeFileName(
 
   length = strlen( filename );
   if( length != 12 )
+  {
+    GNSS_ERROR_MSG( "if( length != 12 )" );
     return FALSE;
+  }
 
   // Decode the filename.
   count = sscanf( filename, "%4c%3d%1d%*c%2d%c", 
@@ -3116,7 +3702,10 @@ BOOL RINEX_DecodeFileName(
     &filetype_char
     );
   if( count != 5 )
+  {
+    GNSS_ERROR_MSG( "sscanf failed." );
     return FALSE;
+  }
 
   filetype_char = (char)toupper(filetype_char);
 
@@ -3135,6 +3724,7 @@ BOOL RINEX_DecodeFileName(
   }
   else
   {
+    GNSS_ERROR_MSG( "unexpected" );
     return FALSE;
   }
 
@@ -3157,6 +3747,7 @@ BOOL RINEX_DecodeFileName(
     }
   default:
     {
+      GNSS_ERROR_MSG( "unexpected default case" );
       return FALSE;
     }
   }
@@ -3190,9 +3781,15 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
   memset( iono_model, 0, sizeof(GNSS_structKlobuchar) );
 
   if( filepath == NULL )
+  {
+    GNSS_ERROR_MSG( "if( filepath == NULL )" );
     return FALSE;
+  }
   if( iono_model == NULL )
+  {
+    GNSS_ERROR_MSG( "if( iono_model == NULL )" );
     return FALSE;
+  }
 
 
   result = RINEX_GetHeader( 
@@ -3204,10 +3801,16 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
     &file_type
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_GetHeader returned FALSE." );
     return FALSE;
+  }
 
   if( file_type != RINEX_FILE_TYPE_GPS_NAV )
+  {
+    GNSS_ERROR_MSG( "if( file_type != RINEX_FILE_TYPE_GPS_NAV )" );
     return FALSE;
+  }
 
   result = RINEX_get_header_lines(
     RINEX_header,
@@ -3218,12 +3821,18 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
     &nr_lines
     );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
     return FALSE;
+  }
   if( nr_lines == 1 )
   {
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
       &(iono_model->alpha0), 
@@ -3231,6 +3840,7 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       &(iono_model->alpha2),
       &(iono_model->alpha3) ) != 4 )
     {
+      GNSS_ERROR_MSG( "sscanf failed" );
       return FALSE; // bad header?
     }
     result = RINEX_get_header_lines(
@@ -3242,13 +3852,22 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       &nr_lines
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
       return FALSE;
+    }
     if( nr_lines != 1 )
+    {
+      GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
       return FALSE; // weird header
+    }
 
     result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
       return FALSE;
+    }
 
     if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
       &(iono_model->beta0), 
@@ -3256,6 +3875,7 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       &(iono_model->beta2),
       &(iono_model->beta3) ) != 4 )
     {
+      GNSS_ERROR_MSG( "sscanf failed" );
       return FALSE; // bad header?
     }
 
@@ -3268,12 +3888,18 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       &nr_lines
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_get_header_lines returned FALSE." );
       return FALSE;
+    }
     if( nr_lines == 1 )
     {
       result = RINEX_ReplaceDwithE( line_buffer, (unsigned)strlen(line_buffer) );
       if( result == FALSE )
+      {
+        GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
         return FALSE;
+      }
 
       if( sscanf( line_buffer, "%Lf %Lf %d %d",
         &header_A0,
@@ -3300,7 +3926,10 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
           &dtmp
           );
         if( result == FALSE )
+        {
+          GNSS_ERROR_MSG( "TIMECONV_GetGPSTimeFromYearAndDayOfYear returned FALSE." );
           return FALSE;
+        }
         iono_model->tow = (unsigned)dtmp;
         iono_model->isValid = TRUE;
       }

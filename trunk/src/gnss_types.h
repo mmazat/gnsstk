@@ -247,7 +247,7 @@ typedef struct
 
   // Derived information.
   double   psr_misclosure;    //!< The measured psr minus the computed psr estimate [m].
-  double   doppler_misclosure;//!< The measured Doppler minus the computed Doppler estimate [m].
+  double   doppler_misclosure;//!< The measured Doppler minus the computed Doppler estimate [m/s].
   double   range;             //!< The best estimate of the geometric range between the antenna and the satellite [m].
   double   rangerate;         //!< The best estimate of the geometric range rate between the antenna and the satellite [m/s].
   double   psr_smoothed;      //!< The carrier smoothed pseudorange if available [m].
@@ -268,7 +268,7 @@ typedef struct
   short index_Doppler_B;          //!< A very convenient index into the B matrix used in double differencing. -1 if not valid.
   short index_adr_B;              //!< A very convenient index into the B matrix used in double differencing. -1 if not valid.
   
-  double adr_misclosure;         //!< The measured ADR minus the computed ADR estimate [m]. This is likely a differential quantity.
+  double adr_misclosure;         //!< The measured ADR minus the computed ADR estimate [m]. This is the between receiver differential adr misclosure.
 
   double adr_misclosure_dd;     //!< The measured ADR minuse the computed ADR estimate + the DD ambiugity estimate
   double adr_misclosure_temp;   //!< A temporary variable used to compute adr_misclosure_dd above/
@@ -337,6 +337,8 @@ typedef struct
 {
   GNSS_structReceiverTime time; // The receiver time information.
 
+  double  lsq_pos_apvf;   //!< The least squares a-posteriori variance factor for the position solution.
+
   double  latitude;       //!< The user latitude [rad].
   double  longitude;      //!< The user longitude [rad].
   double  height;         //!< The user orthometric height [m].
@@ -350,6 +352,8 @@ typedef struct
   double  x;              //!< The user's ECEF position, X [m].
   double  y;              //!< The user's ECEF position, Y [m].
   double  z;              //!< The user's ECEF position, Z [m].
+
+  double  lsq_vel_apvf;   //!< The least squares a-posteriori variance factor for the velocity solution.
 
   double  vn;             //!< The user's local geodetic velocity, velocity North [m/s].
   double  ve;             //!< The user's local geodetic velocity, velocity East [m/s].

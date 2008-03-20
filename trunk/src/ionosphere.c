@@ -44,6 +44,7 @@ SUCH DAMAGE.
 
 #include <math.h>
 #include <float.h>
+#include "gnss_error.h"
 #include "ionosphere.h"
 #include "constants.h"
 
@@ -87,18 +88,24 @@ BOOL IONOSPHERE_GetL1KlobucharCorrection(
 
   // Check the input parameters. 
   // Refer to page 116 of the GPS Interface Control Document. Tabble 20-X Ionospheric Parameters.
-  if( fabs(alpha0) > 128 * pow(2.0, -30.0) ) return FALSE;
-  if( fabs(alpha1) > 128 * pow(2.0, -27.0) ) return FALSE;
-  if( fabs(alpha2) > 128 * pow(2.0, -24.0) ) return FALSE;
-  if( fabs(alpha3) > 128 * pow(2.0, -24.0) ) return FALSE;
-  if( fabs(beta0)  > 128 * pow(2.0,  11.0) ) return FALSE;
-  if( fabs(beta1)  > 128 * pow(2.0,  14.0) ) return FALSE;
-  if( fabs(beta2)  > 128 * pow(2.0,  16.0) ) return FALSE;
-  if( fabs(beta3)  > 128 * pow(2.0,  16.0) ) return FALSE;
+  if( fabs(alpha0) > 128 * pow(2.0, -30.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha0" ); return FALSE; }
+  if( fabs(alpha1) > 128 * pow(2.0, -27.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha1" ); return FALSE; }
+  if( fabs(alpha2) > 128 * pow(2.0, -24.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha2" ); return FALSE; }
+  if( fabs(alpha3) > 128 * pow(2.0, -24.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha3" ); return FALSE; }
+  if( fabs(beta0)  > 128 * pow(2.0,  11.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta0" ); return FALSE; }
+  if( fabs(beta1)  > 128 * pow(2.0,  14.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta1" ); return FALSE; }
+  if( fabs(beta2)  > 128 * pow(2.0,  16.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta2" ); return FALSE; }
+  if( fabs(beta3)  > 128 * pow(2.0,  16.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta3" ); return FALSE; }
   if( latitude > PI/2 || latitude < -PI/2 )
+  {
+    GNSS_ERROR_MSG( "if( latitude > PI/2 || latitude < -PI/2 )" );
     return FALSE;
+  }
   if( gpstow < 0.0 )
+  {
+    GNSS_ERROR_MSG( "if( gpstow < 0.0 )" );
     return FALSE;
+  }
    
   // convert to semi-circles
   lat = latitude  / PI;
@@ -124,10 +131,16 @@ BOOL IONOSPHERE_GetL1KlobucharCorrection(
   {
 #ifdef WIN32 // trap infinite loop due to bad input
     if( !_finite(t) )
+    {
+      GNSS_ERROR_MSG( "if( !_finite(t) )" );
       return FALSE;
+    }
 #else
     if( !isfinite(t) )
+    {
+      GNSS_ERROR_MSG( "if( !isfinite(t) )" );
       return FALSE; 
+    }
 #endif
     if( t < 0.0 )
       t += 86400.0;

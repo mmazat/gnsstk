@@ -36,6 +36,7 @@ SUCH DAMAGE.
 
 
 #include <math.h>
+#include "gnss_error.h"
 #include "gps.h"
 #include "constants.h"
 #include "geodesy.h"
@@ -898,7 +899,10 @@ parity_related,     2,          239-240,          293-294
   // confirm that this is subframe 1  
   subframe_id = (unsigned char)( (subframe1[5] & 0x1C) >> 2 );
   if( subframe_id != 1 )
+  {
+    GNSS_ERROR_MSG( "if( subframe_id != 1 )" );
     return FALSE;
+  }
 
   // GPS Week
   u16a  = (unsigned short)( subframe1[6] << 2 );
@@ -964,7 +968,10 @@ parity_related,     2,          239-240,          293-294
   // confirm that this is subframe 2
   subframe_id = (unsigned char)( (subframe2[5] & 0x1C) >> 2 );
   if( subframe_id != 2 )
+  {
+    GNSS_ERROR_MSG( "if( subframe_id != 2 )" );
     return FALSE;
+  }
 
   // iode subframe2
   iode_subframe2 = subframe2[6];
@@ -1041,7 +1048,10 @@ parity_related,     2,          239-240,          293-294
   // confirm that this is subframe 3
   subframe_id = (unsigned char)( (subframe3[5] & 0x1C) >> 2 );
   if( subframe_id != 3 )
+  {
+    GNSS_ERROR_MSG( "if( subframe_id != 3 )" );
     return FALSE;
+  }
 
   // cic
   u16a  = (unsigned short)( subframe3[6] << 8 );
@@ -1120,6 +1130,7 @@ parity_related,     2,          239-240,          293-294
   else
   {
     *iode = 0;
+    GNSS_ERROR_MSG( "inconsistent subframe dataset" );
     return FALSE; // inconsistent subframe dataset
   }
 }

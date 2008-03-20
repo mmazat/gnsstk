@@ -35,6 +35,7 @@ SUCH DAMAGE.
 */
 
 #include <math.h>
+#include "gnss_error.h"
 #include "geodesy.h"
 #include "constants.h"
 
@@ -190,6 +191,7 @@ BOOL GEODESY_GetReferenceEllipseParameters(
     break;
 
   default:
+    GNSS_ERROR_MSG( "Unexpected default case." );
     return FALSE;
     break;  
   }
@@ -247,9 +249,14 @@ BOOL GEODESY_IsLatitudeValid(
 {
   // check for valid latitude out of range
   if( latitude > HALFPI || latitude < -HALFPI )  
+  {
+    GNSS_ERROR_MSG( "if( latitude > HALFPI || latitude < -HALFPI )" );
     return FALSE;
+  }
   else
+  {
     return TRUE;
+  }
 }
 
 
@@ -282,6 +289,7 @@ BOOL GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
     *x = 0.0;
     *y = 0.0;
     *z = 0.0;
+    GNSS_ERROR_MSG( "Reference ellipse invalid." );
     return FALSE;
   }
   
@@ -292,6 +300,7 @@ BOOL GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
     *x = 0.0;
     *y = 0.0;
     *z = 0.0;
+    GNSS_ERROR_MSG( "Input latitude is invalid." );
     return FALSE;
   }
 
@@ -338,6 +347,7 @@ BOOL GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates(
     *latitude  = 0;
     *longitude = 0;  
     *height    = 0;  
+    GNSS_ERROR_MSG( "Reference ellipse invalid." );    
     return FALSE;
   }
   
@@ -426,10 +436,16 @@ BOOL GEODESY_ComputeNorthingEastingVertical(
 
   result = GEODESY_IsLatitudeValid( referenceLatitude );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "Input reference latitude is invalid" );
     return FALSE;  
-  result = GEODESY_IsLatitudeValid( latitude );
+  }
+  result = GEODESY_IsLatitudeValid( latitude );  
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "Input latitude is invalid." );
     return FALSE;  
+  }
   
   result = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
     referenceEllipse,
@@ -440,7 +456,10 @@ BOOL GEODESY_ComputeNorthingEastingVertical(
     &y_ref,
     &z_ref );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates return FALSE." );
     return FALSE;
+  }
   
   result = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
     referenceEllipse,
@@ -451,7 +470,10 @@ BOOL GEODESY_ComputeNorthingEastingVertical(
     &y,
     &z );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates return FALSE." );
     return FALSE;
+  }
 
   // A and B are rotation angles
   A = referenceLatitude - HALFPI;
@@ -522,6 +544,7 @@ BOOL GEODESY_ComputeMeridianRadiusOfCurvature(
   if( result == FALSE )
   {
     *M = 0;
+    GNSS_ERROR_MSG( "Reference ellipse invalid." );    
     return result;
   }
     
@@ -553,6 +576,7 @@ BOOL GEODESY_ComputePrimeVerticalRadiusOfCurvature(
   if( result == FALSE )
   {
     *N = 0;
+    GNSS_ERROR_MSG( "Reference ellipse invalid." );    
     return result;  
   }
   
@@ -590,12 +614,18 @@ BOOL GEODESY_ComputeMeridianArcBetweenTwoLatitudes(
 
   result = GEODESY_IsLatitudeValid( referenceLatitude );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "Reference latitude is invalid." );
     return result;
+  }
   
   // get necessary reference ellipse parameters
   result = GEODESY_GetReferenceEllipseParameters_A_E2( referenceEllipse, &a, &e2 );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "Reference ellipse invalid." );    
     return result;  
+  }
     
   e4 = e2*e2;
   e6 = e4*e2;
@@ -636,11 +666,17 @@ BOOL GEODESY_ComputeParallelArcBetweenTwoLongitudes(
   // get necessary reference ellipse parameters
   result = GEODESY_GetReferenceEllipseParameters_A_E2( referenceEllipse, &a, &e2 );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "Reference ellipse invalid." );    
     return result;    
+  }
 
   result = GEODESY_IsLatitudeValid( referenceLatitude );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "Reference latitude is invalid." );
     return result;    
+  }
   
   N = sin(referenceLatitude);
   N = a / sqrt( 1.0 - e2 * N * N );
@@ -675,6 +711,7 @@ BOOL GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame(
     *dX = 0;
     *dY = 0;
     *dZ = 0;
+    GNSS_ERROR_MSG( "Reference latitude is invalid." );
     return result;
   }
 
@@ -715,6 +752,7 @@ BOOL GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame(
     *dN = 0;
     *dE = 0;
     *dUp = 0;
+    GNSS_ERROR_MSG( "Reference latitude is invalid." );
     return result;    
   }
 
@@ -768,7 +806,10 @@ BOOL GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame
     &lon,
     &tmp );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates returned FALSE." );
     return result;      
+  }
 
   // vector between the two points in the earth fixed frame
   dX = toX - fromX;
@@ -786,7 +827,10 @@ BOOL GEODESY_ComputeAzimuthAndElevationAnglesBetweenToPointsInTheEarthFixedFrame
     &dE,
     &dUp );
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_RotateVectorFromEarthFixedFrameToLocalGeodeticFrame returned FALSE." );
     return result;    
+  }
   
   // compute the elevation
   tmp = sqrt( dN*dN + dE*dE );
