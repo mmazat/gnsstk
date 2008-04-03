@@ -134,15 +134,16 @@ typedef enum
 /// \brief    An enumeration for a GNSS measurement type.
 typedef enum 
 {
-  GNSS_PSR_MEASUREMENT        = 0,
-  GNSS_DOPPLER_MEASUREMENT    = 1,
-  GNSS_ADR_MEASUREMENT        = 2,  
-  GNSS_LAT_CONSTRAINT         = 3,
-  GNSS_LON_CONSTRAINT         = 4,
-  GNSS_HGT_CONSTRAINT         = 5,
-  GNSS_VN_CONSTRAINT          = 6,
-  GNSS_VE_CONSTRAINT          = 7,
-  GNSS_VUP_CONSTRAINT         = 8,  
+  GNSS_INVALID_MEASUREMENT    = 0,
+  GNSS_PSR_MEASUREMENT        = 1,
+  GNSS_DOPPLER_MEASUREMENT    = 2,
+  GNSS_ADR_MEASUREMENT        = 3,  
+  GNSS_LAT_CONSTRAINT         = 4,
+  GNSS_LON_CONSTRAINT         = 5,
+  GNSS_HGT_CONSTRAINT         = 6,
+  GNSS_VN_CONSTRAINT          = 7,
+  GNSS_VE_CONSTRAINT          = 8,
+  GNSS_VUP_CONSTRAINT         = 9,  
   GNSS_RESERVED_MEASUREMENT_TYPE
 } GNSS_enumMeasurementType;
 
@@ -257,6 +258,9 @@ typedef struct
   float    doppler_predicted; //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
   float    azimuthRads;       //!< The associated satellite azimuth for this channel [rad].
 
+  double   psr_misclosure_lsq;     //!< The measured psr minus the computed psr estimate using least squares [m].
+  double   doppler_misclosure_lsq; //!< The measured Doppler minus the computed Doppler estimate using least squares [m/s].
+  
   float    elevationRads;     //!< The associated satellite elevation for this channel  [rad].
   short index_differential;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
   short index_time_differential; //!< The channel index of a matching time differential observation. -1 means there is no matching channel.
@@ -274,6 +278,7 @@ typedef struct
   double adr_misclosure_temp;   //!< A temporary variable used to compute adr_misclosure_dd above/
 
   double H_p[3]; //!< The design matrix row relating the pseudorange measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
+  double H_a[3]; //!< The design matrix row relating the adr measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
   double H_v[3]; //!< The design matrix row relating the Doppler measurements to the velocity solution. dD/d(lat), dD/d(lon), dD/d(hgt).
 
   GNSS_structCorrections  corrections; //!< The corrections associated with this channel.
@@ -337,7 +342,7 @@ typedef struct
 {
   GNSS_structReceiverTime time; // The receiver time information.
 
-  double  lsq_pos_apvf;   //!< The least squares a-posteriori variance factor for the position solution.
+  double  pos_apvf;       //!< The a-posteriori variance factor for the position solution.
 
   double  latitude;       //!< The user latitude [rad].
   double  longitude;      //!< The user longitude [rad].
@@ -353,7 +358,7 @@ typedef struct
   double  y;              //!< The user's ECEF position, Y [m].
   double  z;              //!< The user's ECEF position, Z [m].
 
-  double  lsq_vel_apvf;   //!< The least squares a-posteriori variance factor for the velocity solution.
+  double  vel_apvf;       //!< The a-posteriori variance factor for the velocity solution.
 
   double  vn;             //!< The user's local geodetic velocity, velocity North [m/s].
   double  ve;             //!< The user's local geodetic velocity, velocity East [m/s].
