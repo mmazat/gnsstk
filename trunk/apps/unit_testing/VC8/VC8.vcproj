@@ -187,7 +187,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\cycle_slip.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\geodesy.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gnss_error.h"
 				>
 			</File>
 			<File
@@ -216,6 +224,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\sem.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\test_cycleslip.h"
 				>
 			</File>
 			<File
@@ -267,6 +279,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\src\cycle_slip.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\geodesy.c"
 				>
 			</File>
@@ -300,6 +316,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\sem.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\test_cycleslip.c"
 				>
 			</File>
 			<File
