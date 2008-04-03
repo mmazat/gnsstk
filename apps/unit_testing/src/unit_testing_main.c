@@ -45,6 +45,7 @@ SUCH DAMAGE.
 #include "test_yuma.h"
 #include "test_ionosphere.h"
 #include "test_rinex.h"
+#include "test_cycleslip.h"
 
 
 /** \brief The function where all suites and tests are added. */
@@ -257,6 +258,24 @@ int AddTests()
     return CU_get_error();
   if( CU_add_test(pSuite, "RINEX_GetKlobucharIonoParametersFromNavFile()", test_RINEX_GetKlobucharIonoParametersFromNavFile) == NULL )
     return CU_get_error();
+
+  ////
+  // added by Wei Cao in Mar 31, 2008
+  /* add a suite to the registry */
+  pSuite = CU_add_suite("CYCLESLIP", init_suite_RINEX, clean_suite_RINEX);
+  if (NULL == pSuite)   
+    return CU_get_error();
+
+  /* add the tests to the suite */
+  if( CU_add_test(pSuite, "CYCLESLIP_CheckForCycleSlipUsingPhaseRatePrediction()", test_CYCLESLIP_CheckForCycleSlipUsingPhaseRatePrediction) == NULL )
+    return CU_get_error();
+  if( CU_add_test(pSuite, "CYCLESLIP_CheckForCycleSlipUsingDualFrequencyPhase()", test_CYCLESLIP_CheckForCycleSlipUsingDualFrequencyPhase) == NULL )
+    return CU_get_error();
+  if( CU_add_test(pSuite, "CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase()", test_CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase) == NULL )
+    return CU_get_error();
+  //
+  ////
+  
   
   return CUE_SUCCESS;
 }

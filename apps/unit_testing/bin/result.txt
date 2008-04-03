@@ -1,6 +1,6 @@
 
 Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
-     2007-12-07,      22:27:24
+     2008-04-03,      22:51:22
 
 
      CUnit - A unit testing framework for C - Version 2.1-0
@@ -8,7 +8,11 @@ Date YYYY-MM-DD, Time HH:MM:SS, of test (UTC).
 
 
 Suite: GEODESY
-  Test: GEODESY_GetReferenceEllipseParameters() ...passed
+  Test: GEODESY_GetReferenceEllipseParameters() ...
+..\src\test_geodesy.c, test_GEODESY_GetReferenceEllipseParameters, 258, Performing an invalid call to GEODESY_GetReferenceEllipseParameters on purpose
+
+..\..\..\src\geodesy.c, GEODESY_GetReferenceEllipseParameters, 194, Unexpected default case.
+passed
   Test: test_GEODESY_ConvertCoordinates() ...passed
   Test: GEODESY_ComputeNorthingEastingVertical() ...passed
   Test: GEODESY_ComputePositionDifference() ...passed
@@ -48,12 +52,16 @@ Suite: RINEX
   Test: RINEX_GetNextObservationSet() ...passed
   Test: RINEX_DecodeGPSNavigationFile() ...passed
   Test: RINEX_GetKlobucharIonoParametersFromNavFile() ...passed
+Suite: CYCLESLIP
+  Test: CYCLESLIP_CheckForCycleSlipUsingPhaseRatePrediction() ...passed
+  Test: CYCLESLIP_CheckForCycleSlipUsingDualFrequencyPhase() ...passed
+  Test: CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase() ...passed
 
 Run Summary:    Type  Total    Ran Passed Failed Inactive
-              suites      6      6    n/a      0        0
-               tests     35     35     35      0        0
-             asserts 337011 337011 337011      0      n/a
+              suites      7      7    n/a      0        0
+               tests     38     38     38      0        0
+             asserts 337014 337014 337014      0      n/a
 
-Elapsed time =    1.797 seconds
+Elapsed time =   27.359 seconds
 
 Tests completed with return value 0.

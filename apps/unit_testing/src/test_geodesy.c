@@ -37,6 +37,7 @@ SUCH DAMAGE.
 */
 #include <stdio.h>
 #include "Basic.h"     // CUnit/Basic.h
+#include "gnss_error.h"
 #include "geodesy.h"
 #include "constants.h"
 
@@ -254,6 +255,7 @@ void test_GEODESY_GetReferenceEllipseParameters(void)
   CU_ASSERT_DOUBLE_EQUAL( f_inv,  GEODESY_REFERENCE_ELLIPSE_WGS72_F_INV, 1e-12 );
   CU_ASSERT_DOUBLE_EQUAL( e2,     GEODESY_REFERENCE_ELLIPSE_WGS72_E2,    1e-18 );
 
+  GNSS_ERROR_MSG( "Performing an invalid call to GEODESY_GetReferenceEllipseParameters on purpose" );
   result = GEODESY_GetReferenceEllipseParameters( 
     1000,
     &a,

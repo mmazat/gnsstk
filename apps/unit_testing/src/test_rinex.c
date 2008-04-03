@@ -203,6 +203,8 @@ void test_RINEX_GetNextObservationSet(void)
   RINEX_enumFileType file_type = RINEX_FILE_TYPE_UNKNOWN;
   RINEX_structDecodedHeader header;
   unsigned i = 0;
+  double gps_tow = 0;
+  unsigned short gps_week = 0;
 
   FILE* fid = NULL;
   BOOL wasEndOfFileReached;  // Has the end of the file been reached (output).
@@ -287,7 +289,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow
       );    
     CU_ASSERT_FATAL( result );
     CU_ASSERT_FATAL( nrObs == 14 ); // L1, and L2 for 7 satellites.
@@ -418,7 +422,9 @@ void test_RINEX_GetNextObservationSet(void)
         &filePosition,
         obsArray,
         24,
-        &nrObs
+        &nrObs,
+        &gps_week,
+        &gps_tow      
         );
       if( wasObservationFound )
         total_nr_epochs++;
@@ -601,7 +607,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
 
@@ -699,7 +707,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
     
@@ -788,7 +798,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
     
@@ -878,7 +890,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
 
@@ -974,7 +988,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
 
@@ -1066,7 +1082,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
 
@@ -1082,7 +1100,9 @@ void test_RINEX_GetNextObservationSet(void)
       &filePosition,
       obsArray,
       24,
-      &nrObs
+      &nrObs,
+      &gps_week,
+      &gps_tow      
       );
     CU_ASSERT_FATAL( result );
 
