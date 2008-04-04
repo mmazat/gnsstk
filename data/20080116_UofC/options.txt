@@ -19,12 +19,12 @@
 OutputFilePath,       (full or relative path)                 = results.txt
 
 StartGPSWeek,         (GPS week (0-1024+)                     = 1462
-StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 319600.0 ;320000.0;319300.0
+StartGPSTimeOfWeek,   (0.0-604800.0 s)                        = 0.0
 EndGPSWeek,           (GPS week (0-1024+)                     = 1462
-EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 320760.0;321510.0
+EndGPSTimeOfWeek,     (0.0-604800.0 s)                        = 604800.0 ;321510.0
 
 ElevationMask,        (decimal degrees)                       = 3.0
-CNoMask,              (decimal dB-Hz)                         = 0.0
+CNoMask,              (decimal dB-Hz)                         = 18.0
 LockTimeMask,         (decimal seconds)                       = 0.0
 
 ; Process only single difference measurements between 
@@ -32,24 +32,49 @@ LockTimeMask,         (decimal seconds)                       = 0.0
 ; available at all, this defaults to disabled
 ProcessOnlyDGPS,      (enable(1),disable(0))                  = 1  
 
+; In some cases the Doppler is derived from the ADR measurements and 
+; should not be used (RTK8 for example). 
+UseDopplerMeasurements, (yes(1)/no(0))                        = no
+
 ;______________________________________________________________________________
 ; PROCESSING METHOD
 ;
-; LSQ: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
-; EKF: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated using 
-;      a non-sequential Kalman Filter.
-; RTK: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift and float 
-;      ambiguities are currently estimated using a 
-;      sequential Kalman Filter.
+; LSQ:  Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated.
+; EKF:  Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift are estimated using 
+;       an extended Kalman Filter with sequential measurment addition.
+;       The velocity and clock drift states are treated as first order
+;       Gauss-Markov processes. Set the Kalman filtering options below.
+;       EKF uses pseudorange, Doppler and carrer phase measurements.
+; RTK4: Lat,Lon,Hgt,Clk, and ambiguities are currently estimated 
+;       using an extened Kalman Filter with sequential measurement addition.
+;       The position and clock states are treated as random walk processes.
+;       Set the appropriate Kalman filtering optiosn below.
+;       RTK4 uses pseudorange, and carrer phase measurements.
+; RTK8: Lat,Lon,Hgt,Clk,Vn,Ve,Vup,ClkDrift, and ambiguities are estimated using 
+;       an extended Kalman Filter with sequential measurment addition.
+;       The velocity and clock drift states are treated as first order
+;       Gauss-Markov processes. Set the Kalman filtering options below.
+;       rtk8 uses pseudorange, Doppler and carrer phase measurements.
 ;
-ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
+ProcessingMethod,     (LSQ,EKF,RTK4,RTK8)                         = RTK4
+
 ;______________________________________________________________________________
 ; KALMAN FILTERING OPTIONS
 ;
 ; The model used is a Discrete Extended Kalman Filter.
-; The velocity/ClkDrift states are all treated as first order Guass-Markov 
-; processes. Thus, the position/Clk states are integrated Gauss-markov 
-; processes. This model (1D) is described in Example 5.3, p.200-201 from
+;
+; RTK4 treats the position and clock states as random walk processes.
+RTK4_sigmaNorth, (sqrt(spectral density for Northing)     [m/s]) = 1.25
+RTK4_sigmaEast,  (sqrt(spectral density for Easting)      [m/s]) = 1.25
+RTK4_sigmaUp,    (sqrt(spectral density for Up)           [m/s]) = 1.25
+RTK4_sigmaClock, (sqrt(spectral density for Clock Offset) [m/s]) = 1000.0
+
+; EKF and RTK8 treat the velocity and clock drift states as first order 
+; Guass-Markov processes. The position and clock offset states are 
+; driven by the velocity ad clock drift states (integrated Gauss-markov 
+; processes). 
+; 
+; This model (1D case) is described in Example 5.3, p.200-201 from
 ; "Brown, R.G. and P.Y.C. Hwang (1997). Introduction to Random Signals 
 ; and Applied Kalman Filtering, Third Edition, John Wiley & Sons, Inc."
 ; This model (1D) is also described on p. 78-82 of
@@ -63,14 +88,15 @@ ProcessingMethod,     (LSQ,EKF,RTK)                           = RTK
 ; \alpha  is referred to as the correlation time of the process.
 ; \sigma  is the standard deviation of the system noise.
 ;
+; FOR EKF AND RTK8 ONLY
 alpha_Vn,       (correlation time Vn       [s])              = 60.0
 alpha_Ve,       (correlation time Ve       [s])              = 60.0
 alpha_Vup,      (correlation time Vup      [s])              = 60.0
-alpha_ClkDrift, (correlation time ClkDrift [s])              = 60.0
-sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.1
-sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.1
-sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.1
-sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 0.1
+alpha_ClkDrift, (correlation time ClkDrift [s])              = 10.0
+sigma_Vn,       (stdev of the system noise, Vn       [m/s])  = 0.0150
+sigma_Ve,       (stdev of the system noise, Ve       [m/s])  = 0.0150
+sigma_Vup,      (stdev of the system noise, Vup      [m/s])  = 0.0250
+sigma_ClkDrift, (stdev of the system noise, ClkDrift [m/s])  = 100.0
 
 
 ;______________________________________________________________________________
@@ -133,15 +159,15 @@ Rover_Latitude,   (decimal degrees or dd mm ss.ss)            = 51.079428117
 Rover_Longitude,  (decimal degrees or dd mm ss.ss)            = -114.132818611 
 Rover_Height,     (m)                                         = 1116.585
 
-Rover_UncertaintyLatitude,   (1 sigma [m])                    = 0.0001 ;1.0
-Rover_UncertaintyLongitude,  (1 sigma [m])                    = 0.0001 ;1.0
-Rover_UncertaintyHeight,     (1 sigma [m])                    = 0.0001 ;1.0
+Rover_UncertaintyLatitude,   (1 sigma [m])                    = 10; 0.001
+Rover_UncertaintyLongitude,  (1 sigma [m])                    = 10; 0.001
+Rover_UncertaintyHeight,     (1 sigma [m])                    = 10; 0.001
 
 Rover_EnableTropoCorrection, (enable(1)/disable(0))           = 1
 Rover_EnableIonoCorrection,  (enable(1)/disable(0))           = 1
 Rover_ExcludeSatellites,     (array of PRN's to exclude)      = 
 
-Rover_EnablePositionConstraint, (yes/no)                      = yes
+Rover_EnablePositionConstraint, (yes/no)                      = no
 Rover_EnableHeightConstraint,   (yes/no)                      = no
 
 ; GDM - The hack to put in the UWB range data for the baseline constraint case.

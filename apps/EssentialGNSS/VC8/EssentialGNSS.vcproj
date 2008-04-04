@@ -287,6 +287,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\gnss_error.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\gnss_types.h"
 					>
 				</File>

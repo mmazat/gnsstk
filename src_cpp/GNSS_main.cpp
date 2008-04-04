@@ -36,6 +36,7 @@ SUCH DAMAGE.
 
 #include <stdio.h>
 #include <math.h>
+#include "gnss_error.h"
 #include "constants.h"
 #include "geodesy.h"
 #include "GNSS_RxData.h"
@@ -61,6 +62,17 @@ bool OutputPVT(
   bool isStatic //!< Indicates if the rover receiver is in static mode.
   );
 
+bool OutputPVT(
+  Matrix &PVT,
+  GNSS_RxData& rxData,  //!< The receiver data.
+  const double datumLatitudeRads,  //!< Used to compute a position difference.
+  const double datumLongitudeRads, //!< Used to compute a position difference.
+  const double datumHeight,         //!< Used to compute a position difference.
+  bool isStatic //!< Indicates if the rover receiver is in static mode.
+  );
+
+bool OutputObservationData( GNSS_RxData* rxData, bool isRover );
+
 /// \brief    Try to sychronize the base and rover measurement sources.
 /// \return   true if successful, false if error.
 bool GetNextSetOfSynchronousMeasurements( 
@@ -82,7 +94,9 @@ int main( int argc, char* argv[] )
   bool endOfStreamBase = false;
   bool endOfStreamRover = false;
   bool isSynchronized = false;
+  bool isEightStateModel = false; // A boolean indicating if the velocity and clock drift states are included as well as the position and clock offset states in the RTK model.
 
+  char msg[256];
   char supermsg[8192];
   unsigned nrBytesInBuffer = 0;
 
@@ -105,11 +119,7 @@ int main( int argc, char* argv[] )
 
   FILE *fid = NULL; 
   FILE *fid_pvt = NULL;
-#ifdef EXTRACTSVDATA
-  FILE *svfid = NULL;
-  unsigned short prn = 11;
-#endif
-
+  
   GNSS_OptionFile opt;
 
   std::string OptionFilePath;
@@ -117,34 +127,53 @@ int main( int argc, char* argv[] )
   bool useLSQ = true;
   bool useEKF = false;
   bool useRTK = false;
-  bool useRTKDD = false;
+  bool isFilterInitialized = false;
   
   bool isAtFirstEpoch = true;
 
-  GNSS_structPVT firstPVT;
-  GNSS_structPVT secondPVT;
-  bool firstPVT_isSet = false;
+  char fname[24];
+
+  Matrix PVT;
 
   try
   {
     printf( "\nUSAGE: EGNSS <option file path>\n" );
     if( argc != 2 )
     {      
-      return 0;
+      sprintf( msg, "Invalid arguments: you must specify the option file.", fname );
+      GNSS_ERROR_MSG( msg );
+      return 1;
     }
     OptionFilePath = argv[1];
 
     if( !opt.ReadAndInterpretOptions( OptionFilePath ) )
     {
-      printf( "\nInvalid option file.\n" );
+      GNSS_ERROR_MSG( "Invalid option file." );
       return 1;
     }
 
-    // Open the PVT output file
-    fid_pvt = fopen( "pvt.csv", "w" );
-    if( !fid_pvt )
-      return 1;
+    // Delete any GPSL1_svXX.csv files in the working directory.
+    for( i = 0; i < 32; i++ )
+    {
+      sprintf( fname, "GPSL1_PRN%02d.csv", i );
+      fid = fopen( fname, "r" );
+      if( fid )
+      {
+        fclose(fid);
+        remove( fname );
+        fid = NULL;
+      }
+      sprintf( fname, "GPSL1_PRN%02d_BASE.csv", i );
+      fid = fopen( fname, "r" );
+      if( fid )
+      {
+        fclose(fid);
+        remove( fname );
+        fid = NULL;
+      }
+    }
 
+    
     // Set the start time.
     start_time = opt.m_StartTime.GPSWeek*SECONDS_IN_WEEK + opt.m_StartTime.GPSTimeOfWeek;
 
@@ -156,66 +185,57 @@ int main( int argc, char* argv[] )
       useLSQ = true; // least squares is used for the first epoch
       useEKF = false;
       useRTK = false;
+      Estimator.m_FilterType = GNSS_Estimator::GNSS_FILTER_TYPE_LSQ;
+      isFilterInitialized = true;
     }
     else if( opt.m_ProcessingMethod == "EKF" )
     {
       useLSQ = true; // least squares is used for the first epoch
       useEKF = true;
       useRTK = false;
+      Estimator.m_FilterType = GNSS_Estimator::GNSS_FILTER_TYPE_EKF;
     }
-    else if( opt.m_ProcessingMethod == "RTK" )
+    else if( opt.m_ProcessingMethod == "RTK4" )
     {
       useLSQ = true; // least squares is used for the first epoch
       useEKF = false;
       useRTK  = true;
+      isEightStateModel = false;
+      Estimator.m_FilterType = GNSS_Estimator::GNSS_FILTER_TYPE_RTK4;
     }
-    else if( opt.m_ProcessingMethod == "RTKDD" )
+    else if( opt.m_ProcessingMethod == "RTK8" )
     {
       useLSQ = true; // least squares is used for the first epoch
       useEKF = false;
-      useRTK  = false;
-      useRTKDD  = true;
+      useRTK  = true;
+      isEightStateModel = true;
+      Estimator.m_FilterType = GNSS_Estimator::GNSS_FILTER_TYPE_RTK8;
     }
-
-    if( opt.m_ProcessingMethod != "LSQ" )
+    else 
     {
-      Estimator.m_KF.alphaVn       = opt.m_KalmanOptions.alphaVn;
-      Estimator.m_KF.alphaVe       = opt.m_KalmanOptions.alphaVe;
-      Estimator.m_KF.alphaVup      = opt.m_KalmanOptions.alphaVup;
-      Estimator.m_KF.alphaClkDrift = opt.m_KalmanOptions.alphaClkDrift;
-      Estimator.m_KF.sigmaVn       = opt.m_KalmanOptions.sigmaVn;
-      Estimator.m_KF.sigmaVe       = opt.m_KalmanOptions.sigmaVe;
-      Estimator.m_KF.sigmaVup      = opt.m_KalmanOptions.sigmaVup;
-      Estimator.m_KF.sigmaClkDrift = opt.m_KalmanOptions.sigmaClkDrift;
+      GNSS_ERROR_MSG( "Unexpected." );
+      return 1;      
     }
 
+    if( opt.m_ProcessingMethod == "RTK4" )
+    {
+      Estimator.m_FourStateRandomWalkKalmanModel.sigmaNorth = opt.m_KalmanOptions.RTK4_sigmaNorth;
+      Estimator.m_FourStateRandomWalkKalmanModel.sigmaEast = opt.m_KalmanOptions.RTK4_sigmaEast;
+      Estimator.m_FourStateRandomWalkKalmanModel.sigmaUp = opt.m_KalmanOptions.RTK4_sigmaUp;
+      Estimator.m_FourStateRandomWalkKalmanModel.sigmaClock = opt.m_KalmanOptions.RTK4_sigmaClock;
+    }
+    else if( opt.m_ProcessingMethod == "EKF" || opt.m_ProcessingMethod == "RTK8" )
+    {
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.alphaVn       = opt.m_KalmanOptions.alphaVn;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.alphaVe       = opt.m_KalmanOptions.alphaVe;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.alphaVup      = opt.m_KalmanOptions.alphaVup;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.alphaClkDrift = opt.m_KalmanOptions.alphaClkDrift;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.sigmaVn       = opt.m_KalmanOptions.sigmaVn;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.sigmaVe       = opt.m_KalmanOptions.sigmaVe;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.sigmaVup      = opt.m_KalmanOptions.sigmaVup;
+      Estimator.m_FirstOrderGaussMarkovKalmanModel.sigmaClkDrift = opt.m_KalmanOptions.sigmaClkDrift;
+    }
 
-#ifndef _CRT_SECURE_NO_DEPRECATE    
-    // Open the output file.
-    if( fopen_s( &fid, opt.m_OutputFilePath.c_str(), "w" ) != 0 )
-      return 1;
-#else
-    fid = fopen( opt.m_OutputFilePath.c_str(), "w" );
-    if( fid == NULL )
-      return 1;
-#endif
-    
-//#define EXTRACTSVDATA      
-#ifdef EXTRACTSVDATA
-    //if( fopen_s( &svfid, "C:\\Zen\\Zenautics\\repos\\prj\\ZNav\\bin\\rover\\oem4wc\\ZNAV_SV.txt", "w" ) != 0 )
-      //return 1;
-
-#ifndef _CRT_SECURE_NO_DEPRECATE    
-    if( fopen_s( &svfid, "prn.txt", "w" ) != 0 )
-      return 1;
-#else
-    svfid = fopen( "theprn.txt", "w" );
-    if( svfid == NULL )
-      return 1;
-#endif
-    
-#endif
-    
     if( opt.m_Reference.isValid )
     {
       if( opt.m_RINEXNavDataPath.length() != 0 )
@@ -228,7 +248,7 @@ int main( int argc, char* argv[] )
       }
       if( !result )
       {
-        printf( "\nBad path to the reference station data.\n" );
+        GNSS_ERROR_MSG( "Failed to initialize the reference receiver object." );        
         return 1;
       }
 
@@ -262,11 +282,14 @@ int main( int argc, char* argv[] )
         100.0,
         10.0 ); // The reference position is fixed but the clock is still unknown.
       if( !result )
+      {
+        GNSS_ERROR_MSG( "Failed to initialize the reference receiver object." );
         return 1;
+      }
     }
-
     if( !opt.m_Rover.isValid )
     {
+      GNSS_ERROR_MSG( "Rover options are not valid." );
       return 1;
     }
 
@@ -280,7 +303,10 @@ int main( int argc, char* argv[] )
       result = rxData.Initialize( opt.m_Rover.DataPath.c_str(), isValidPath, opt.m_Rover.DataType, NULL );
     }
     if( !result )
+    {
+      GNSS_ERROR_MSG( "Failed to initialize the rover receiver object." );
       return 1;
+    }
     if( opt.m_klobuchar.isValid )
     {
       rxData.m_klobuchar = opt.m_klobuchar;
@@ -299,7 +325,6 @@ int main( int argc, char* argv[] )
     {
       rxData.m_DisableTropoCorrection = true;
     }
-
     
     result = rxData.SetInitialPVT(
       opt.m_Rover.latitudeRads,
@@ -314,7 +339,10 @@ int main( int argc, char* argv[] )
       1000.0,
       1.0e9 );
     if( !result )
+    {
+      GNSS_ERROR_MSG( "Failed to initialize the rover receiver object." );
       return 1; 
+    }
 
     // GDM_HACK
     // For comparing the computed rover position
@@ -325,7 +353,10 @@ int main( int argc, char* argv[] )
         opt.m_RoverDatum.longitudeRads,
         opt.m_RoverDatum.height );
       if( !result )
+      {
+        GNSS_ERROR_MSG( "Failed to initialize the rover receiver object's datum point." );
         return 1; 
+      }
     }
 
 #ifdef GDM_UWB_RANGE_HACK
@@ -334,7 +365,10 @@ int main( int argc, char* argv[] )
       // GDM - Load the UWB range data.
       result = rxData.EnableAndLoadUWBData( opt.m_UWBFilePath.c_str(), opt.m_Reference.x, opt.m_Reference.y, opt.m_Reference.z, true );
       if( !result )
+      {
+        GNSS_ERROR_MSG( "Failed to load the UWB data." );
         return 1; 
+      }
     }
 #endif
 
@@ -354,13 +388,19 @@ int main( int argc, char* argv[] )
           endOfStreamRover,
           isSynchronized );
         if( !result )
+        {
+          GNSS_ERROR_MSG( "Unable to load next set of measurements." );
           return -1;
+        }
       }
       else
       {
         result = rxData.LoadNext( endOfStreamRover );
         if( !result )
+        {
+          GNSS_ERROR_MSG( "Unable to load next set of measurements." );
           return -1;
+        }
       }
 
       if( endOfStreamRover )
@@ -384,12 +424,11 @@ int main( int argc, char* argv[] )
 
 
       // GDM_DEBUG breakpoint times
-      if( rxData.m_pvt.time.gps_tow > 242005 )
+      if( rxData.m_pvt.time.gps_tow > 319273 )
         int ggg = 99;
 
       if( rxData.m_pvt.time.gps_tow > 320414 )
         int ggga = 99;
-
 
       if( isAtFirstEpoch )
       {
@@ -402,11 +441,30 @@ int main( int argc, char* argv[] )
         if( dT < 0.0 )
         {
           // should never happen
-          printf( "\ndT is negative!\n");
+          GNSS_ERROR_MSG( "dT is negative." );
           return 1; 
         }        
       }
 
+      if( !opt.m_UseDopplerMeasurements )
+      {
+        // Disable all the Doppler measurements on the rover.
+        for( i = 0; i < rxData.m_nrValidObs; i++ )
+        {
+          rxData.m_ObsArray[i].flags.isDopplerValid = false;
+          rxData.m_ObsArray[i].flags.isDopplerUsedInSolution = false;          
+        }
+
+        if( opt.m_Reference.isValid )
+        {
+          // Disable all the Doppler measurements on the base station.
+          for( i = 0; i < rxDataBase.m_nrValidObs; i++ )
+          {
+            rxDataBase.m_ObsArray[i].flags.isDopplerValid = false;
+            rxDataBase.m_ObsArray[i].flags.isDopplerUsedInSolution = false;            
+          }
+        }          
+      }
         
       // exclude satellites as indicated in the option file
       for( j = 0; j < opt.m_Rover.nrSatsToExclude; j++ )
@@ -445,214 +503,143 @@ int main( int argc, char* argv[] )
         rxData.m_pvt.isHeightConstrained = true;
       }
 
-      if( useLSQ )
-      { 
-        if( opt.m_Reference.isValid )
+      // Always perfom least squares.
+      if( opt.m_Reference.isValid )
+      {
+        result = Estimator.PerformLeastSquares(
+          &rxData,
+          &rxDataBase,
+          wasPositionComputed,
+          wasVelocityComputed );
+        if( !result )
         {
-          result = Estimator.PerformLeastSquares_8StatePVT(
-            &rxData,
-            &rxDataBase,
-            wasPositionComputed,
-            wasVelocityComputed );
-          if( !result )
-            return -1;
+          sprintf( msg, "%.1Lf %d LSQ returned false\n", rxData.m_pvt_lsq.time.gps_tow, rxData.m_pvt_lsq.time.gps_tow );
+          GNSS_ERROR_MSG( msg );
+          return 2;
+        }
+      }
+      else
+      {
+        result = Estimator.PerformLeastSquares(
+          &rxData,
+          NULL,
+          wasPositionComputed,
+          wasVelocityComputed );
+        if( !result )
+        {
+          sprintf( msg, "%.1Lf %d LSQ returned false\n", rxData.m_pvt_lsq.time.gps_tow, rxData.m_pvt_lsq.time.gps_tow );
+          GNSS_ERROR_MSG( msg );
+          return 2;
+        }
+      }
+
+      if( !isFilterInitialized )
+      {
+        // Is there a valid least squares position estimate?
+        if( !wasPositionComputed )
+        {
+          continue;
         }
         else
         {
-          result = Estimator.PerformLeastSquares_8StatePVT(
-            &rxData,
-            NULL,
-            wasPositionComputed,
-            wasVelocityComputed );
-          if( !result )
-            return -1;
-        }
-        if( !wasPositionComputed )
-          continue;
-
-        if( !wasVelocityComputed && (useEKF || useRTK || useRTKDD) ) // compute initial velocity estimate for EKF or RTK if needed
-        {            
-          // Compute two consective position fixes and perform the difference
-          // to initial the velocity filter.            
-          if( !firstPVT_isSet )
-          {
-            firstPVT = rxData.m_pvt;
-            firstPVT_isSet = true;
-            continue;
-          }
-          else
-          {
-            secondPVT = rxData.m_pvt;
-
-            double N = 0;
-            double M = 0;
-            double tmp_vn = 0;
-            double tmp_ve = 0;
-            double tmp_vup = 0;
-            double tmp_clkdrift = 0;
-            double deltaTime = (secondPVT.time.gps_week*SECONDS_IN_WEEK + secondPVT.time.gps_tow) -
-              (firstPVT.time.gps_week*SECONDS_IN_WEEK + firstPVT.time.gps_tow);
-
-            if( deltaTime < 1e-04 )
-            {
-              firstPVT_isSet = false;
-              continue;
-            }
-
-            GEODESY_ComputeMeridianRadiusOfCurvature(
-              GEODESY_REFERENCE_ELLIPSE_WGS84,
-              rxData.m_pvt.latitude,
-              &M );
-
-            GEODESY_ComputePrimeVerticalRadiusOfCurvature(
-              GEODESY_REFERENCE_ELLIPSE_WGS84,
-              rxData.m_pvt.latitude,
-              &N );
-
-            tmp_vn = (secondPVT.latitude - firstPVT.latitude)*(M+secondPVT.height) / deltaTime;
-            tmp_ve = (secondPVT.longitude - firstPVT.longitude)*((N+secondPVT.height)*cos(secondPVT.latitude)) / deltaTime;
-            tmp_vup = (secondPVT.height - firstPVT.height) / deltaTime;
-            tmp_clkdrift = (secondPVT.clockOffset - firstPVT.clockOffset) / deltaTime;
-
-            result = rxData.UpdateVelocityAndClockDrift(
-              tmp_vn,
-              tmp_ve,
-              tmp_vup,
-              tmp_clkdrift,
-              5.0*deltaTime,
-              5.0*deltaTime,
-              5.0*deltaTime,
-              5.0*deltaTime
-              );     
-            if( !result )
-              return -1;
-            wasVelocityComputed = true;              
-          }            
+          // Seed the filter with the least squares solution.
+          rxData.m_pvt = rxData.m_pvt_lsq;
         }
 
-        if( wasPositionComputed && wasVelocityComputed )
+        if( useRTK )
         {
-          if( useEKF || useRTK )
-          {            
-            useLSQ = false; // position/velocity is now seeded
-            result = Estimator.InitializeStateVarianceCovariance_8StatePVGM(
-              rxData.m_pvt.std_lat,
-              rxData.m_pvt.std_lon,
-              rxData.m_pvt.std_hgt,
-              rxData.m_pvt.std_vn,
-              rxData.m_pvt.std_ve,
-              rxData.m_pvt.std_vup,
-              rxData.m_pvt.std_clk,
-              rxData.m_pvt.std_clkdrift,
-              Estimator.m_EKF.P );  //KO Could use LS m_P here to keep all information from LS step.
-
-            if( useRTK )
-              Estimator.m_RTK.P = Estimator.m_EKF.P;
-
-            if( !result )
-              return 1;
-          }
-          //DD added by KO, Dec 18, 2007 results in m_P being a 6x6 matrix
-          else if ( useRTKDD )
+          result = Estimator.InitializeStateVarianceCovarianceFromLeastSquares_RTK(
+            Estimator.m_posLSQ.P,
+            Estimator.m_velLSQ.P
+            );
+          if( !result )
           {
-            useLSQ = false; // position/velocity is now seeded
-            result = Estimator.InitializeStateVarianceCovariance_6StatePVGM(
-              rxData.m_pvt.std_lat,
-              rxData.m_pvt.std_lon,
-              rxData.m_pvt.std_hgt,
-              rxData.m_pvt.std_vn,
-              rxData.m_pvt.std_ve,
-              rxData.m_pvt.std_vup,
-              Estimator.m_RTKDD.P );
-            if( !result )
-              return 1;
+            GNSS_ERROR_MSG( "Estimator.InitializeStateVarianceCovarianceFromLeastSquares_RTK returned false." );
+            return 1;
           }
         }
+        else if( useEKF )
+        {            
+          result = Estimator.InitializeStateVarianceCovariance_EKF(
+            Estimator.m_posLSQ.P,
+            Estimator.m_velLSQ.P
+            );
+          if( !result )
+          {
+            GNSS_ERROR_MSG( "Estimator.InitializeStateVarianceCovariance_EKF returned false." );
+            return 1;
+          }
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Unexpected." );
+          return 1;
+        }
+        isFilterInitialized = true;
       }
       
       if( useEKF )
       {
-        result = Estimator.PredictAhead_8StatePVGM(
+        result = Estimator.PredictAhead_EKF(
           rxData,
-          dT,
-          Estimator.m_EKF.T,
-          Estimator.m_EKF.Q,
-          Estimator.m_EKF.P );
+          dT
+          );
         if( !result )
+        {
+          GNSS_ERROR_MSG( "Estimator.PredictAhead_EKF returned false." );
           return 1;
+        }
 
         if( opt.m_Reference.isValid )
         {
-          result = Estimator.Kalman_Update_8StatePVGM(
+          result = Estimator.Kalman_Update_EKF(
             &rxData,
-            &rxDataBase,
-            Estimator.m_EKF.P );
+            &rxDataBase
+            );
           if( !result )
+          {
+            GNSS_ERROR_MSG( "Estimator.Kalman_Update_EKF returned false." );
             return -1;
+          }
         }
         else
         {
-          result = Estimator.Kalman_Update_8StatePVGM(
+          result = Estimator.Kalman_Update_EKF(
             &rxData,
-            NULL,
-            Estimator.m_EKF.P );
+            NULL
+            );
           if( !result )
+          {
+            GNSS_ERROR_MSG( "Estimator.Kalman_Update_EKF returned false." );
             return -1;
+          }
         }
       }
       else if( useRTK )
       {
-        result = Estimator.PredictAhead_8StatePVGM_Float(
-          rxData,
-          dT,
-          Estimator.m_RTK.T,
-          Estimator.m_RTK.Q,
-          Estimator.m_RTK.P );
+        result = Estimator.PredictAhead_RTK( rxData, dT );
         if( !result )
+        {
+          GNSS_ERROR_MSG( "Estimator.PredictAhead_RTK returned false." );
           return 1;
+        }
 
         if( opt.m_Reference.isValid )
         {
-          result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
-            &rxData,
-            &rxDataBase,
-            Estimator.m_RTK.P );
+          result = Estimator.Kalman_Update_RTK( &rxData, &rxDataBase );
           if( !result )
+          {
+            GNSS_ERROR_MSG( "Estimator.Kalman_Update_RTK returned false." );
             return 1;
+          }
         }
         else
         {
-          result = Estimator.Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
-            &rxData,
-            NULL,
-            Estimator.m_RTK.P );
-          if( !result )
-            return 1;
+          GNSS_ERROR_MSG( "Only differential supported." );
+          return 1;
         }
-	  }
-	  //Fixed mode added by KO, Dec 18, 2007
-	  else if ( useRTKDD )
-	  {
-		  result = Estimator.PredictAhead_6StatePVGM_Float(
-			  rxData,
-			  dT,
-			  Estimator.m_RTKDD.T,
-			  Estimator.m_RTKDD.Q,
-			  Estimator.m_RTKDD.P );
-		  if ( !result )
-			  return 1;
-
-		  result = Estimator.Kalman_Update_6StatePVGM_FloatSolution(
-			  &rxData,
-			  &rxDataBase,
-			  Estimator.m_RTKDD.P );
-		  if ( !result )
-			  return 1;
-
-		  result = Estimator.FixAmbiguities();
-		  if ( !result )
-			  return 1;
-	  }
+      }	  
+      
 
 
       /*
@@ -690,63 +677,61 @@ int main( int argc, char* argv[] )
         opt.m_RoverDatum.isValid = true;
       }
       // Output the PVT results.
-      if( !OutputPVT( fid_pvt, rxData, opt.m_RoverDatum.latitudeRads, opt.m_RoverDatum.longitudeRads, opt.m_RoverDatum.height, opt.m_RoverIsStatic ) )
+      if( !OutputPVT( PVT, rxData, opt.m_RoverDatum.latitudeRads, opt.m_RoverDatum.longitudeRads, opt.m_RoverDatum.height, opt.m_RoverIsStatic ) )
       {
+        sprintf( msg, "%.3Lf %d OutputPVT Failed\n", rxData.m_pvt.time.gps_tow, rxData.m_pvt.time.gps_week );
+        GNSS_ERROR_MSG( msg );
         return 1;
       }
 
-        
-
-      fprintf( fid, "%12.4lf %4d %20.10lf %20.10lf %15.3lf %20.10lf %4d %10.4lf %10.4lf %10.4lf %20.10lf %10.4lf %10.4lf %10.4lf %10.4lf %10.2f %10.2f %10.2f\n", 
-        rxData.m_pvt.time.gps_tow,
-        rxData.m_pvt.time.gps_week,
-        rxData.m_pvt.latitudeDegs,
-        rxData.m_pvt.longitudeDegs,
-        rxData.m_pvt.height,
-        rxData.m_pvt.clockOffset,
-        rxData.m_pvt.nrPsrObsUsed,
-        rxData.m_pvt.vn,
-        rxData.m_pvt.ve,
-        rxData.m_pvt.vup,
-        rxData.m_pvt.clockDrift,
-        rxData.m_pvt.std_lat,
-        rxData.m_pvt.std_lon,
-        rxData.m_pvt.std_hgt,
-        rxData.m_pvt.std_clk,
-        rxData.m_pvt.dop.hdop,
-        rxData.m_pvt.dop.vdop,
-        rxData.m_pvt.dop.tdop
-        );        
-
-#ifdef EXTRACTSVDATA
-      for( i = 0; i < rxData.m_nrValidObs; i++ )
+      /*
+      if( !OutputObservationData( &rxData, true ) )
       {
-        if( rxData.m_ObsArray[i].id == prn &&           
-          rxData.m_ObsArray[i].system == GNSS_GPS &&
-          rxData.m_ObsArray[i].freqType == GNSS_GPSL1 
-          ) 
-        {
-          fprintf( svfid, "%12.4lf %4d %10.1f %10.1f %10.1f %20.10lf %20.10lf %20.10lf %20.10lf\n", 
-            rxData.m_pvt.time.gps_tow,
-            rxData.m_pvt.time.gps_week,          
-            rxData.m_ObsArray[i].cno,
-            rxData.m_ObsArray[i].satellite.elevation*RAD2DEG,
-            rxData.m_ObsArray[i].satellite.azimuth*RAD2DEG,
-            rxData.m_ObsArray[i].psr_misclosure,
-            rxData.m_ObsArray[i].doppler_misclosure,
-            rxData.m_ObsArray[i].psr,
-            rxData.m_ObsArray[i].adr
-            );
-        }
-      }        
-#endif
+        sprintf( msg, "%.3Lf %d OutputObservationData Failed\n", rxData.m_pvt.time.gps_tow, rxData.m_pvt.time.gps_week );
+        GNSS_ERROR_MSG( msg );
+        return 1;
+      }
+      if( !OutputObservationData( &rxDataBase, false ) )
+      {
+        sprintf( msg, "%.3Lf %d OutputObservationData Failed\n", rxData.m_pvt.time.gps_tow, rxData.m_pvt.time.gps_week );
+        GNSS_ERROR_MSG( msg );
+        return 1;
+      }
+      */
     }
 
-    // close the output file
-    fclose( fid );
-#ifdef EXTRACTSVDATA
-    fclose(svfid);
-#endif
+    if( !PVT.Inplace_Transpose() )
+    {
+      GNSS_ERROR_MSG( "if( !PVT.Inplace_Transpose() )" );
+      return 1;
+    }
+    
+    // Open the PVT output file
+    fid_pvt = fopen( "pvt.csv", "w" );
+    if( !fid_pvt )
+    {
+      sprintf( msg, "Unable to open pvt.csv." );
+      GNSS_ERROR_MSG( msg );
+      return 1;
+    }
+    fprintf( fid_pvt, "GPS time of week(s), GPS week, latitude (deg), longitude (deg), height (m), Velocity North (m/s), Velocity East (m/s), Velocity Up (m/s), Ground Speed (km/hr), Clock Offset (m), Clock Drift (m/s), " );
+    if( opt.m_RoverIsStatic )
+      fprintf( fid_pvt, "Error North (m), Error East (m), Error Up (m),");
+    else
+      fprintf( fid_pvt, "Northing (m), Easting (m), Up (m),");
+    fprintf( fid_pvt, "STDEV latitude (m), STDEV longitude (m), STDEV height (m), STDEV Velocity North (m/s), STDEV Velocity East (m/s), STDEV Velocity Up (m/s), STDEV Clock Offset (m), STDEV Clock Drift (m/s), " );
+    fprintf( fid_pvt, "NR PSR Available, NR PSR Used, NR Doppler Available, NR Doppler Used, NR ADR Available, NR ADR Used," );
+    fprintf( fid_pvt, "NDOP,EDOP,VDOP,HDOP,PDOP,TDOP,GDOP,");    
+    fprintf( fid_pvt, "APVF Position, APVF Velocity\n");    
+    fclose( fid_pvt );
+
+    if( !PVT.PrintDelimited( "pvt.csv", 12, ',', true )  )
+    {
+      GNSS_ERROR_MSG( "if( !PVT.PrintDelimited( \"pvt.csv\", 12, ',', true )  )" );
+      return 1;
+    }
+
+
   }
   catch( MatrixException& matrixException )
   {
@@ -777,7 +762,10 @@ bool OutputPVT(
   double up = 0.0;
 
   if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
     return false;
+  }
 
   if( once )
   {
@@ -788,7 +776,8 @@ bool OutputPVT(
       fprintf( fid, "Northing (m), Easting (m), Up (m),");
     fprintf( fid, "STDEV latitude (m), STDEV longitude (m), STDEV height (m), STDEV Velocity North (m/s), STDEV Velocity East (m/s), STDEV Velocity Up (m/s), STDEV Clock Offset (m), STDEV Clock Drift (m/s), " );
     fprintf( fid, "NR PSR Available, NR PSR Used, NR Doppler Available, NR Doppler Used, NR ADR Available, NR ADR Used," );
-    fprintf( fid, "NDOP,EDOP,VDOP,HDOP,PDOP,TDOP,GDOP\n");    
+    fprintf( fid, "NDOP,EDOP,VDOP,HDOP,PDOP,TDOP,GDOP,");    
+    fprintf( fid, "APVF Position, APVF Velocity\n");    
     once = false;
   }
 
@@ -805,7 +794,10 @@ bool OutputPVT(
     &up );
 
   if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ComputePositionDifference returned FALSE." );
     return false;
+  }
   
   fprintf( fid, "%.10g,%d,%.13g,%.14g,%.8g,%.7g,%.7g,%.7g,%.7g,%.13g,%.9g,",
         rxData.m_pvt.time.gps_tow,
@@ -844,7 +836,7 @@ bool OutputPVT(
     rxData.m_pvt.nrAdrObsUsed    
     );
 
-  fprintf( fid, "%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g\n",
+  fprintf( fid, "%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,",
     rxData.m_pvt.dop.ndop,
     rxData.m_pvt.dop.edop,
     rxData.m_pvt.dop.vdop,
@@ -854,10 +846,246 @@ bool OutputPVT(
     rxData.m_pvt.dop.gdop
     );
 
+  fprintf( fid, "%.5g,%.5g\n",
+    rxData.m_pvt.pos_apvf,
+    rxData.m_pvt.vel_apvf
+    );
+
   fflush( fid );
 
   return true;
 }
+
+
+bool OutputPVT(
+  Matrix &PVT,
+  GNSS_RxData& rxData,  //!< The receiver data.
+  const double datumLatitudeRads,  //!< Used to compute a position difference.
+  const double datumLongitudeRads, //!< Used to compute a position difference.
+  const double datumHeight,         //!< Used to compute a position difference.
+  bool isStatic //!< Indicates if the rover receiver is in static mode.
+  )
+{
+  static bool once = true;
+  BOOL result;
+  double northing = 0.0;
+  double easting = 0.0;
+  double up = 0.0;
+  unsigned i = 0;
+  const unsigned nr_items = 37;
+  Matrix data(nr_items,1);
+
+  result = GEODESY_ComputePositionDifference(
+    GEODESY_REFERENCE_ELLIPSE_WGS84,
+    datumLatitudeRads,
+    datumLongitudeRads,
+    datumHeight,
+    rxData.m_pvt.latitude,
+    rxData.m_pvt.longitude,
+    rxData.m_pvt.height,
+    &northing,
+    &easting,
+    &up );
+
+  if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ComputePositionDifference returned FALSE." );
+    return false;
+  }
+
+  data[i] = rxData.m_pvt.time.gps_tow; i++;
+  data[i] = rxData.m_pvt.time.gps_week; i++;
+  data[i] = rxData.m_pvt.latitudeDegs; i++;
+  data[i] = rxData.m_pvt.longitudeDegs; i++;
+  data[i] = rxData.m_pvt.height; i++;
+  data[i] = rxData.m_pvt.vn; i++;
+  data[i] = rxData.m_pvt.ve; i++;
+  data[i] = rxData.m_pvt.vup; i++;
+  data[i] = sqrt( rxData.m_pvt.vn*rxData.m_pvt.vn + rxData.m_pvt.ve*rxData.m_pvt.ve)*3.6; i++;
+  data[i] = rxData.m_pvt.clockOffset; i++;
+  data[i] = rxData.m_pvt.clockDrift; i++;
+
+  data[i] = northing; i++;
+  data[i] = easting; i++;
+  data[i] = up; i++;
+
+  data[i] = rxData.m_pvt.std_lat; i++;
+  data[i] = rxData.m_pvt.std_lon; i++;
+  data[i] = rxData.m_pvt.std_hgt; i++;
+  data[i] = rxData.m_pvt.std_vn; i++;
+  data[i] = rxData.m_pvt.std_ve; i++;
+  data[i] = rxData.m_pvt.std_vup; i++;
+  data[i] = rxData.m_pvt.std_clk; i++;
+  data[i] = rxData.m_pvt.std_clkdrift; i++;
+
+  data[i] = rxData.m_pvt.nrPsrObsAvailable; i++;
+  data[i] = rxData.m_pvt.nrPsrObsUsed; i++;
+  data[i] = rxData.m_pvt.nrDopplerObsAvailable; i++;
+  data[i] = rxData.m_pvt.nrDopplerObsUsed; i++;
+  data[i] = rxData.m_pvt.nrAdrObsAvailable; i++;
+  data[i] = rxData.m_pvt.nrAdrObsUsed; i++;
+
+  data[i] = rxData.m_pvt.dop.ndop; i++;
+  data[i] = rxData.m_pvt.dop.edop; i++;
+  data[i] = rxData.m_pvt.dop.vdop; i++;
+  data[i] = rxData.m_pvt.dop.hdop; i++;
+  data[i] = rxData.m_pvt.dop.pdop; i++;
+  data[i] = rxData.m_pvt.dop.tdop; i++;
+  data[i] = rxData.m_pvt.dop.gdop; i++;
+    
+  data[i] = rxData.m_pvt_lsq.pos_apvf; i++;
+  data[i] = rxData.m_pvt_lsq.vel_apvf; i++;
+
+  if( PVT.isEmpty() )
+  {
+    PVT = data;
+  }
+  else
+  {
+    if( !PVT.AddColumn( data, 0 ) )
+    {
+      GNSS_ERROR_MSG( "if( !PVT.AddColumn( data, 0 ) )" );
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+
+bool OutputObservationData( GNSS_RxData* rxData, bool isRover )
+{
+  unsigned i = 0;
+  char msg[256];
+  char fname[24];
+  FILE* fid = NULL;
+  
+  for( i = 0; i < rxData->m_nrValidObs; i++ )
+  {
+    fid = NULL;
+
+    if( rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
+    {
+      if( isRover )
+        sprintf( fname, "GPSL1_PRN%02d.csv", rxData->m_ObsArray[i].id );
+      else
+        sprintf( fname, "GPSL1_PRN%02d_BASE.csv", rxData->m_ObsArray[i].id );
+      
+      // check if file exists
+      fid = fopen( fname, "r" );
+      if( !fid )
+      {
+        fid = fopen( fname, "w" );
+        if( !fid )
+        {
+          sprintf( msg, "Unable to open %s\n", fname );
+          GNSS_ERROR_MSG( msg );
+          return false;
+        }
+        fprintf( fid, "GPS time of week(s),GPS week, ID,Channel," );
+        fprintf( fid, "System,Code Type,Frequency Type," );
+        fprintf( fid, "Elevation (deg), Azimuth (deg)," );
+        fprintf( fid, "PSR (m), ADR (cycles), PSR-ADR (m), Doppler (Hz),C/No (dB-Hz),Lock Time (s)," );
+        fprintf( fid, "isActive,isCodeLocked,isPhaseLocked,isParityValid,isPsrValid,isAdrValid,isDopplerValid,isGrouped,isAutoAssigned,isCarrierSmoothed," );
+        fprintf( fid, "isEphemerisValid,isAlmanacValid,isAboveElevationMask,isAboveCNoMask,isAboveLockTimeMask,isNotUserRejected,isNotPsrRejected,isNotAdrRejected,isNotDopplerRejected,isNoCycleSlipDetected," );
+        fprintf( fid, "isPsrUsedInSolution,isDopplerUsedInSolution,isAdrUsedInSolution,isDifferentialPsrAvailable,isDifferentialDopplerAvailable,isDifferentialAdrAvailable,useTropoCorrection,useBroadcastIonoCorrection,isTimeDifferntialPsrAvailable,isTimeDifferntialDopplerAvailable," );
+        fprintf( fid, "stdev PSR (m),stdev adr (cycles),stdev Doppler (Hz)," );
+        fprintf( fid, "PSR residual (m), Doppler residual (m/s), ADR residual (m)," );
+        fprintf( fid, "ambiguity\n" );
+      }
+      else
+      {
+        fclose(fid);
+        fid = NULL;
+        fid = fopen( fname, "a+" );
+        if( !fid )
+        {
+          sprintf( msg, "Unable to open %s\n", fname );
+          GNSS_ERROR_MSG( msg );
+          return false;
+        }
+      }
+
+      fprintf( fid, "%.3Lf,%d,%d,%d,",
+        rxData->m_pvt.time.gps_tow,
+        rxData->m_pvt.time.gps_week,
+        rxData->m_ObsArray[i].id,
+        rxData->m_ObsArray[i].channel );
+
+      fprintf( fid, "%d,%d,%d,",
+        rxData->m_ObsArray[i].system,   //!< The satellite system associated with this channel.
+        rxData->m_ObsArray[i].codeType, //!< The code type for this channel.
+        rxData->m_ObsArray[i].freqType ); //!< The frequency type for this channel.
+
+      fprintf( fid, "%.2Lf,%.2Lf,", 
+        rxData->m_ObsArray[i].satellite.elevation*RAD2DEG,
+        rxData->m_ObsArray[i].satellite.azimuth*RAD2DEG );
+
+      fprintf( fid, "%.4Lf,%.4Lf,%.4Lf,%.3Lf,%.1f,%.2f,",
+        rxData->m_ObsArray[i].psr,
+        rxData->m_ObsArray[i].adr,
+        rxData->m_ObsArray[i].psr-(rxData->m_ObsArray[i].adr*GPS_WAVELENGTHL1),
+        rxData->m_ObsArray[i].doppler,
+        rxData->m_ObsArray[i].cno,
+        rxData->m_ObsArray[i].locktime );
+
+      fprintf( fid, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+        rxData->m_ObsArray[i].flags.isActive,                //!< This flag indicates that the channel is active for use. If this is not set, no other flags are valid for use.
+        rxData->m_ObsArray[i].flags.isCodeLocked,            //!< Indicates if the code tracking is locked.
+        rxData->m_ObsArray[i].flags.isPhaseLocked,           //!< Indicates if the phase tracking is locked.
+        rxData->m_ObsArray[i].flags.isParityValid,           //!< Indicates if the phase parity if valid.      
+        rxData->m_ObsArray[i].flags.isPsrValid,              //!< Indicates if the pseudorange valid for use.
+        rxData->m_ObsArray[i].flags.isAdrValid,              //!< Indicates if the ADR is valid for use.
+        rxData->m_ObsArray[i].flags.isDopplerValid,          //!< Indicates if the Doppler if valid for use.
+        rxData->m_ObsArray[i].flags.isGrouped,               //!< Indicates if this channel has another associated channel. eg. L1 and L2 measurements.
+        rxData->m_ObsArray[i].flags.isAutoAssigned,          //!< Indicates if the channel was receiver assigned (otherwise, the user forced this channel assignment).
+        rxData->m_ObsArray[i].flags.isCarrierSmoothed );       //!< Indicates if the pseudorange has carrier smoothing enabled.
+        
+      fprintf( fid, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+        rxData->m_ObsArray[i].flags.isEphemerisValid,        //!< Indicates if this channel has valid associated ephemeris information. 
+        rxData->m_ObsArray[i].flags.isAlmanacValid,          //!< Indicates if this channel has valid associated almanac information.
+        rxData->m_ObsArray[i].flags.isAboveElevationMask,    //!< Indicates if the satellite tracked is above the elevation mask.    
+        rxData->m_ObsArray[i].flags.isAboveCNoMask,          //!< Indciates if the channel's C/No is above a threshold value.
+        rxData->m_ObsArray[i].flags.isAboveLockTimeMask,     //!< Indicates if the channel's locktime is above a treshold value.
+        rxData->m_ObsArray[i].flags.isNotUserRejected,       //!< Indicates if the user has not forced the rejection of this channel or PRN.
+        rxData->m_ObsArray[i].flags.isNotPsrRejected,        //!< Indicates if the pseudorange was not rejetced (ie Fault Detection and Exclusion).
+        rxData->m_ObsArray[i].flags.isNotAdrRejected,        //!< Indicates if the ADR was not rejetced (ie Fault Detection and Exclusion).
+        rxData->m_ObsArray[i].flags.isNotDopplerRejected,    //!< Indicates if the Doppler was not rejected (ie Fault Detection and Exclusion).
+        rxData->m_ObsArray[i].flags.isNoCycleSlipDetected );   //!< Indicates that no cycle slip has occurred at this epoch.
+        
+      fprintf( fid, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+        rxData->m_ObsArray[i].flags.isPsrUsedInSolution,     //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
+        rxData->m_ObsArray[i].flags.isDopplerUsedInSolution, //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
+        rxData->m_ObsArray[i].flags.isAdrUsedInSolution,     //!< Indicates if the the ADR is used in the solution.
+        rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable,     //!< Indicates if a matching pseudrange observation is available from another receiver.
+        rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable, //!< Indicates if a matching Doppler observation is available from another receiver.
+        rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable,     //!< Indicates if a matching ADR observation is available from another receiver.
+        rxData->m_ObsArray[i].flags.useTropoCorrection,         //!< Indicates that the tropospheric correction should be applied.
+        rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection, //!< Indicates that the broadcast ionospheric correction should be applied.
+        rxData->m_ObsArray[i].flags.isTimeDifferntialPsrAvailable,
+        rxData->m_ObsArray[i].flags.isTimeDifferntialDopplerAvailable );
+
+      fprintf( fid, "%.3f,%.3f,%.3f,",
+        rxData->m_ObsArray[i].stdev_psr,         //!< The estimated pseudorange measurement standard deviation [m].
+        rxData->m_ObsArray[i].stdev_adr,         //!< The estimated accumulated Doppler range measurement standard deviation [cycles].
+        rxData->m_ObsArray[i].stdev_doppler );     //!< The estimated Doppler measurement standard deviation [Hz].
+
+      fprintf( fid, "%.3f,%.3f,%.3f,",
+        rxData->m_ObsArray[i].psr_misclosure,     //!< The measured psr minus the computed psr estimate [m].
+        rxData->m_ObsArray[i].doppler_misclosure, //!< The measured Doppler minus the computed Doppler estimate [m].
+        rxData->m_ObsArray[i].adr_misclosure );   //!< The measured ADR minus the computed ADR estimate [m]. This is the between receiver differential adr misclosure.
+
+      fprintf( fid, "%.3Lf\n",  
+        rxData->m_ObsArray[i].ambiguity );         //!< The estimated float ambiguity [m].    
+
+      fclose( fid );
+    }
+  }
+
+  return true;
+}
+
 
 
 
@@ -878,13 +1106,19 @@ bool GetNextSetOfSynchronousMeasurements(
 
   result = rxDataBase.LoadNext( endOfStreamBase );
   if( !result )
+  {
+    GNSS_ERROR_MSG( "rxDataBase.LoadNext returned false." );
     return false;
+  }
   if( endOfStreamBase )
     return true;
 
   result = rxData.LoadNext( endOfStreamRover );
   if( !result )
+  {
+    GNSS_ERROR_MSG( "rxData.LoadNext returned false." );
     return false;
+  }
   if( endOfStreamRover )
     return true;
 
@@ -905,13 +1139,19 @@ bool GetNextSetOfSynchronousMeasurements(
       // The rover time is ahead of the base time.
       result = rxDataBase.LoadNext( endOfStreamRover );
       if( !result )
-        return 1;
+      {
+        GNSS_ERROR_MSG( "rxDataBase.LoadNext returned false." );
+        return false;
+      }
     }
     else
     {
       result = rxData.LoadNext( endOfStreamRover );
       if( !result )
-        return 1;
+      {
+        GNSS_ERROR_MSG( "rxData.LoadNext returned false." );
+        return false;
+      }
     }
   }
 

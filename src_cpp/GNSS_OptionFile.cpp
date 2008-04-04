@@ -38,6 +38,7 @@ SUCH DAMAGE.
 #include <memory.h>
 #include "constants.h"
 #include "GNSS_OptionFile.h"
+#include "gnss_error.h"
 #include "rinex.h"
 #include "geodesy.h"
 #include "StdStringUtils.h"
@@ -73,61 +74,147 @@ namespace GNSS
     BOOL resultBOOL = FALSE;
 
     if( !ReadOptionFile( OptionFilePath ) )
+    {
+      GNSS_ERROR_MSG( "ReadOptionFile returned false." );
       return false;
+    }
 
     m_OptionFilePath = OptionFilePath;
 
     if( !GetValue( "OutputFilePath", m_OutputFilePath ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: OutputFilePath" );
       return false;
+    }
 
     if( !GetValue( "ProcessingMethod", m_ProcessingMethod ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: ProcessingMethod" );
       return false; 
+    }
     if( m_ProcessingMethod != "LSQ" 
 		&& m_ProcessingMethod != "EKF" 
-		&& m_ProcessingMethod != "RTK" 
+    && m_ProcessingMethod != "RTK4" 
+    && m_ProcessingMethod != "RTK8" 
 		&& m_ProcessingMethod != "RTKDD" )
+    {
+      GNSS_ERROR_MSG( "Invalid option: ProcessingMethod" );
       return false;
+    }
 
-    if( m_ProcessingMethod != "LSQ" )
+    if( m_ProcessingMethod == "RTK4" )
+    {
+      if( !GetValue( "RTK4_sigmaNorth", m_KalmanOptions.RTK4_sigmaNorth ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: RTK4_sigmaNorth" );
+        return false; 
+      }
+      if( !GetValue( "RTK4_sigmaEast", m_KalmanOptions.RTK4_sigmaEast ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: RTK4_sigmaEast" );
+        return false; 
+      }
+      if( !GetValue( "RTK4_sigmaUp", m_KalmanOptions.RTK4_sigmaUp ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: RTK4_sigmaUp" );
+        return false; 
+      }
+      if( !GetValue( "RTK4_sigmaClock", m_KalmanOptions.RTK4_sigmaClock ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: RTK4_sigmaClock" );
+        return false; 
+      }
+    }
+    else if( m_ProcessingMethod == "EKF" || m_ProcessingMethod == "RTK8" )
     {
       if( !GetValue( "alpha_Vn", m_KalmanOptions.alphaVn ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: alpha_Vn" );
         return false; 
+      }
       if( !GetValue( "alpha_Ve", m_KalmanOptions.alphaVe ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: alpha_Ve" );
         return false; 
+      }
       if( !GetValue( "alpha_Vup", m_KalmanOptions.alphaVup ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: alpha_Vup" );
         return false; 
+      }
       if( !GetValue( "alpha_ClkDrift", m_KalmanOptions.alphaClkDrift ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: alpha_ClkDrift" );
         return false; 
+      }
 
       if( !GetValue( "sigma_Vn", m_KalmanOptions.sigmaVn ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: sigma_Vn" );
         return false; 
+      }
       if( !GetValue( "sigma_Ve", m_KalmanOptions.sigmaVe ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: sigma_Ve" );
         return false; 
+      }
       if( !GetValue( "sigma_Vup", m_KalmanOptions.sigmaVup ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: sigma_Vup" );
         return false; 
+      }
       if( !GetValue( "sigma_ClkDrift", m_KalmanOptions.sigmaClkDrift ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: sigma_ClkDrift" );
         return false; 
+      }
     }
 
     if( !GetValue( "StartGPSWeek", m_StartTime.GPSWeek ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: StartGPSWeek" );
       return false;
+    }
     if( !GetValue( "StartGPSTimeOfWeek", m_StartTime.GPSTimeOfWeek ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: StartGPSTimeOfWeek" );
       return false;
+    }
 
     if( !GetValue( "EndGPSWeek", m_EndTime.GPSWeek ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: EndGPSWeek" );
       return false;
+    }
     if( !GetValue( "EndGPSTimeOfWeek", m_EndTime.GPSTimeOfWeek ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: EndGPSTimeOfWeek" );
       return false;
+    }
 
     if( !GetValue( "ElevationMask", m_elevationMask ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: ElevationMask" );
       return false;
+    }
     if( !GetValue( "CNoMask", m_cnoMask ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: CNoMask" );
       return false;
+    }
     if( !GetValue( "LockTimeMask", m_locktimeMask ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: LockTimeMask" );
       return false;
+    }
 
     if( !GetValue( "ProcessOnlyDGPS", m_processDGPSOnly ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: ProcessOnlyDGPS" );
       return false;
+    }
+
+    GetValue( "UseDopplerMeasurements", m_UseDopplerMeasurements );
 
     GetValue( "RINEXNavigationDataPath", m_RINEXNavDataPath );      
 
@@ -141,31 +228,54 @@ namespace GNSS
         m_Reference.isValid = true;
 
         if( !GetValue( "Reference_DataType", m_Reference.DataTypeStr ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: Reference_DataType" );
           return false;
+        }
 
-		StdStringUtils::MakeUpper(m_Reference.DataTypeStr);
+        StdStringUtils::MakeUpper(m_Reference.DataTypeStr);
 
         if( m_Reference.DataTypeStr.compare("NOVATELOEM4") == 0 )
+        {
           m_Reference.DataType = GNSS_RXDATA_NOVATELOEM4;
+        }
         else if( m_Reference.DataTypeStr.compare("RINEX2.1") == 0 )
+        {
           m_Reference.DataType = GNSS_RXDATA_RINEX21;
+        }
         else if( m_Reference.DataTypeStr.compare("RINEX2.11") == 0 )
+        {
           m_Reference.DataType = GNSS_RXDATA_RINEX211;
+        }
         else
+        {
+          GNSS_ERROR_MSG( "Invalid option: Reference_DataType" );
           return false;
+        }
 
 
         if( !GetValue( "Reference_UseECEF", useECEF ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: Reference_UseECEF" );
           return false;
-
+        }
         if( useECEF )
         {
           if( !GetValue( "Reference_ECEF_X", m_Reference.x ) )
+          {
+            GNSS_ERROR_MSG( "Invalid option: Reference_ECEF_X" );
             return false;
+          }
           if( !GetValue( "Reference_ECEF_Y", m_Reference.y ) )
+          {
+            GNSS_ERROR_MSG( "Invalid option: Reference_ECEF_Y" );
             return false;
+          }
           if( !GetValue( "Reference_ECEF_Z", m_Reference.z ) )
+          {
+            GNSS_ERROR_MSG( "Invalid option: Reference_ECEF_Z" );
             return false;
+          }
 
           resultBOOL = GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates(
             GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -177,7 +287,10 @@ namespace GNSS
             &(m_Reference.height)
             );
           if( resultBOOL == FALSE )
+          {
+            GNSS_ERROR_MSG( "GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates returned FALSE. Check Reference_ECEF values." );
             return false;
+          }
           m_Reference.latitudeDegrees  = m_Reference.latitudeRads  * RAD2DEG;
           m_Reference.longitudeDegrees = m_Reference.longitudeRads * RAD2DEG;
         }
@@ -194,6 +307,7 @@ namespace GNSS
           }
           else
           {
+            GNSS_ERROR_MSG( "Invalid option: Reference_Latitude" );
             return false;
           }
           m_Reference.latitudeRads = m_Reference.latitudeDegrees*DEG2RAD;
@@ -209,12 +323,16 @@ namespace GNSS
           }
           else
           {
+            GNSS_ERROR_MSG( "Invalid option: Reference_Longitude" );
             return false;
           }
           m_Reference.longitudeRads = m_Reference.longitudeDegrees*DEG2RAD;
 
           if( !GetValue( "Reference_Height", m_Reference.height ) )
+          {
+            GNSS_ERROR_MSG( "Invalid option: Reference_Height" );
             return false;
+          }
 
           resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
             GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -226,7 +344,10 @@ namespace GNSS
             &m_Reference.z 
             );
           if( resultBOOL == FALSE )
+          {
+            GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned false. Check Reference_Latitude, Reference_Longitude, Reference_Height." );
             return false;
+          }
         }
 
         // The reference is known to sub mm.
@@ -235,11 +356,20 @@ namespace GNSS
         m_Reference.uncertaintyHeightOneSigma = 1.0e-04;
 
         if( !GetValue( "Reference_EnableTropoCorrection", m_Reference.useTropo ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: Reference_EnableTropoCorrection" );
           return false;
+        }
         if( !GetValue( "Reference_EnableIonoCorrection", m_Reference.useIono ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: Reference_EnableIonoCorrection" );
           return false;
+        }
         if( !GetValueArray( "Reference_ExcludeSatellites", m_Reference.satsToExclude, 64, n ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: Reference_ExcludeSatellites" );
           return false;
+        }
         m_Reference.nrSatsToExclude = n;
       }
     }
@@ -282,7 +412,10 @@ namespace GNSS
           &m_klobuchar
           );
         if( resultBOOL == FALSE )
+        {
+          GNSS_ERROR_MSG( "Invalid option: Iono_ObtainFromRINEXNavFile, RINEX_GetKlobucharIonoParametersFromNavFile returned FALSE." );
           return false;       
+        }
       }
       else
       {
@@ -292,38 +425,71 @@ namespace GNSS
 
     m_Rover.isValid = false;
     if( !GetValue( "Rover_DataPath", m_Rover.DataPath ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_DataPath" );
       return false;
+    }
 
     if( m_Rover.DataPath.empty() )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_DataPath" );
       return false;
+    }
     if( !DoesFileExist( m_Rover.DataPath ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_DataPath" );
       return false;
+    }
 
     if( !GetValue( "Rover_DataType", m_Rover.DataTypeStr ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_DataType" );
       return false;
+    }
 
-	StdStringUtils::MakeUpper(m_Rover.DataTypeStr);
+    StdStringUtils::MakeUpper(m_Rover.DataTypeStr);
 
     if( m_Rover.DataTypeStr.compare("NOVATELOEM4") == 0 )
+    {
       m_Rover.DataType = GNSS_RXDATA_NOVATELOEM4;
+    }
     else if( m_Rover.DataTypeStr.compare("RINEX2.1") == 0 )
+    {
       m_Rover.DataType = GNSS_RXDATA_RINEX21;
+    }
     else if( m_Rover.DataTypeStr.compare("RINEX2.11") == 0 )
+    {
       m_Rover.DataType = GNSS_RXDATA_RINEX211;
+    }
     else
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_DataType" );
       return false;
+    }
 
     if( !GetValue( "Rover_UseECEF", useECEF ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_UseECEF" );
       return false;
+    }
 
     if( useECEF )
     {
       if( !GetValue( "Rover_ECEF_X", m_Rover.x ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: Rover_ECEF_X" );
         return false;
+      }
       if( !GetValue( "Rover_ECEF_Y", m_Rover.y ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: Rover_ECEF_Y" );
         return false;
+      }
       if( !GetValue( "Rover_ECEF_Z", m_Rover.z ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: Rover_ECEF_Z" );
         return false;
+      }
 
       resultBOOL = GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates(
         GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -335,7 +501,10 @@ namespace GNSS
         &(m_Rover.height)
         );
       if( resultBOOL == FALSE )
+      {
+        GNSS_ERROR_MSG( "GEODESY_ConvertEarthFixedCartesianToGeodeticCurvilinearCoordinates returned FALSE. Check Rover_ECEF values." );
         return false;
+      }
       m_Rover.latitudeDegrees  = m_Rover.latitudeRads  * RAD2DEG;
       m_Rover.longitudeDegrees = m_Rover.longitudeRads * RAD2DEG;
     }
@@ -352,6 +521,7 @@ namespace GNSS
       }
       else
       {
+        GNSS_ERROR_MSG( "Invalid option: Rover_Latitude" );
         return false;
       }
       m_Rover.latitudeRads = m_Rover.latitudeDegrees*DEG2RAD;
@@ -367,12 +537,16 @@ namespace GNSS
       }
       else
       {
+        GNSS_ERROR_MSG( "Invalid option: Rover_Longitude" );
         return false;
       }
       m_Rover.longitudeRads = m_Rover.longitudeDegrees*DEG2RAD;
 
       if( !GetValue( "Rover_Height", m_Rover.height ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: Rover_Height" );
         return false;
+      }
 
       resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
         GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -384,22 +558,43 @@ namespace GNSS
         &m_Rover.z 
         );
       if( resultBOOL == FALSE )
+      {
+        GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned false. Check Rover_Latitude, Rover_Longitude, Rover_Height." );
         return false;
+      }
     }
 
     if( !GetValue( "Rover_UncertaintyLatitude", m_Rover.uncertaintyLatitudeOneSigma ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_UncertaintyLatitude" );
       return false;
+    }
     if( !GetValue( "Rover_UncertaintyLongitude", m_Rover.uncertaintyLongitudeOneSigma ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_UncertaintyLongitude" );
       return false;
+    }
     if( !GetValue( "Rover_UncertaintyHeight", m_Rover.uncertaintyHeightOneSigma ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_UncertaintyHeight" );
       return false;
+    }
 
     if( !GetValue( "Rover_EnableTropoCorrection", m_Rover.useTropo ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_EnableTropoCorrection" );
       return false;
+    }
     if( !GetValue( "Rover_EnableIonoCorrection", m_Rover.useIono ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_EnableIonoCorrection" );
       return false;
+    }
     if( !GetValueArray( "Rover_ExcludeSatellites", m_Rover.satsToExclude, 64, n ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Rover_ExcludeSatellites" );
       return false;
+    }
     m_Rover.nrSatsToExclude = n;
 
 

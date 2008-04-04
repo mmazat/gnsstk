@@ -430,6 +430,7 @@ namespace GNSS
     /// \brief   Update the receiver position and clock offset.
     /// \return  true if successful, false if error.            
     bool UpdatePositionAndRxClock( 
+      GNSS_structPVT& pvt,         //!< The position, velocity, and time struct. Usually either rxData.m_pvt or rxData.m_pvt_lsq.
       const double latitudeRads,   //!< The latitude [rad].
       const double longitudeRads,  //!< The longitude [rad].
       const double height,         //!< The orthometric height [m].
@@ -443,6 +444,7 @@ namespace GNSS
     /// \brief   Update the receiver velocity and clock drift.
     /// \return  true if successful, false if error.                
     bool UpdateVelocityAndClockDrift( 
+      GNSS_structPVT& pvt,         //!< The position, velocity, and time struct. Usually either rxData.m_pvt or rxData.m_pvt_lsq.
       const double vn,             //!< The northing velocity [m/s].
       const double ve,             //!< The easting velocity [m/s].
       const double vup,            //!< The up velocity [m/s].
@@ -588,6 +590,10 @@ namespace GNSS
 
     /// The receiver's previous position, velocity, and time information.
     GNSS_structPVT  m_prev_pvt;
+
+    /// The receiver's position, velocity, and time information as estimated using least squares.
+    /// Least squares gets its own pvt struct since LSQ will often be run in parallel with other filters.
+    GNSS_structPVT  m_pvt_lsq;
 
     /// The klobuchar ionospheric correction parameters for GPS.
     GNSS_structKlobuchar m_klobuchar;

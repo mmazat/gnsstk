@@ -39,6 +39,7 @@ SUCH DAMAGE.
 #include <math.h>
 
 #include "GNSS_RxData.h"
+#include "gnss_error.h"
 #include "novatel.h" 
 #include "constants.h"
 #include "geodesy.h"
@@ -88,13 +89,21 @@ namespace GNSS
     if( m_array != NULL )
     {
       if( m_arrayLength == GPS_NUMBER_VALID_PRNS )
+      {
         return true; // already allocated
+      }
       else
+      {
+        GNSS_ERROR_MSG( "if( m_arrayLength != GPS_NUMBER_VALID_PRNS )" );
         return false; // error
+      }
     }
     m_array = new GPS_structOrbitParameters[GPS_NUMBER_VALID_PRNS];
     if( m_array == NULL )
+    {
+      GNSS_ERROR_MSG( "new failed" );
       return false;
+    }
     m_arrayLength = GPS_NUMBER_VALID_PRNS;
 
     // Initialize all to zero.
@@ -113,12 +122,18 @@ namespace GNSS
 
     if( m_arrayLength == 0 )
     {
-      if( !AllocateArray() )
+      if( !AllocateArray() )      
+      {
+        GNSS_ERROR_MSG( "AllocateArray returned false." );
         return false;
+      }
     }
 
     if( !GetIndexGivenPRN( prn, index ) )
+    {
+      GNSS_ERROR_MSG( "GetIndexGivenPRN returned false." );
       return false;
+    }
 
     // The previous ephemeris is set based on what was the current prior this update.
     m_array[index].previousEph = m_array[index].currentEph;
@@ -134,11 +149,17 @@ namespace GNSS
     if( m_arrayLength == 0 )
     {
       if( !AllocateArray() )
+      {
+        GNSS_ERROR_MSG( "AllocateArray returned false." );
         return false;
+      }
     }
 
     if( !GetIndexGivenPRN( prn, index ) )
+    {
+      GNSS_ERROR_MSG( "GetIndexGivenPRN returned false." );
       return false;
+    }
     
     m_array[index].almanac = alm;
 
@@ -161,7 +182,10 @@ namespace GNSS
     }
     
     if( !GetIndexGivenPRN( prn, index ) )
+    {
+      GNSS_ERROR_MSG( "GetIndexGivenPRN returned false." );
       return false;
+    }
 
     // check the prn to see if any ephemeris information is available.
     if( m_array[index].currentEph.prn == 0 )
@@ -212,7 +236,10 @@ namespace GNSS
     }
     
     if( !GetIndexGivenPRN( prn, index ) )
+    {
+      GNSS_ERROR_MSG( "GetIndexGivenPRN returned false." );
       return false;
+    }
 
     // check the prn to see if any ephemeris information is available.
     if( m_array[index].currentEph.prn == 0 )
@@ -264,7 +291,10 @@ namespace GNSS
     }
     
     if( !GetIndexGivenPRN( prn, index ) )
+    {
+      GNSS_ERROR_MSG( "GetIndexGivenPRN returned false." );
       return false;
+    }
 
     // check the prn to see if any ephemeris information is available.
     if( m_array[index].currentEph.prn == 0 )
@@ -329,14 +359,17 @@ namespace GNSS
     // check unsupported prn values
     if( prn == 0 )
     {
+      GNSS_ERROR_MSG( "if( prn == 0 )" );
       return false;
     }
     if( prn > 38 && prn < 120 )
     {
+      GNSS_ERROR_MSG( "if( prn > 38 && prn < 120 )" );
       return false;
     }
     if( prn > 138 )
     {
+      GNSS_ERROR_MSG( "if( prn > 138 )" );
       return false;
     }
     
@@ -392,6 +425,7 @@ namespace GNSS
     if( m_RINEX_eph.eph_array != NULL )
     {
       delete[] m_RINEX_eph.eph_array;
+      m_RINEX_eph.eph_array = NULL;
     }
   }
 
@@ -415,14 +449,23 @@ namespace GNSS
 
 #ifdef GDM_UWB_ALREADY_OUTLIER_REMOVED
     if( !m_UWB.data.ReadFromFile(filepath) )
+    {
+      GNSS_ERROR_MSG( "m_UWB.data.ReadFromFile() returned false." );
       return false;
+    }
 #else
     Matrix tmp;
     if( filepath == NULL )
+    {
+      GNSS_ERROR_MSG( "if( filepath == NULL )" );
       return false;
+    }
 
     if( !tmp.ReadFromFile(filepath) )
+    {
+      GNSS_ERROR_MSG( "if( !tmp.ReadFromFile(filepath) )" );     
       return false;
+    }
 
     // Remove unnecessary data
     for( i = 2; i < 13; i++ )
@@ -430,7 +473,10 @@ namespace GNSS
     tmp.RemoveColumnsAfterIndex( 3 );
 
     if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols()-1 )  )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols()-1 )  )" );
       return false;
+    }
 
     // Convert to meters
     for( i = 0; i < tmp.nrows(); i++ )
@@ -444,7 +490,10 @@ namespace GNSS
       }
     }
     if( !m_UWB.data.Redim( j, 3 ) )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( j, 3 ) )" );
       return false;
+    }
 
 
 
@@ -455,12 +504,21 @@ namespace GNSS
       double range_std = 0;
       
       if( !tmp.Resize( j, 3 ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.Resize( j, 3 ) )" );
         return false;
+      }
 
       if( !m_UWB.data.GetStats_ColumnMean( 2, range_mean, tmpd ) )
+      {
+        GNSS_ERROR_MSG( "if( !m_UWB.data.GetStats_ColumnMean( 2, range_mean, tmpd ) )" );
         return false;
+      }
       if( !m_UWB.data.GetStats_ColumnStdev( 2, range_std ) )
+      {
+        GNSS_ERROR_MSG( "if( !m_UWB.data.GetStats_ColumnStdev( 2, range_std ) )" );
         return false;
+      }
 
       // first reject those measurements that are 3 sigma from the mean
       // then recompute the mean and standard deviation
@@ -481,12 +539,21 @@ namespace GNSS
       }
 
       if( !tmp.Redim( j, 3 ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.Redim( j, 3 ) )" );
         return false;
+      }
 
       if( !tmp.GetStats_ColumnMean( 2, range_mean, tmpd ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.GetStats_ColumnMean( 2, range_mean, tmpd ) )" );
         return false;
+      }
       if( !tmp.GetStats_ColumnStdev( 2, range_std ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.GetStats_ColumnStdev( 2, range_std ) )" );
         return false;
+      }
 
       j = 0;
       for( i = 0; i < tmp.nrows(); i++ )
@@ -502,13 +569,22 @@ namespace GNSS
         j++;    
       }
       if( !m_UWB.data.Redim( j, 3 ) )
+      {
+        GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( j, 3 ) )" );
         return false;
+      }
 
       // just for debug
       if( !m_UWB.data.GetStats_ColumnMean( 2, range_mean, tmpd ) )
+      {
+        GNSS_ERROR_MSG( "if( !m_UWB.data.GetStats_ColumnMean( 2, range_mean, tmpd ) )" );
         return false;
+      }
       if( !m_UWB.data.GetStats_ColumnStdev( 2, range_std ) )
-        return false;      
+      {
+        GNSS_ERROR_MSG( "if( !m_UWB.data.GetStats_ColumnStdev( 2, range_std ) )" );
+        return false;    
+      }
       j = 0;
     }
         
@@ -529,7 +605,10 @@ namespace GNSS
     double tdiff = 0.0;
     double uwb_range = 0.0;
     if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 3 )
+    {
+      GNSS_ERROR_MSG( "if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 3 )" );
       return false;
+    }
 
     /// Just match the closest epoch before the gps measurment, not after.
     epoch = m_pvt.time.gps_tow + m_pvt.time.gps_week*SECONDS_IN_WEEK;
@@ -620,10 +699,12 @@ namespace GNSS
     
     if( path == NULL )
     {
+      GNSS_ERROR_MSG( "if( path == NULL )" );
       return false;
     }
     if( rxType == GNSS_RXDATA_UNKNOWN )
     {
+      GNSS_ERROR_MSG( "if( rxType == GNSS_RXDATA_UNKNOWN )" );
       return false;
     }
 
@@ -632,9 +713,15 @@ namespace GNSS
     if( rxType == GNSS_RXDATA_RINEX21 || rxType == GNSS_RXDATA_RINEX211 )
     {
       if( !CheckRINEXObservationHeader( path, isRinexValid ) )
+      {
+        GNSS_ERROR_MSG( "CheckRINEXObservationHeader returned false." );
         return false;
+      }
       if( !isRinexValid )
+      {
+        GNSS_ERROR_MSG( "if( !isRinexValid )" );
         return false;
+      }
     }
 
     if( RINEX_ephemeris_path != NULL )
@@ -642,7 +729,10 @@ namespace GNSS
       m_RINEX_eph.filepath = RINEX_ephemeris_path;
       
       if( !LoadRINEXNavigationData() )
+      {
+        GNSS_ERROR_MSG( "LoadRINEXNavigationData returned false." );
         return false;
+      }
 
       // Indicate that the RINEX ephemeris data can be used.
       m_RINEX_use_eph = true;
@@ -650,12 +740,18 @@ namespace GNSS
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
     if( fopen_s( &m_fid, path, "rb" ) != 0 )
+    {
+      GNSS_ERROR_MSG( "fopen_s returned non zero." );
       return false;
+    }
 #else
     m_fid = fopen( path, "rb" );
 #endif
-    if( m_fid == NULL )    
+    if( m_fid == NULL )  
+    {
+      GNSS_ERROR_MSG( "if( m_fid == NULL )" );
       return false;
+    }
 
 
     if( rxType == GNSS_RXDATA_RINEX21 || rxType == GNSS_RXDATA_RINEX211 )
@@ -674,6 +770,7 @@ namespace GNSS
     {
       if( m_fid != NULL )
         fclose(m_fid);
+      GNSS_ERROR_MSG( "if( feof(m_fid) || ferror(m_fid) != 0 )" );
       return false;
     }
     
@@ -688,6 +785,7 @@ namespace GNSS
     unsigned j = 0;
     double psr_difference = 0;
     bool result = false;
+    char msg[256];
 
     // Reset the millisecond jump detectors.
     m_msJumpDetected_Positive = false;
@@ -714,19 +812,11 @@ namespace GNSS
       }
     default:
       {
+        GNSS_ERROR_MSG( "Unexpected default case reached." );
         return false;
         break;
       }
     }
-
-//#define GDM_HACK_TO_REMOVE_DOPPLER 
-#ifdef GDM_HACK_TO_REMOVE_DOPPLER 
-    for( i = 0; i < m_nrValidObs; i++ )
-    {
-      m_ObsArray[i].flags.isDopplerValid = false;
-      m_ObsArray[i].flags.isDopplerUsedInSolution = false;      
-    }
-#endif
 
     // Check for millisecond jumps in the data.
     // First determine the index of the corresponding measurement in the previous epoch
@@ -751,6 +841,8 @@ namespace GNSS
               {
                 if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
                 {
+                  sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, psr_difference, psr_difference/ONE_MS_IN_M );
+                  GNSS_ERROR_MSG( msg );
                   m_msJumpDetected_Positive = true;
                 }
               }
@@ -759,6 +851,8 @@ namespace GNSS
                 psr_difference *= -1.0;
                 if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
                 {
+                  sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, psr_difference, psr_difference/ONE_MS_IN_M );
+                  GNSS_ERROR_MSG( msg );                  
                   m_msJumpDetected_Negative = true;
                 }
               }
@@ -808,6 +902,9 @@ namespace GNSS
       {
         mean_val /= double(mean_n);
         m_clockJump = mean_val;
+        sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, m_clockJump, m_clockJump/ONE_MS_IN_M );
+        GNSS_ERROR_MSG( msg );                  
+
       }
     }
 
@@ -816,7 +913,10 @@ namespace GNSS
     {
       result = LoadUWBRangeForThisEpoch();
       if( !result )
+      {
+        GNSS_ERROR_MSG( "LoadUWBRangeForThisEpoch returned false." );
         return false;
+      }
     }
 #endif
 
@@ -826,7 +926,10 @@ namespace GNSS
       if( m_RINEX_use_eph )
       {
         if( !UpdateTheEphemerisArrayWithUsingRINEX() )
+        {
+          GNSS_ERROR_MSG( "UpdateTheEphemerisArrayWithUsingRINEX returned false." );
           return false;
+        }
       }
     }
     return result;
@@ -843,7 +946,10 @@ namespace GNSS
     isValid = false;
 
     if( filepath == NULL )
+    {
+      GNSS_ERROR_MSG( "if( filepath == NULL )" );
       return false;    
+    }
     
     result = RINEX_GetHeader( 
       filepath,
@@ -854,7 +960,10 @@ namespace GNSS
       &file_type
     );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_GetHeader returned FALSE." );
       return false;
+    }
 
     result = RINEX_DecodeHeader_ObservationFile(
       RINEX_buffer,
@@ -862,7 +971,10 @@ namespace GNSS
       &m_RINEX_obs_header
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_DecodeHeader_ObservationFile returned false." );
       return false;
+    }
 
     if( file_type != RINEX_FILE_TYPE_OBS )
     {
@@ -920,7 +1032,10 @@ namespace GNSS
     endOfStream = false;
 
     if( m_fid == NULL )
+    {
+      GNSS_ERROR_MSG( "if( m_fid == NULL )" );
       return false;
+    }
 
     // Copy the current observations into the previous storage.
     m_prev_nrValidObs = m_nrValidObs;
@@ -944,7 +1059,10 @@ namespace GNSS
       &rx_gps_tow
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_GetNextObservationSet returned false." );
       return false;
+    }
 
     if( wasEndOfFileReached )
     {
@@ -960,15 +1078,23 @@ namespace GNSS
       m_pvt.time.gps_week = rx_gps_week;
       m_pvt.time.gps_tow  = rx_gps_tow;
 
+      // It's the same for the least squares container.
+      m_pvt_lsq.time.gps_week = rx_gps_week;
+      m_pvt_lsq.time.gps_tow  = rx_gps_tow;
+
       for(i = 0; i < nrObs; i++ )
       {
-        m_ObsArray[i].stdev_psr     = 1.4f;  // [m]
-        m_ObsArray[i].stdev_adr     = 0.05f; // these are in cycles!.
-        m_ObsArray[i].stdev_doppler = 1.0f;  // Hz // GDM_HACK //changed from 0.5 to 1.0 Hz
+        // Use a constrained solution and variance-covariance analysis to determine these values.
+        m_ObsArray[i].stdev_psr     = 0.50f;   // [m]
+        m_ObsArray[i].stdev_adr     = 0.02f;   // [cycles]
+        m_ObsArray[i].stdev_doppler = 0.011f;  // [Hz]
 
         // Check if ephemeris information is available
         if( !m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[i].id, isAvailable ) )
+        {
+          GNSS_ERROR_MSG( "m_EphAlmArray.IsEphemerisAvailable() returned false" );
           return false;
+        }
         m_ObsArray[i].flags.isEphemerisValid      = isAvailable;
 
         if( m_DisableTropoCorrection )
@@ -990,6 +1116,26 @@ namespace GNSS
       }
     }
 
+#define GDM_HACK_FOR_ONLY_L1
+#ifdef GDM_HACK_FOR_ONLY_L1
+    j = 0;
+    for( i = 0; i < m_nrValidObs; i++ )
+    {
+      if( m_ObsArray[i].freqType == GNSS_GPSL1 )
+      {
+        memcpy( &m_ObsArray[j], &m_ObsArray[i], sizeof(GNSS_structMeasurement) );
+        if( i != j )
+          memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+        j++;
+      }      
+      else
+      {
+        memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+      }
+    }
+    m_nrValidObs = j;
+#endif
+    
 
     // Search for matching observations in the previous set of data to pass on static information
     // like ambiguities.
@@ -1003,6 +1149,8 @@ namespace GNSS
           m_ObsArray[i].id == m_prev_ObsArray[j].id ) // Note should also check that channels are the same if real time!
         {
           m_ObsArray[i].ambiguity = m_prev_ObsArray[j].ambiguity;
+          //if( m_prev_ObsArray[j].ambiguity != 0 )
+            //printf( "%10.1Lf    %2d %12.1Lf\n", m_pvt.time.gps_tow, m_ObsArray[i].id, m_ObsArray[i].ambiguity );
           break;
         }
       }
@@ -1043,7 +1191,10 @@ namespace GNSS
     endOfStream = false;
 
     if( m_fid == NULL )
+    {
+      GNSS_ERROR_MSG( "if( m_fid == NULL )" );
       return false;
+    }
 
     // Copy the current observations into the previous storage.
     m_prev_nrValidObs = m_nrValidObs;
@@ -1071,7 +1222,10 @@ namespace GNSS
             &numberBadCRC 
             );
           if( result == FALSE )
+          {
+            GNSS_ERROR_MSG( "NOVATELOEM4_FindNextMessageInFile returned false." );
             return false;
+          }
           
           messageType = (NOVATELOEM4_enumMessageType)messageID;
           if( wasMessageFound && messageType != NOVATELOEM4_RANGEB )
@@ -1128,6 +1282,7 @@ namespace GNSS
                 if( !result )
                 {
                   // An error occurred.
+                  GNSS_ERROR_MSG( "m_EphAlmArray.AddEphemeris() returned false." );
                   return false;
                 }
               }
@@ -1149,11 +1304,18 @@ namespace GNSS
             &nrValidObs 
             );
           if( result == FALSE )
+          {
+            GNSS_ERROR_MSG( "NOVATELOEM4_DecodeRANGEB returned false." );
             return false;
+          }
 
           // Set the receiver time of the observation set.
           m_pvt.time.gps_week = header.gpsWeek;
           m_pvt.time.gps_tow  = header.gpsMilliSeconds / 1000.0;
+
+          // It's the same for the least squares container.
+          m_pvt_lsq.time.gps_week = header.gpsWeek;
+          m_pvt_lsq.time.gps_tow  = header.gpsMilliSeconds / 1000.0;
 
           for( i = 0; i < nrValidObs && i < GNSS_RXDATA_NR_CHANNELS; i++ )
           {
@@ -1176,24 +1338,17 @@ namespace GNSS
             m_ObsArray[i].cno       = obsArray[i].cno;
             m_ObsArray[i].locktime  = obsArray[i].locktime;
     
-            if( obsArray[i].psrstd < 0.2 )
-              m_ObsArray[i].stdev_psr     = 0.2f;
+            if( obsArray[i].psrstd < 0.1 )
+              m_ObsArray[i].stdev_psr     = 0.20f;
             else
               m_ObsArray[i].stdev_psr     = obsArray[i].psrstd; 
 
-            m_ObsArray[i].stdev_psr     = 1.4f;
-            
             if( obsArray[i].adrstd < 0.0025 )
               m_ObsArray[i].stdev_adr     = 0.0025f; // these are in cycles!.              
             else
               m_ObsArray[i].stdev_adr     = obsArray[i].adrstd; // these are in cycles!.
 
-            if( obsArray[i].adrstd < 0.0001 )
-              int gaa = 99;
-
-            m_ObsArray[i].stdev_adr     = 0.05f; // these are in cycles!.
-            
-            m_ObsArray[i].stdev_doppler = 0.5f; // Hz
+            m_ObsArray[i].stdev_doppler = 0.09f; // Hz
 
             m_ObsArray[i].psr_smoothed      = 0.0;
             m_ObsArray[i].psr_predicted     = 0.0;
@@ -1214,7 +1369,10 @@ namespace GNSS
 
             // Check if ephemeris information is available
             if( !m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[i].id, isAvailable ) )
+            {
+              GNSS_ERROR_MSG( "m_EphAlmArray.IsEphemerisAvailable() returned false." );
               return false;
+            }
 
             m_ObsArray[i].flags.isEphemerisValid      = isAvailable;
 
@@ -1271,6 +1429,7 @@ namespace GNSS
       }
     default:
       {
+        GNSS_ERROR_MSG( "Unexpected default case reached." );
         return false;
       }
     }
@@ -1320,6 +1479,7 @@ namespace GNSS
     bool result;
 
     result = UpdatePositionAndRxClock(
+      m_pvt,
       latitudeRads,
       longitudeRads,
       height,
@@ -1329,9 +1489,13 @@ namespace GNSS
       std_hgt,
       std_clk );
     if( !result )
+    {
+      GNSS_ERROR_MSG( "UpdatePositionAndRxClock returned false." );
       return false;
+    }
 
     result = UpdateVelocityAndClockDrift(
+      m_pvt,
       vn,
       ve,
       vup,
@@ -1341,9 +1505,10 @@ namespace GNSS
       std_vup,
       std_clkdrift );
     if( !result )
+    {
+      GNSS_ERROR_MSG( "UpdateVelocityAndClockDrift returned false." );
       return false;
-
-    //m_pvt.dop;     //!< All the associated DOP information for this solution.
+    }
 
     if( std_lat == 0.0 && std_lon == 0.0 && std_hgt == 0.0 )
     {
@@ -1361,12 +1526,16 @@ namespace GNSS
 
     // Set the previous pvt as well.
     m_prev_pvt = m_pvt;
+
+    // Set the least squares specific pvt as well.
+    m_pvt_lsq = m_pvt;
     
     return true;
   }
 
 
   bool GNSS_RxData::UpdatePositionAndRxClock( 
+    GNSS_structPVT& pvt,         //!< The position, velocity, and time struct. Usually either rxData.m_pvt or rxData.m_pvt_lsq.
     const double latitudeRads,   //!< The latitude [rad].
     const double longitudeRads,  //!< The longitude [rad].
     const double height,         //!< The orthometric height [m].
@@ -1378,48 +1547,55 @@ namespace GNSS
     )
   {
     bool result;
-    m_pvt.latitude   = latitudeRads;
-    m_pvt.longitude  = longitudeRads;
-    m_pvt.height     = height;
+    pvt.latitude   = latitudeRads;
+    pvt.longitude  = longitudeRads;
+    pvt.height     = height;
     
-    m_pvt.latitudeDegs  = latitudeRads*RAD2DEG;
-    m_pvt.longitudeDegs = longitudeRads*RAD2DEG;
+    pvt.latitudeDegs  = latitudeRads*RAD2DEG;
+    pvt.longitudeDegs = longitudeRads*RAD2DEG;
 
     result = GetDMS( 
-      m_pvt.latitudeDegs, 
-      m_pvt.lat_dms.degrees, 
-      m_pvt.lat_dms.minutes, 
-      m_pvt.lat_dms.seconds, 
+      pvt.latitudeDegs, 
+      pvt.lat_dms.degrees, 
+      pvt.lat_dms.minutes, 
+      pvt.lat_dms.seconds, 
       (char*)m_pvt.lat_dms.dms_str, 24 );
     if( result == false )
+    {
+      GNSS_ERROR_MSG( "GetDMS returned false." );
       return false;
-
+    }
+    
     result = GetDMS( 
-      m_pvt.longitudeDegs, 
-      m_pvt.lon_dms.degrees, 
-      m_pvt.lon_dms.minutes, 
-      m_pvt.lon_dms.seconds, 
-      (char*)m_pvt.lon_dms.dms_str, 24 );
+      pvt.longitudeDegs, 
+      pvt.lon_dms.degrees, 
+      pvt.lon_dms.minutes, 
+      pvt.lon_dms.seconds, 
+      (char*)pvt.lon_dms.dms_str, 24 );
     if( result == false )
+    {
+      GNSS_ERROR_MSG( "GetDMS returned false." );
       return false;
+    }
 
     if( GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
       GEODESY_REFERENCE_ELLIPSE_WGS84,
-      m_pvt.latitude,
-      m_pvt.longitude,
-      m_pvt.height,
-      &m_pvt.x,
-      &m_pvt.y,
-      &m_pvt.z ) == FALSE )
+      pvt.latitude,
+      pvt.longitude,
+      pvt.height,
+      &pvt.x,
+      &pvt.y,
+      &pvt.z ) == FALSE )
     {
+      GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned FALSE." );
       return false;
     }
-    m_pvt.clockOffset = clk;
+    pvt.clockOffset = clk;
 
-    m_pvt.std_lat = std_lat;
-    m_pvt.std_lon = std_lon;
-    m_pvt.std_hgt = std_hgt;
-    m_pvt.std_clk = std_clk;
+    pvt.std_lat = std_lat;
+    pvt.std_lon = std_lon;
+    pvt.std_hgt = std_hgt;
+    pvt.std_clk = std_clk;
     
     return true;
   }
@@ -1445,7 +1621,10 @@ namespace GNSS
       m_datum_pvt.lat_dms.seconds, 
       (char*)m_pvt.lat_dms.dms_str, 24 );
     if( result == false )
+    {
+      GNSS_ERROR_MSG( "GetDMS returned false." );
       return false;
+    }
 
     result = GetDMS( 
       m_datum_pvt.longitudeDegs, 
@@ -1454,7 +1633,10 @@ namespace GNSS
       m_datum_pvt.lon_dms.seconds, 
       (char*)m_datum_pvt.lon_dms.dms_str, 24 );
     if( result == false )
+    {
+      GNSS_ERROR_MSG( "GetDMS returned false." );
       return false;
+    }
 
     if( GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
       GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -1465,6 +1647,7 @@ namespace GNSS
       &m_datum_pvt.y,
       &m_datum_pvt.z ) == FALSE )
     {
+      GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned FALSE." );
       return false;
     }
    
@@ -1472,6 +1655,7 @@ namespace GNSS
   }
 
   bool GNSS_RxData::UpdateVelocityAndClockDrift( 
+    GNSS_structPVT& pvt,         //!< The position, velocity, and time struct. Usually either rxData.m_pvt or rxData.m_pvt_lsq.
     const double vn,             //!< The northing velocity [m/s].
     const double ve,             //!< The easting velocity [m/s].
     const double vup,            //!< The up velocity [m/s].
@@ -1482,26 +1666,26 @@ namespace GNSS
     const double std_clkdrift    //!< The standard deviation uncertainty in the clock drift [m/s].
     )
   {
-    m_pvt.vn  = vn;
-    m_pvt.ve  = ve;
-    m_pvt.vup = vup;
+    pvt.vn  = vn;
+    pvt.ve  = ve;
+    pvt.vup = vup;
 
     GEODESY_RotateVectorFromLocalGeodeticFrameToEarthFixedFrame(
-      m_pvt.latitude,
-      m_pvt.longitude,
-      m_pvt.vn,
-      m_pvt.ve,
-      m_pvt.vup,
-      &m_pvt.vx,
-      &m_pvt.vy,
-      &m_pvt.vz );
+      pvt.latitude,
+      pvt.longitude,
+      pvt.vn,
+      pvt.ve,
+      pvt.vup,
+      &pvt.vx,
+      &pvt.vy,
+      &pvt.vz );
     
-    m_pvt.clockDrift = clkdrift;
+    pvt.clockDrift = clkdrift;
 
-    m_pvt.std_vn  = std_vn;
-    m_pvt.std_ve  = std_ve;
-    m_pvt.std_vup = std_vup;
-    m_pvt.std_clkdrift  = std_clkdrift;
+    pvt.std_vn  = std_vn;
+    pvt.std_ve  = std_ve;
+    pvt.std_vup = std_vup;
+    pvt.std_clkdrift  = std_clkdrift;
 
     return true;
   }
@@ -1559,7 +1743,10 @@ namespace GNSS
 #endif
 
     if( result == -1 )
+    {
+      GNSS_ERROR_MSG( "sprintf returned unexpected result" );
       return false;
+    }
 
     return true;
   }
@@ -1577,14 +1764,24 @@ namespace GNSS
     double phase_diff = 0.0; // The difference between the predicted phase and the measured phase.
     double predicted_phase = 0.0;
     double mean_doppler = 0.0;
+    double cmc = 0.0;
+    double cmc_prev = 0.0;
+    double cmc_diff = 0.0;
+    char msg[256];
 
     static double max_dif = 0.0;
 
     t_prev = m_prev_pvt.time.gps_week*SECONDS_IN_WEEK + m_prev_pvt.time.gps_tow;
     t = m_pvt.time.gps_week*SECONDS_IN_WEEK + m_pvt.time.gps_tow;
     dt = t - t_prev;
-    if( dt <= 0.0 )
+    if( dt == 0.0 )
     {
+      // nothing to check.
+      return true; 
+    }
+    if( dt < 0.0 )
+    {    
+      GNSS_ERROR_MSG( "if( dt < 0.0 )" );
       return false;
     }
     if( dt > 60.0 ) // The phase rate prediction method is not going to work well.
@@ -1598,13 +1795,17 @@ namespace GNSS
       {
         if( m_ObsArray[i].system == m_prev_ObsArray[j].system &&
           m_ObsArray[i].id == m_prev_ObsArray[j].id &&
+          m_ObsArray[i].freqType == GNSS_GPSL1 &&
           m_ObsArray[i].freqType == m_prev_ObsArray[j].freqType )
         {
           // channel matching is not perforned.
           // This should be done if this a real time receiver data.
           // However, since the data source is generally not known for
           // post processing software, it is not performed here.
-          if( m_ObsArray[i].flags.isPhaseLocked && m_prev_ObsArray[j].flags.isPhaseLocked )
+          if( m_ObsArray[i].flags.isPhaseLocked && m_prev_ObsArray[j].flags.isPhaseLocked &&
+            m_ObsArray[i].flags.isDopplerValid && m_prev_ObsArray[j].flags.isDopplerValid &&
+            m_ObsArray[i].flags.isAdrValid && m_prev_ObsArray[j].flags.isAdrValid &&
+            m_ObsArray[i].flags.isParityValid && m_prev_ObsArray[j].flags.isParityValid )
           {
             mean_doppler = (m_ObsArray[i].doppler + m_prev_ObsArray[j].doppler)/2.0;
 
@@ -1616,6 +1817,13 @@ namespace GNSS
               max_dif = fabs(phase_diff);
             if( fabs(phase_diff) > nrThresholdCycles*dt )
             {
+              // Compare using code - carrier.
+              cmc_prev = m_prev_ObsArray[j].psr - m_prev_ObsArray[j].adr*GPS_WAVELENGTHL1;
+              cmc = m_ObsArray[i].psr - m_ObsArray[i].adr*GPS_WAVELENGTHL1;
+              cmc_diff = cmc - cmc_prev;
+
+              sprintf( msg, "%.1Lf %d GPS L1 cycle slip detected\n PRN %d Phase rate method difference= %.1Lf cycles, Time difference code-carrier = %.1Lf m",  m_pvt.time.gps_tow, m_pvt.time.gps_week, m_ObsArray[i].id, phase_diff, cmc_diff );
+              GNSS_ERROR_MSG( msg );
               m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
             }
             else
@@ -1623,6 +1831,31 @@ namespace GNSS
               m_ObsArray[i].flags.isNoCycleSlipDetected = 1; // No cycle slip detected.
             }
             break;
+          }        
+          else
+          {
+            if( m_ObsArray[i].flags.isPhaseLocked && m_prev_ObsArray[j].flags.isPhaseLocked &&
+              m_ObsArray[i].flags.isPsrValid && m_prev_ObsArray[j].flags.isPsrValid &&
+              m_ObsArray[i].flags.isCodeLocked && m_prev_ObsArray[j].flags.isCodeLocked &&
+              m_ObsArray[i].flags.isAdrValid && m_prev_ObsArray[j].flags.isAdrValid &&
+              m_ObsArray[i].flags.isParityValid && m_prev_ObsArray[j].flags.isParityValid )
+            {
+              // Compare using code - carrier.
+              cmc_prev = m_prev_ObsArray[j].psr - m_prev_ObsArray[j].adr*GPS_WAVELENGTHL1;
+              cmc = m_ObsArray[i].psr - m_ObsArray[i].adr*GPS_WAVELENGTHL1;
+              cmc_diff = cmc - cmc_prev;
+
+              if( fabs(cmc_diff) > 1.5 )
+              {
+                sprintf( msg, "%.1Lf %d GPS L1 cycle slip detected\n PRN %d Time difference code-carrier = %.1Lf m",  m_pvt.time.gps_tow, m_pvt.time.gps_week, m_ObsArray[i].id, cmc_diff );
+                GNSS_ERROR_MSG( msg );
+                m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
+              }
+              else
+              {
+                m_ObsArray[i].flags.isNoCycleSlipDetected = 1; // No cycle slip detected.
+              }
+            }
           }
         }
       }
@@ -1639,8 +1872,10 @@ namespace GNSS
     Matrix X(100,m_nrValidObs);
     
     if( filepath == NULL )
+    {
+      GNSS_ERROR_MSG( "if( filepath == NULL )" );
       return false;
-
+    }
 
     for( i = 0; i < m_nrValidObs; i++ )
     {
@@ -1776,6 +2011,7 @@ namespace GNSS
     if( maxBufferLength < 1024*8 )
     {
       nrBytesInBuffer = 0;
+      GNSS_ERROR_MSG( "if( maxBufferLength < 1024*8 )" );
       return false;
     }
     
@@ -1937,7 +2173,10 @@ namespace GNSS
     FILE* fid = NULL;
     fid = fopen( m_RINEX_eph.filepath.c_str(), "r" );
     if( fid == NULL )
+    {
+      GNSS_ERROR_MSG( "if( fid == NULL )" );
       return false;
+    }
 
     // Advance over the header.
     while( !feof(fid) && ferror(fid)==0 )
@@ -1967,8 +2206,11 @@ namespace GNSS
     m_RINEX_eph.eph_array = NULL;
     m_RINEX_eph.eph_array = new GPS_structEphemeris[estimated_nr_eph];
     if( m_RINEX_eph.eph_array == NULL )
-      return FALSE;
-    
+    {
+      GNSS_ERROR_MSG( "if( m_RINEX_eph.eph_array == NULL )" );
+      return false;
+    }
+     
     m_RINEX_eph.max_array_length = estimated_nr_eph;
     
     result = RINEX_DecodeGPSNavigationFile(
@@ -1979,7 +2221,10 @@ namespace GNSS
       &m_RINEX_eph.array_length
       );
     if( result == FALSE )
+    {
+      GNSS_ERROR_MSG( "RINEX_DecodeGPSNavigationFile returned FALSE." );
       return false;
+    }
 
     return true;
   }
@@ -2027,7 +2272,10 @@ namespace GNSS
             eph_tow
             );
           if( !result )
+          {
+            GNSS_ERROR_MSG( "m_EphAlmArray.GetEphemerisTOW returned false." );
             return false;
+          }
 
           if( isAvailable )
           {
@@ -2057,7 +2305,10 @@ namespace GNSS
                       m_RINEX_eph.eph_array[RINEX_eph_index]
                     );
                     if( !result )
+                    {
+                      GNSS_ERROR_MSG( "m_EphAlmArray.AddEphemeris returned false." );
                       return false;
+                    }
                     isEphUpToDate = true;
                     break;
                   }
@@ -2086,7 +2337,10 @@ namespace GNSS
                       m_RINEX_eph.eph_array[RINEX_eph_index]
                     );
                     if( !result )
+                    {
+                      GNSS_ERROR_MSG( "m_EphAlmArray.AddEphemeris returned false." );
                       return false;
+                    }
                     isEphUpToDate = true;                    
                   }
                   break;
@@ -2105,7 +2359,10 @@ namespace GNSS
                 m_RINEX_eph.eph_array[RINEX_eph_index]
               );
               if( !result )
+              {
+                GNSS_ERROR_MSG( "m_EphAlmArray.AddEphemeris returned false." );
                 return false;
+              }
               isEphUpToDate = true;
             }
           }
@@ -2122,7 +2379,10 @@ namespace GNSS
         {
           result = m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[j].id, isAvailable );
           if( !result )
+          {
+            GNSS_ERROR_MSG( "m_EphAlmArray.IsEphemerisAvailable returned false." );
             return false;
+          }
 
           m_ObsArray[j].flags.isEphemerisValid = isAvailable;
         }
