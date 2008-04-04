@@ -731,7 +731,7 @@ namespace Zenautics
 
     \code
     Matrix A;
-    atrix B(2,2);
+    Matrix B(2,2);
     A = "[1.123 2.123; 3.123 4.123]";  // Set A using string notation.
     if( !A.AddColumn( B, 1 ) ) // Add second column of B to A.
       return false;

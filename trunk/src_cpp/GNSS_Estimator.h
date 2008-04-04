@@ -62,6 +62,18 @@ namespace GNSS
   */
   class GNSS_Estimator
   { 
+  public:
+
+    enum GNSS_FilterType
+    {
+      GNSS_FILTER_TYPE_INVALID = 0,
+      GNSS_FILTER_TYPE_LSQ = 1,
+      GNSS_FILTER_TYPE_EKF = 2,
+      GNSS_FILTER_TYPE_RTK4 = 3,
+      GNSS_FILTER_TYPE_RTK8 = 4,
+      GNSS_FILTER_TYPE_RESERVED
+    };
+
   public: 
 
     /// \brief    The default constructor (no data allocated yet).
@@ -133,30 +145,31 @@ namespace GNSS
     ///
     /// \pre    The following must be valid:        \n
     /// rxData->m_ObsArray[i].flags.isPsrUsedInSolution \n
-    /// \post   The following are set: \n
-    /// rxData->m_pvt.dop.ndop \n
-    /// rxData->m_pvt.dop.edop \n
-    /// rxData->m_pvt.dop.vdop \n
-    /// rxData->m_pvt.dop.tdop \n
-    /// rxData->m_pvt.dop.hdop \n
-    /// rxData->m_pvt.dop.pdop \n
-    /// rxData->m_pvt.dop.gdop \n
-    /// rxData->m_pvt.dop.hdop \n
-    /// rxData->m_pvt.dop.pdop \n
-    /// rxData->m_pvt.dop.gdop \n
+    /// \post   The following are set: either rxData->m_pvt or rxData->m_pvt_lsq\n
+    /// dop.ndop \n
+    /// dop.edop \n
+    /// dop.vdop \n
+    /// dop.tdop \n
+    /// dop.hdop \n
+    /// dop.pdop \n
+    /// dop.gdop \n
     /// \return true if successful, false otherwise
-    bool ComputeDOP( GNSS_RxData* rxData );
+    bool ComputeDOP( 
+      GNSS_RxData *rxData,       //!< The receiver data.
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
+      );
+  
 
 
     /// \brief    Determine the satellite clock corrections, positions, and 
     ///           velocities for the rover receiver and the reference
     ///           receiver if aviailable (!NULL). Also determine if the 
-    ///           ephemeris is valid (not too old). If differential, 
+    ///           ephemeris is valid (not too old). If differential,
     ///           rxBaseData != NULL, the reference station receiver 
     ///           ephemeris data is used.
     ///
     /// \pre      The following must be valid:        \n
-    /// rxData.m_pvt must be a valid estimate.        \n
+    /// rxData.m_pvt or rxData.m_pvt_lsq must be a valid estimate.  \n
     /// rxData.m_maxAgeEphemeris must be set.         \n
     /// rxData.m_time must be a valid time.           \n           
     /// if differential                               \n
@@ -177,9 +190,10 @@ namespace GNSS
     ///
     /// \return   true if successful, false if error.    
     bool DetermineSatellitePVT_GPSL1( 
-      GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData,  //!< The pointer to the reference receiver data. NULL if not available.
-      unsigned &nrValidEph      //!< The number of GPS L1 channels with valid ephemeris for the rover.
+      GNSS_RxData *rxData,       //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData,   //!< The pointer to the reference receiver data. NULL if not available.
+      unsigned &nrValidEph,      //!< The number of GPS L1 channels with valid ephemeris for the rover.
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );
 
     /// \brief    Determine the tropospheric and ionospheric delay for each
@@ -187,7 +201,7 @@ namespace GNSS
     ///
     /// \pre      The following values must be valid: \n
     /// rxData.m_time (all values) \n
-    /// rxData.m_pvt must be a valid estimate \n
+    /// rxData.m_pvt or rxData.m_pvt_lsq must be a valid estimate \n
     /// rxData.m_ObsArray[i].satellite.elevation \n
     /// rxData.m_ObsArray[i].satellite.azimuth \n
     /// rxData.m_klobuchar \n
@@ -197,8 +211,10 @@ namespace GNSS
     /// rxData.m_ObsArray[i].corrections.prcTropoWet \n
     /// rxData.m_ObsArray[i].corrections.prcIono \n
     bool DetermineAtmosphericCorrections_GPSL1( 
-      GNSS_RxData &rxData  //!< The receiver data.        
-      );
+      GNSS_RxData &rxData,       //!< The receiver data.
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.)
+    );
+  
   
   
 
@@ -220,9 +236,12 @@ namespace GNSS
     ///
     /// \return   true if successful, false if error.    
     bool DetermineUsablePseudorangeMeasurementsForThePositionSolution_GPSL1( 
-      GNSS_RxData &rxData,             //!< The receiver data.
-      unsigned &nrUsablePseudoranges   //!< the number of usable GPS L1 pseudorange measurements.
-      );  
+      GNSS_RxData &rxData,            //!< The receiver data.
+      unsigned char &nrUsablePseudoranges, //!< The number of usable GPS L1 pseudorange measurements.
+      unsigned char &nrPsrObsAvailable,     //!< The number of psr measurements available for use.
+      unsigned char &nrPsrObsRejected       //!< The number of psr measurements flagged as rejected.
+      );
+  
 
 
     /// \brief    Determine the usable GPS L1 ADR measurements.
@@ -300,7 +319,7 @@ namespace GNSS
                position solution based on its pseudroange measurement.
     
     \pre      The following must be valid: \n
-    rxData.m_pvt \n
+    rxData.m_pvt or rxData.m_pvt_lsq \n
     rxData.m_ObsArray[index].satellite \n
     rxData.m_ObsArray[index].flags.isPsrUsedInSolution \n
 
@@ -308,11 +327,36 @@ namespace GNSS
     rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[0] \n
     rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[1] \n
     rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_p[2] \n
-    rxData.m_ObsArray[indexi].range \n
+    rxData.m_ObsArray[index].range \n
     
     \return   true if successful, false if error.
     */
-    bool DetermineDesignMatrixElement_GPSL1_Psr( GNSS_RxData &rxData, const unsigned int index );
+    bool DetermineDesignMatrixElement_GPSL1_Psr( 
+      GNSS_RxData &rxData,       //!< The receiver data.
+      const unsigned int index,  //!< The index of the observation i.e. rxData.m_ObsArray[index].
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
+      );
+
+
+    /**
+    \brief    Determine a single design matrix element for the GPS L1 
+              position solution based on its adr measurement.
+    
+    \pre      The following must be valid: \n
+    rxData.m_pvt \n
+    rxData.m_ObsArray[index].satellite \n
+    rxData.m_ObsArray[index].flags.isAdrUsedInSolution \n
+
+    \post     The following are set. \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_a[0] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_a[1] \n
+    rxData.m_ObsArray[index].rxData.m_ObsArray[i].H_a[2] \n
+    rxData.m_ObsArray[index].range \n
+    
+    \return   true if successful, false if error.
+    */
+    bool DetermineDesignMatrixElement_GPSL1_Adr( GNSS_RxData &rxData, const unsigned int index );
+  
 
 
     /**
@@ -320,7 +364,7 @@ namespace GNSS
               position solution based on pseudroange measurements.
     
     \pre      The following must be valid: \n
-    rxData.m_pvt \n
+    rxData.m_pvt or rxData.m_pvt_lsq \n
     rxData.m_ObsArray[index].satellite \n
     rxData.m_ObsArray[index].flags.isPsrUsedInSolution \n
 
@@ -332,7 +376,11 @@ namespace GNSS
     
     \return   true if successful, false if error.
     */
-    bool DetermineDesignMatrixElements_GPSL1_Psr( GNSS_RxData &rxData );
+    bool DetermineDesignMatrixElements_GPSL1_Psr( 
+      GNSS_RxData &rxData,       //!< The receiver data.
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.)
+      );
+  
 
 
     
@@ -383,7 +431,7 @@ namespace GNSS
     rxData->m_ObsArray[index].corrections.prcTropoWet    \n
     rxData->m_ObsArray[index].corrections.prcIono        \n
     rxData->m_ObsArray[index].range                      \n
-    rxData->m_pvt.clockOffset                        \n
+    rxData->m_pvt.clockOffset  or rxData->m_pvt_lsq.clockOffset \n
     if diffential, the same above for rxBaseData.
 
     \post     The following is set:     \n
@@ -392,9 +440,10 @@ namespace GNSS
     \return   true if successful, false if error.    
     */
     bool GNSS_Estimator::DeterminePseudorangeMisclosure_GPSL1( 
-      GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
-      const unsigned int index, //!< The index of the observation in the receiver data.
-      GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
+      GNSS_RxData *rxData,       //!< The pointer to the receiver data.    
+      const unsigned int index,  //!< The index of the observation in the receiver data.
+      GNSS_RxData *rxBaseData,   //!< The pointer to the reference receiver data. NULL if not available.    
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );
   
 
@@ -408,7 +457,7 @@ namespace GNSS
     rxData->m_ObsArray[i].corrections.prcTropoWet    \n
     rxData->m_ObsArray[i].corrections.prcIono        \n
     rxData->m_ObsArray[i].range                      \n
-    rxData->m_pvt.clockOffset                        \n
+    rxData->m_pvt.clockOffset  or rxData->m_pvt_lsq.clockOffset \n
     if diffential, the same above for rxBaseData.
 
     \post     The following is set:     \n
@@ -417,8 +466,9 @@ namespace GNSS
     \return   true if successful, false if error.    
     */    
     bool DeterminePseudorangeMisclosures_GPSL1( 
-      GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
+      GNSS_RxData *rxData,       //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData,   //!< The pointer to the reference receiver data. NULL if not available.    
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );
 
 
@@ -523,7 +573,7 @@ namespace GNSS
     /// rxData.m_ObsArray[i].adr_misclosure \n
     ///
     /// \return   true if successful, false if error. 
-    bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
+    bool DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
       GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available. 
       Matrix &subB,             //!< The matrix that describes the differencing from SD to DD adr measurements
@@ -547,9 +597,12 @@ namespace GNSS
     ///           will be set to 1(used) or 0(not used).
     /// \return   true if successful, false if error.        
     bool DetermineUsableDopplerMeasurementsForTheVelocitySolution_GPSL1( 
-      GNSS_RxData &rxData,       //!< The receiver data.
-      unsigned &nrUsableDopplers //!< the number of usable GPS L1 Doppler measurements.
+      GNSS_RxData &rxData,                   //!< The receiver data.
+      unsigned char &nrUsableDopplers,       //!< The number of usable GPS L1 Doppler measurements.
+      unsigned char &nrDopplerObsAvailable,  //!< The number of psr measurements available for use.
+      unsigned char &nrDopplerObsRejected    //!< The number of psr measurements flagged as rejected.
       );
+  
 
 
     /**
@@ -559,7 +612,7 @@ namespace GNSS
     rxData.m_ObsArray[index].flags.isDopplerUsedInSolution  \n
     rxData.m_ObsArray[index].satellite.clkdrift \n
     rxData.m_ObsArray[index].rangerate \n
-    rxData.m_pvt.clockDrift \n
+    rxData.m_pvt.clockDrift or rxData.m_pvt_lsq.clockDrift \n
     
     \post     The following is set: \n
     rxData.m_ObsArray[index].doppler_misclosure \n
@@ -569,7 +622,8 @@ namespace GNSS
     bool DetermineDopplerMisclosure_GPSL1( 
       GNSS_RxData *rxData,      //!< The pointer to the receiver data.    
       const unsigned int index, //!< The index of the observation in the receiver data.
-      GNSS_RxData *rxBaseData   //!< The pointer to the reference receiver data. NULL if not available.    
+      GNSS_RxData *rxBaseData,  //!< The pointer to the reference receiver data. NULL if not available.    
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );
 
     /**
@@ -579,7 +633,7 @@ namespace GNSS
     rxData.m_ObsArray[index].flags.isDopplerUsedInSolution  \n
     rxData.m_ObsArray[index].satellite.clkdrift \n
     rxData.m_ObsArray[index].rangerate \n
-    rxData.m_pvt.clockDrift \n
+    rxData.m_pvt.clockDrift or rxData.m_pvt_lsq.clockDrift \n
     
     \post     The following is set: \n
     rxData.m_ObsArray[index].doppler_misclosure \n
@@ -587,8 +641,9 @@ namespace GNSS
     \return   true if successful, false if error.
     */
     bool DetermineDopplerMisclosures_GPSL1( 
-      GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
-      GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
+      GNSS_RxData *rxData,       //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData,   //!< The pointer to the reference receiver data. NULL if not available.    
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );
 
 
@@ -610,7 +665,8 @@ namespace GNSS
     */
     bool DetermineDesignMatrixElement_GPSL1_Doppler( 
       GNSS_RxData &rxData,      //!< The receiver data.
-      const unsigned int index  //!< The index of the observation in the receiver data.
+      const unsigned int index, //!< The index of the observation in the receiver data.
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );  
 
     /**
@@ -629,27 +685,12 @@ namespace GNSS
     
     \return   true if successful, false if error.
     */
-    bool DetermineDesignMatrixElement_GPSL1_Doppler( 
-      GNSS_RxData &rxData  //!< The receiver data.
+    bool DetermineDesignMatrixElements_GPSL1_Doppler( 
+      GNSS_RxData &rxData,       //!< The receiver data.
+      const bool isLeastSquares  //!< A boolean to indicate if the rover position and velocity values are from least squares rxData->m_pvt_lsq or from rxData->m_pvt.
       );  
 
-  
-    /// \brief    Determine the design matrix for the GPS L1 
-    ///           velocity solution based on Doppler measurements.
-    ///
-    /// \pre      The following must be valid:
-    /// rxData.m_pvt
-    /// rxData.m_ObsArray[i].satellite
-    /// rxData.m_ObsArray[i].flags.isDopplerUsedInSolution
-    /// \post     The following are set:
-    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_v[0]
-    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_v[1]
-    /// rxData.m_ObsArray[i].rxData.m_ObsArray[i].H_v[2]
-    ///
-    /// \return   true if successful, false if error.                
-    bool DetermineDesignMatrixElements_GPSL1_Doppler( GNSS_RxData &rxData );
- 
-
+    
     /// \brief    Determine the measurement weight matrix for the GPS L1 
     ///           velocity solution based on Doppler measurement
     ///           standard deviation values specified in 
@@ -720,152 +761,70 @@ namespace GNSS
       bool &hasRejectionOccurred,    //!< This indicates if a rejection occurred. Only one measurement is flagged.
       unsigned char &indexOfRejected //!< This is the index of the rejected observation.
       );
-  
 
 
+    bool ComputeTransitionMatrix_RTK(
+      const double dT  //!< The change in time since the last update [s].      
+      );
+    bool ComputeProcessNoiseMatrix_RTK(
+      const double dT  //!< The change in time since the last update [s].      
+      );
+    bool PredictAhead_RTK(
+      GNSS_RxData &rxData, //!< The receiver data.
+      const double dT      //!< The change in time since the last update [s].      
+    );  
+    bool InitializeStateVarianceCovarianceFromLeastSquares_RTK(
+      Matrix &pos_P, //!< The variance covariance of the position and clock states from least squares, state order: latitude, longitude, height, clock ofset [4x4].
+      Matrix &vel_P  //!< The variance covariance of the velocity and clock drift states from least squares, state order: latitude rate, longitude rate, height rate, clock drift [4x4].      
+    );
+    bool Kalman_Update_RTK(
+      GNSS_RxData *rxData,     //!< A pointer to the rover receiver data. This must be a valid pointer.
+      GNSS_RxData *rxBaseData  //!< A pointer to the reference receiver data if available. NULL if not available.      
+    );
 
 
-    bool ComputeTransitionMatrix_8StatePVGM(
-      const double dT, //!< The change in time since the last update [s].
-      Matrix &T        //!< The transition matrix [8 x 8].
+    bool ComputeTransitionMatrix_EKF(
+      const double dT  //!< The change in time since the last update [s].
       );
 
-    bool ComputeTransitionMatrix_8StatePVGM_Float(
-      const double dT, //!< The change in time since the last update [s].
-      Matrix &T        //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
+    bool ComputeProcessNoiseMatrix_EKF(
+      const double dT  //!< The change in time since the last update [s].
       );
-
-	bool ComputeTransitionMatrix_6StatePVGM_Float(
-      const double dT, //!< The change in time since the last update [s].
-      Matrix &T        //!< The transition matrix [(8 + nrAmb) x (8 + nrAmb)]. 
-      );
-  
-
-    bool ComputeProcessNoiseMatrix_8StatePVGM(
-      const double dT, //!< The change in time since the last update [s].
-      Matrix &Q        //!< The process noise matrix [8 x 8].
-      );
-
-    bool ComputeProcessNoiseMatrix_8StatePVGM_Float(
-      const double dT, //!< The change in time since the last update [s].
-      Matrix &Q        //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
-      );
-
-	bool ComputeProcessNoiseMatrix_6StatePVGM_Float(
-      const double dT, //!< The change in time since the last update [s].
-      Matrix &Q        //!< The process noise matrix [(8 + nrAmb) x (8 + nrAmb)].
-      );
-
-  
-
 
     /// \brief    Initialize the state variance-covariance matrix 
     ///           for the 8 state PV Gauss Markov model.
     ///
     /// \return   true if successful, false if error.
-    bool InitializeStateVarianceCovariance_8StatePVGM(
-      const double std_lat,        //!< The standard deviation uncertainty in the latitude [m].
-      const double std_lon,        //!< The standard deviation uncertainty in the longitude [m]. 
-      const double std_hgt,        //!< The standard deviation uncertainty in the height [m].
-      const double std_vn,         //!< The standard deviation uncertainty in the northing velocity [m/s].
-      const double std_ve,         //!< The standard deviation uncertainty in the easting velocity [m/s].
-      const double std_vup,        //!< The standard deviation uncertainty in the up velocity [m/s].
-      const double std_clk,        //!< The standard deviation uncertainty in the clock offset [m].
-      const double std_clkdrift,   //!< The standard deviation uncertainty in the clock drift [m/s].    
-      Matrix &P                    //!< The variance covariance of the states [8x8].
-      );
-
-    /// \brief    Initialize the state variance-covariance matrix 
-    ///           for the 6 state PV Gauss Markov model.
-    ///
-    /// \return   true if successful, false if error.
-	bool InitializeStateVarianceCovariance_6StatePVGM(
-	  const double std_lat,        //!< The standard deviation uncertainty in the latitude [m].
-      const double std_lon,        //!< The standard deviation uncertainty in the longitude [m]. 
-      const double std_hgt,        //!< The standard deviation uncertainty in the height [m].
-      const double std_vn,         //!< The standard deviation uncertainty in the northing velocity [m/s].
-      const double std_ve,         //!< The standard deviation uncertainty in the easting velocity [m/s].
-      const double std_vup,        //!< The standard deviation uncertainty in the up velocity [m/s].
-      Matrix &P                    //!< The variance covariance of the states [6x6].
-      );
-
-  
-
-    bool PredictAhead_8StatePVGM(
-      GNSS_RxData &rxData, //!< The receiver data.
-      const double dT,     //!< The change in time since the last update [s].
-      Matrix &T,           //!< The transition matrix                                 [8 x 8] (output).
-      Matrix &Q,           //!< The process noise matrix                              [8 x 8] (output).
-      Matrix &P            //!< The state variance covariance matrix                  [8 x 8] (input/output).      
-      );
-
-    bool PredictAhead_8StatePVGM_Float(
-      GNSS_RxData &rxData, //!< The receiver data.
-      const double dT,     //!< The change in time since the last update [s].
-      Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-      );
-
-    bool PredictAhead_6StatePVGM_Float(
-      GNSS_RxData &rxData, //!< The receiver data.
-      const double dT,     //!< The change in time since the last update [s].
-      Matrix &T,           //!< The transition matrix                                 [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &Q,           //!< The process noise matrix                              [(8 + nrAmb) x (8 + nrAmb)] (output).
-      Matrix &P            //!< The state variance covariance matrix                  [(8 + nrAmb) x (8 + nrAmb)] (input/output).      
-      );
-
-
-
-    
-    bool Kalman_Update_8StatePVGM(
-      GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
-      GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P                 //!< The variance-covariance of the states.
-      );
-
-    bool Kalman_Update_8StatePVGM_SequentialMode(
-      GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
-      GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P                 //!< The variance-covariance of the states.
+    bool InitializeStateVarianceCovariance_EKF(
+      Matrix &pos_P, //!< The variance covariance of the position and clock states from least squares, state order: latitude, longitude, height, clock ofset [4x4].
+      Matrix &vel_P  //!< The variance covariance of the velocity and clock drift states from least squares, state order: latitude rate, longitude rate, height rate, clock drift [4x4].      
     );
 
+    bool PredictAhead_EKF(
+      GNSS_RxData &rxData, //!< The receiver data.
+      const double dT      //!< The change in time since the last update [s].
+      );
 
-    bool Kalman_Update_8StatePVGM_SequentialMode_FloatSolution(
+    bool Kalman_Update_EKF(
       GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
-      GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P                 //!< The variance-covariance of the states.
-    );
+      GNSS_RxData *rxBaseData   //!< A pointer to the reference receiver data if available. NULL if not available.
+      );
 
-	bool Kalman_Update_6StatePVGM_FloatSolution(
-      GNSS_RxData *rxData,      //!< A pointer to the rover receiver data. This must be a valid pointer.
-      GNSS_RxData *rxBaseData,  //!< A pointer to the reference receiver data if available. NULL if not available.
-      Matrix &P                 //!< The variance-covariance of the states.
-    );
-
-
-	/// \brief    Fix ambiguities, right now does nothing.
-    ///
-    /// \return   true if successful, false if error.
-    bool FixAmbiguities();
-    
-
-
-    /// \brief    Update the rest of m_pvt.time struct based on the 
+    /// \brief    Update the position, velocity, and time struct based on the 
     ///           gps week and time of week only.
     ///
     /// \return   true if successful, false if error.
     bool UpdateTime(
-      GNSS_RxData &rxData  //!< The receiver data. The m_pvt.time struct is updated.    
+      GNSS_structPVT& pvt // The position, velocity, and time information struct.
       );
-
+  
   
     /// \brief    Perform least squares using pseudoranges and Doppler 
     ///           measurments to determine the eight states:
     ///           (lat,lon,hgt,vn,ve,vup,clk,clkdrift).
     ///
     /// \return   true if successful, false if error.
-    bool PerformLeastSquares_8StatePVT(
+    bool PerformLeastSquares(
       GNSS_RxData *rxData,       //!< A pointer to the rover receiver data. This must be a valid pointer.
       GNSS_RxData *rxBaseData,   //!< A pointer to the reference receiver data if available. NULL if not available.
       bool &wasPositionComputed, //!< A boolean to indicate if a position solution was computed.    
@@ -874,7 +833,7 @@ namespace GNSS
       
 
     /// \brief    A static function for outputting a matrix to the console.
-    bool PrintMatToDebug( const char *name, Matrix& M );
+    bool PrintMatToDebug( const char *name, Matrix& M, const unsigned precision = 6 );
 
 
 
@@ -888,6 +847,7 @@ namespace GNSS
       GNSS_RxData *rxData,     //!< Pointer to the receiver data.
       GNSS_RxData *rxBaseData, //!< Pointer to the reference receiver data if any (NULL if not available).
       Matrix &P,               //!< The state variance-covariance matrix.
+      const bool isEightStateModel, //!< A boolean indicating if the velocity and clock drift states are included.
       bool& changeOccured 
       );
 
@@ -949,14 +909,19 @@ namespace GNSS
 
     struct stLSQ
     {
-      Matrix x;   //!< The states,                                                  [u x 1].
-      Matrix dx;  //!< The iterative update to the states,                          [u x 1].
-      Matrix P;   //!< The states variance-covariance matrix,                       [u x u].
-      Matrix H;   //!< The design matrix,                                           [n x u].
-      Matrix w;   //!< The observation misclosure vector,                           [n x 1].
-      Matrix R;   //!< The variance covariance matrix of the observations,          [n x n].
-      Matrix W;   //!< The inverse of m_R,                                          [n x n].
-      Matrix r;   //!< The diagonal of the observations variance-covariance matrix, [n x 1].
+      Matrix x;    //!< The states,                                                  [u x 1].
+      Matrix dx;   //!< The iterative update to the states,                          [u x 1].
+      Matrix P;    //!< The states variance-covariance matrix,                       [u x u].
+      Matrix H;    //!< The design matrix,                                           [n x u].
+      Matrix w;    //!< The observation misclosure vector,                           [n x 1].
+      Matrix R;    //!< The variance covariance matrix of the observations,          [n x n].
+      Matrix W;    //!< The inverse of m_R,                                          [n x n].
+      Matrix r;    //!< The diagonal of the observations variance-covariance matrix, [n x 1].
+      double apvf; //!< The a-posteriori variance factor.
+      double sqrt_apvf;
+      unsigned n;
+      unsigned u;
+      double rms_residual;
     };
 
     struct stEKF
@@ -1012,7 +977,7 @@ namespace GNSS
       Matrix D_Bierman; //!< The diagonal matrix of UDUt of P                       [u x u].
     };
 
-    struct stKalmanModel
+    struct stEightStateFirstOrderGaussMarkovKalmanModel
     {
       double alphaVn;
       double alphaVe;
@@ -1024,17 +989,35 @@ namespace GNSS
       double sigmaClkDrift;
 
       // default constructor
-      stKalmanModel()
-        : alphaVn(100.0), 
-        alphaVe(100.0), 
-        alphaVup(100.0), 
-        alphaClkDrift(100.0),
+      stEightStateFirstOrderGaussMarkovKalmanModel()
+        : alphaVn(20.0), 
+        alphaVe(20.0), 
+        alphaVup(20.0), 
+        alphaClkDrift(10.0),
         sigmaVn(0.01),
         sigmaVe(0.01),
         sigmaVup(0.01),
-        sigmaClkDrift(0.01)
+        sigmaClkDrift(1000.0)
       {}
     };
+
+    struct stFourStateRandomWalkKalmanModel
+    {
+      double sigmaNorth;
+      double sigmaEast;
+      double sigmaUp;
+      double sigmaClock;
+
+      // default constructor
+      stFourStateRandomWalkKalmanModel()
+        : sigmaNorth(0.5), 
+          sigmaEast(0.5), 
+          sigmaUp(0.5), 
+          sigmaClock(100.0)
+      {}
+    };
+
+    GNSS_FilterType m_FilterType;
 
     stLSQ m_posLSQ; //!< The Least Sqaures estimation matrix information for the position and clock offset solution.
     stLSQ m_velLSQ; //!< The Least Sqaures estimation matrix information for the velocity and clock drift solution.
@@ -1047,7 +1030,11 @@ namespace GNSS
 
     /// Kalman filter model settings for 1st order Gauss Markov
     /// Velocity/ClkDrift states. 8 state PVGM model.
-    stKalmanModel m_KF;
+    stEightStateFirstOrderGaussMarkovKalmanModel m_FirstOrderGaussMarkovKalmanModel;
+    
+    /// Kalman filter model settings for a 4 state random walk model.
+    /// Latitude, Longitude, Height, and Clock Offset.
+    stFourStateRandomWalkKalmanModel m_FourStateRandomWalkKalmanModel;
 
 
     struct stAmbiguityInfo

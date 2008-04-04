@@ -135,6 +135,11 @@ namespace GNSS
 
     struct stKalmanOptions
     {
+      double RTK4_sigmaNorth;
+      double RTK4_sigmaEast;
+      double RTK4_sigmaUp;
+      double RTK4_sigmaClock;
+
       double alphaVn;
       double alphaVe;
       double alphaVup;
@@ -146,7 +151,11 @@ namespace GNSS
 
       // default constructor
       stKalmanOptions()
-        : alphaVn(100.0), 
+        : RTK4_sigmaNorth(0.5),
+        RTK4_sigmaEast(0.5),
+        RTK4_sigmaUp(0.5),
+        RTK4_sigmaClock(100.0),
+        alphaVn(100.0), 
         alphaVe(100.0), 
         alphaVup(100.0), 
         alphaClkDrift(100.0),
@@ -205,6 +214,9 @@ namespace GNSS
 
     /// The end time for processing.
     stGPSTime m_EndTime;
+
+    /// A boolean to indicate if Doppler measurements should be used at all.
+    bool m_UseDopplerMeasurements;
 
     /// The klobuchar ionospheric parameters.
     GNSS_structKlobuchar m_klobuchar;
