@@ -2,17 +2,17 @@
 \file     cmatrix.h
 \brief    'c' functions for vector and matrix operations.
 \author   Glenn D. MacGougan (GDM)
-\date     2007-12-21
-\version  1.11
+\date     2008-05-07
+\version  0.05 Beta
 
-\b LICENSE \b INFORMATION \n
-Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
+\b Version \b Information \n
+This is the open source version (BSD license). The Professional Version
+is avaiable via http://www.zenautics.com. The Professional Version
+is highly optimized using SIMD for INTEL processors and includes 
+optimization for multi-code processors.
 
-Redistribution pertains only to the following files and their contents. \n
-- Matrix.h\n
-- Matrix.cpp\n
-- cmatrix.h\n
-- cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)\n
+\b License \b Information \n
+Copyright (c) 2008, Glenn D. MacGougan, Zenautics Technologies Inc. \n
 
 Redistribution and use in source and binary forms, with or without
 modification, of the specified files is permitted provided the following 
@@ -42,7 +42,7 @@ SUCH DAMAGE.
 \b NOTES: \n
 This code was developed using rigourous unit testing for every function 
 and operation. Despite any rigorous development process, bugs are
-inevitable. Please report bugs and suggested fixes to glenn@zenautics.com.\n
+inevitable. Please report bugs and suggested fixes to glenn @ zenautics.com.\n
 */
 
 #ifndef ZENUATICS_MTX_H
@@ -52,7 +52,6 @@ inevitable. Please report bugs and suggested fixes to glenn@zenautics.com.\n
 extern "C" 
 {
 #endif
-
 
 typedef int BOOL;
 
@@ -258,6 +257,12 @@ BOOL MTX_AddColumn( MTX *dst, const MTX *src, const unsigned src_col );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Concatonate( MTX *dst, const MTX *src );
 
+/// \brief  A becomes A|0|0|0|.. etc      
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_AddZeroValuedColumns( MTX *dst, const unsigned nr_new_cols );
+
+
 /// \brief  Redimension the matrix, original data is saved in place, new data is set to zero.
 ///
 /// \return TRUE if successful, FALSE otherwise.
@@ -386,7 +391,7 @@ BOOL MTX_TransposeInplace( MTX *M );
 /// precision has a maximum of 32. After which no rounding occurs.
 ///
 /// \return TRUE if successful, FALSE otherwise.
-BOOL MTX_Round( MTX *M, const unsigned precision );                             
+BOOL MTX_Round( MTX *M, const unsigned precision );
 
 /// \brief  Round the matrix elements to the nearest integers towards minus infinity.
 ///
@@ -398,10 +403,17 @@ BOOL MTX_Floor( MTX *M );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Ceil( MTX *M );
 
-/// \brief  Round the matrix elements of X to the nearest integers towards zero.
+/// \brief  Round the matrix elements to the nearest integers towards zero. 
+///         Sometimes known as trunc().
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Fix( MTX *M );
+
+
+/// \brief  Set the destination matrix to be 1.0 minus the source matrix.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_OneMinus( const MTX* src, MTX *dst );
 
 
 /// \brief  Determine the matrix file delimiter and if a comment line is available.
@@ -558,6 +570,11 @@ BOOL MTX_Divide_Scalar( MTX *M, const double scalar );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Divide_ScalarComplex( MTX *M, const double re, const double im );
 
+/// \brief  Change the sign of all the data in the matrix. M *= -1.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_Negate( MTX *M );
+
 
 /// \brief  Computes the absolute value of each element in the matrix.
 ///
@@ -571,7 +588,7 @@ BOOL MTX_Abs( MTX *M );
 BOOL MTX_acos( MTX *M );
 
 /// \brief  Compute the phase angle in radians of the elements in the matrix.
-/// If all elements are real, the results are 0. If complex
+/// If all elements are real, the results are 0.
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_angle( MTX *M );
@@ -654,10 +671,20 @@ BOOL MTX_Subtract_Inplace( MTX *A, const MTX *B );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_PreMultiply_Inplace( MTX *A, const MTX *B ); // A = B*A
 
+/// \brief  Multiply A = tranpose(B)*A, inplace.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_TransposePreMultiply_Inplace( MTX *A, const MTX *B ); // A = tranpose(B)*A
+
 /// \brief  Multiply A = A*B, inplace.
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_PostMultiply_Inplace( MTX *A, const MTX* B ); // A = A*B
+
+/// \brief  Multiply A = A*transpose(B), inplace.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_PostMultiplyTranspose_Inplace( MTX *A, const MTX* B ); // A = A*tranpose(B)
 
 
 /// \brief  Dot multiply A .*= B, inplace (A.data[col][row] = A.data[col][row]*B.data[col][row]).
@@ -687,11 +714,51 @@ BOOL MTX_Subtract( MTX *A, const MTX *B, const MTX *C );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Multiply( MTX *A, const MTX *B, const MTX *C );
 
+/// \brief  Multiply A = transpose(B)*C.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_TransposeMultiply( MTX *A, const MTX* B, const MTX* C );
+
+/// \brief  Multiply A = B*transpose(C).
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_MultiplyTranspose( MTX *A, const MTX* B, const MTX* C ); // A = B*transpose(C)
+
 /// \brief  Rest if A == B to within the specified tolerance.
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_IsEqual( const MTX *A, const MTX *B, const double tolerance, BOOL *isEqual );
 
+
+/// \brief  Add this matrix and an identity matrix. Adds 1.0 to the diagonal even if not square.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_AddIdentity( const MTX *src, MTX *dst );
+
+/// \brief  Add this matrix and an identity matrix. Adds 1.0 to the diagonal even if not square.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_AddIdentity_Inplace( MTX *src );
+
+/// \brief  Subtract an identity matrix from this matrix. Subtracts 1.0 from the diagonal even if not square.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_MinusIdentity( const MTX *src, MTX *dst );
+
+/// \brief  Subtract an identity matrix from this matrix. Subtracts 1.0 from the diagonal even if not square.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_MinusIdentity_Inplace( MTX *src );
+
+/// \brief  Subtract this matrix from an identity matrix. Subtracts the diagonal from 1.0 even if not square.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_IdentityMinus( const MTX *src, MTX *dst );
+
+/// \brief  Subtract this matrix from an identity matrix. Subtracts the diagonal from 1.0 even if not square.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_IdentityMinus_Inplace( MTX *src );
 
 
 /// \brief  Difference and approximte derivative for column col.
@@ -1268,9 +1335,16 @@ BOOL MTX_Inv( MTX *src );
 ///         than 3x3, false if singular or not square
 BOOL MTX_InvertInPlaceClosedForm( MTX *M );
 
+/// \brief  Compute the inplace inverse of the matrix.
+///         Uses fast closed form solutions for:
+///         Only for: 1x1, 2x2, 3x3
+///
+/// \return TRUE if successful, FALSE if empty or has dimensions larger
+///         than 3x3, false if singular or not square
+BOOL MTX_InvertClosedForm( const MTX *M, MTX *dst );
 
 
-/// \brief  Compute the inplace inverse of a postive definite matrix.
+/// \brief  Compute the inplace inverse of a matrix.
 ///
 /// The matrix is first tested to determine if it is a symmetric 
 /// positive-definite matrix. If so, Cholesky decomposition is used
@@ -1287,11 +1361,26 @@ BOOL MTX_InvertInPlaceClosedForm( MTX *M );
 BOOL MTX_InvertInPlace( MTX *M  );
 
 
-/// \brief  Perfroms an inplace inverse using Gaussian Elimination methods.
+/// \brief  Compute the inverse of a matrix.
+///
+/// The matrix is first tested to determine if it is a symmetric 
+/// positive-definite matrix. If so, Cholesky decomposition is used
+/// to facilitate the inversion of a lower triangular matrix. If the
+/// matrix is not symmetric and positive-definite robust inversion
+/// using gaussing elimination is attempted.
+///
+/// 3x3 matrices or smaller dimensions are computed using 
+/// MTX_InvertClosedForm.
+/// 
+/// If the matrix is singular, the original matrix is unchanged.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_Invert( const MTX *src, MTX *dst );
+
+/// \brief  Perfroms an inplace matrix inverse using Gaussian Elimination methods.
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_InvertInPlaceRobust( MTX *M );
-
 
 /// \brief  Computes a moving average using N lead samples and M lagging samples
 /// for the specified column and stores it in dst.
@@ -1369,6 +1458,19 @@ BOOL MTX_FFT( const MTX *src, MTX *dst );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_IFFT( const MTX *src, MTX *dst );
 
+/// \brief  Compute the Two-Dimensional Fast Fourier Transform of the src matrix and
+/// store it in the dst matrix.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_FFT2( const MTX *src, MTX *dst );
+
+/// \brief  Compute the Two-Dimensional Inverse Fast Fourier Transform of the src matrix and
+/// store it in the dst matrix.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_IFFT2( const MTX *src, MTX *dst );
+
+
 /// \brief  Compute the inplace Fast Fourier Transform of each column of the matrix.
 ///
 /// \return TRUE if successful, FALSE otherwise.
@@ -1378,6 +1480,17 @@ BOOL MTX_FFT_Inplace( MTX *src);
 ///
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_IFFT_Inplace( MTX *src);
+
+
+/// \brief  Compute the inplace two dimensional Fast Fourier Transform of the matrix.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_FFT2_Inplace( MTX *src);
+
+/// \brief  Compute the inplace two dimensional inverse Fast Fourier Transform of the matrix.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_IFFT2_Inplace( MTX *src);
 
 
 
@@ -1489,29 +1602,61 @@ BOOL MTX_RemoveRowsAndColumns(
   );
 
 
-  #ifdef ___MTX_RANDN_READY
-/** \brief Produce a matrix that is composed of pseudo-random numbers. 
- *  The seed state is based on the system clock or alternatively by the seed
- *  parameter, a positive integer can set the seed state upon generation. 
- *  Elements are chosen from a normal distribution with mean zero, variance of 
- *  one and standard of deviation one.
- *
- * \code 
- *  MTX A;
- *  MTX_Init(&A);
- *  MTX_randn( 1000, 1 ); // create a random vector of 1000 rows by 1 column.
- *  \endcode
- *
- *  \return TRUE if successful, FALSE otherwise.
+/** 
+\brief  Sets the matrix as the NxN hilbert matrix. H_ij = 1.0 / (i+j-1.0) for i=1:N, j=1:N.
+
+\code
+MTX H;
+BOOL result;
+MTX_Init( &H );
+result = MTX_Hilbert( &H, 3);
+// H == "[1 1/2 1/3; 1/2 1/3 1/4; 1/3 1/4 1/5]";
+\endcode    
+
+\return TRUE if successful, FALSE otherwise.
+*/
+BOOL MTX_Hilbert( MTX *src, const unsigned N );
+
+
+/** 
+\brief Produce a matrix that is composed of pseudo-random numbers. 
+Values are elements are standard normal distribution with mean zero, 
+variance of one and standard of deviation one. N(0,1)
+ 
+\code 
+MTX A;
+MTX_Init(&A);
+MTX_randn( 1000, 1 ); // create a standard-normal distributed random vector of 1000 rows by 1 column.
+\endcode
+ 
+\return TRUE if successful, FALSE otherwise.
 */
 BOOL MTX_randn( 
   MTX* M, 
   const unsigned nrows, 
-  const unsigned ncols, 
-  const BOOL useSeed, 
+  const unsigned ncols,   
   const unsigned seed 
   );
-#endif
+
+/** 
+\brief Produce a matrix that is composed of pseudo-random numbers. 
+Values are elements are uniform distribution [0,1].
+ 
+\code 
+MTX A;
+MTX_Init(&A);
+MTX_rand( 1000, 1 ); // create a uniformly distributed random vector of 1000 rows by 1 column.
+\endcode
+ 
+\return TRUE if successful, FALSE otherwise.
+*/
+BOOL MTX_rand( 
+  MTX* M, 
+  const unsigned nrows, 
+  const unsigned ncols,   
+  const unsigned seed 
+  );
+
 
 /// \brief  Test if a double value is NaN.
 BOOL MTX_IsNAN( double value );
@@ -1523,14 +1668,139 @@ BOOL MTX_IsPostiveINF( double value );
 BOOL MTX_IsNegativeINF( double value );
 
 
+/// \brief  A quick plot, to a RLE compressed windows bitmap file, x_column vs y_column of the matrix M.
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_PlotQuick( MTX* M, const char* bmpfilename, const unsigned x_col, const unsigned y_col );
+
+
+/// \brief  These are the supported colors.
+typedef enum 
+{
+  MTX_WHITE       = 0,
+  MTX_BLACK       = 1,
+  MTX_BLUE        = 2,
+  MTX_GREEN       = 3,
+  MTX_PURPLE      = 4,
+  MTX_MAGENTA     = 5,
+  MTX_DARKBLUE    = 6,
+  MTX_INDIANRED   = 7,
+  MTX_BABYBLUE    = 8,
+  MTX_PAISLYBLUE  = 9,
+  MTX_LIGHTPURPLE = 10,      
+  MTX_DARKPURPLE  = 11,
+  MTX_GREYPURPLE  = 12,
+  MTX_BROWN       = 13,
+  MTX_RED         = 14,
+  MTX_PINK        = 15,
+  MTX_YELLOW      = 16,
+  MTX_ORANGE      = 17,
+  MTX_CYAN        = 18,
+  MTX_LIMEGREEN   = 19,
+  MTX_GREY        = 20,
+  MTX_LIGHTGREY   = 21
+} MTX_enumColor;
+
+typedef struct 
+{
+  MTX* M;                 //!< A pointer to the series data matrix. 
+  unsigned x_col;         //!< The series x data column.
+  unsigned y_col;         //!< The series y data column.
+  BOOL connected;         //!< Are the data points connected.
+  MTX_enumColor color;    //!< The color of the data points/line.
+  char* label;            //!< The series label, NULL if none.
+  char* units;            //!< The series units, NULL if none.
+  int precision;          //!< The number of significant digits in the statistics.
+  BOOL markOutlierData;   //!< Should the outlier data be marked.
+} MTX_PLOT_structSeries;
+
+
+/// \brief  A container struct used in MTX_structAxisOptions.
+typedef struct
+{
+  BOOL doNotUseDefault;
+  double val;
+} MTX_structAxisSubOption;
+
+/// \brief  A container struct for axis options.
+typedef struct 
+{
+  MTX_structAxisSubOption lowerlimit;
+  MTX_structAxisSubOption upperlimit;
+  MTX_structAxisSubOption tickstart;
+  MTX_structAxisSubOption ticksize;
+  MTX_structAxisSubOption tickend;
+}MTX_structAxisOptions;
+
+
+/// \brief  Plot up to 12 series on one figure directly to an RLE compressed BITMAP file.
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_Plot( 
+  const char* bmpfilename,         //!< The output RLE compressed BITMAP filename.
+  const char* title,               //!< The plot title (NULL if not used).
+  const unsigned plot_height_cm,   //!< The plot height in cm.
+  const unsigned plot_width_cm,    //!< The plot width in cm.
+  const BOOL includeStats,         //!< A boolean to indicate if statistics info should be included on the plot.
+  const BOOL isXGridOn,            //!< A boolean to indicate if the x grid lines are on.
+  const BOOL isYGridOn,            //!< A boolean to indicate if the y grid lines are on.
+  const char* xlabel,              //!< The x axis label (NULL if not used).
+  const char* ylabel,              //!< The y axis label (NULL if not used).
+  const MTX_structAxisOptions x,   //!< Limits and ticks for x.
+  const MTX_structAxisOptions y,   //!< Limits and ticks for y.
+  const MTX_PLOT_structSeries* series, //!< A pointer to an array of series structs.
+  const unsigned nrSeries              //!< The number of series.
+  );
+
+
+/**
+\brief  Swap the contents of matrix A with matrix B.
+
+\code
+MTX A,B;
+MTX_Init( &A );
+MTX_Init( &B );
+MTX_Malloc( &A, 2, 2, TRUE );
+MTX_Malloc( &B, 1, 1, TRUE );
+MTX_Fill( &A, 88.0 );
+MTX_Fill( &B, 44.0 );
+MTX_Swap( &A, &B );
+// A == [44], B == [88 88; 88 88]
+MTX_Free( &A );
+MTX_Free( &B );
+\endcode
+
+\return TRUE if succesful, FALSE otherwise.
+*/
+BOOL MTX_Swap( MTX* A, MTX *B );
+
+
+#ifdef _DEBUG
+
+  /* Take a filename and return a pointer to its final element.  This
+  function is called on __FILE__ to fix a MSVC nit where __FILE__
+  contains the full path to the file.  This is bad, because it
+  confuses users to find the home directory of the person who
+  compiled the binary in their warrning messages. */
+  const char * _shortfile(const char *fname);
+  #define _SHORT_FILE_  _shortfile(__FILE__)
+
+  #if defined(_MSC_VER) && _MSC_VER < 1300 /* Windows compilers before VC7 don't have __FUNCTION__ or __LINE__. */
+    #define MTX_ERROR_MSG( msg ) { const char *themsg = msg; if( themsg != NULL ){ printf( "\n%s, %s\n", _SHORT_FILE_, themsg ); }else{ printf( "\n%s, %s, %d, Unknown Error\n", __FILE__, __FUNCTION__, __LINE__ ); } }
+  #else
+    #define MTX_ERROR_MSG( msg ) { const char *themsg = msg; if( themsg != NULL ){ printf( "\n%s, %s, %d, %s\n", _SHORT_FILE_, __FUNCTION__, __LINE__, themsg ); }else{ printf( "\n%s, %s, %d, Unknown Error\n", __FILE__, __FUNCTION__, __LINE__ ); } }
+  #endif
+
+#else
+
+  const char* _shortfile(const char *fname);
+  #define _SHORT_FILE_  _shortfile(__FILE__)
+  #define MTX_ERROR_MSG( msg ) {}
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
 
 
 #endif // ZENUATICS_MTX_H
-
-
-
-
 

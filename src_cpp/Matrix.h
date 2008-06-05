@@ -2,17 +2,17 @@
 \file     Matrix.h
 \brief    The Zenautics Matrix Class
 \author   Glenn D. MacGougan (GDM)
-\date     2007-12-21
-\version  1.11
+\date     2008-05-07
+\version  0.05 Beta
 
-\b LICENSE \b INFORMATION \n
-Copyright (c) 2007, Glenn D. MacGougan, Zenautics Technologies Inc. \n
+\b Version \b Information \n
+This is the open source version (BSD license). The Professional Version
+is avaiable via http://www.zenautics.com. The Professional Version
+is highly optimized using SIMD for INTEL processors and includes 
+optimization for multi-code processors.
 
-Redistribution pertains only to the following files and their contents. \n
-- Matrix.h\n
-- Matrix.cpp\n
-- cmatrix.h\n
-- cmatrix_basic.lib (for windows), cmatrix_basic_lib.a (for linux)\n
+\b License \b Information \n
+Copyright (c) 2008, Glenn D. MacGougan, Zenautics Technologies Inc. \n
 
 Redistribution and use in source and binary forms, with or without
 modification, of the specified files is permitted provided the following 
@@ -42,23 +42,26 @@ SUCH DAMAGE.
 \b NOTES: \n
 This code was developed using rigourous unit testing for every function 
 and operation. Despite any rigorous development process, bugs are
-inevitable. Please report bugs and suggested fixes to glenn@zenautics.com.\n
+inevitable. Please report bugs and suggested fixes to glenn @ zenautics.com.\n
+
+\b Preprocessor Defines \n
+#define _MATRIX_NO_EXCEPTION // removes exception handling support. \n
 */
 
 #ifndef _ZENAUTICS_MATRIX_H_
 #define _ZENAUTICS_MATRIX_H_
 
-#include <stdio.h>
-#include <complex> // This is needed for the Standard Template Library complex<double> type.
-#include <string>
+#include <complex> // For std::complex<double> (Standard Template Library)
+#include <string>  // For std::string (Standard Template Library)
 #include "cmatrix.h" // The core matrix engine is written in 'c'.
+
+//#define _MATRIX_NO_EXCEPTION // removes exception handling support if required.
+
 
 namespace Zenautics
 {
 
-#define MATRIX_USE_EXCEPTION_HANDLING
-#ifdef MATRIX_USE_EXCEPTION_HANDLING
-
+#ifndef _MATRIX_NO_EXCEPTION
   /**
   \class   MatrixException
   \brief   A class for exceptions thrown by the Matrix class.  
@@ -114,7 +117,6 @@ namespace Zenautics
     /// \brief  The matrix exception character string.  
     char m_msg[256];    
   };
-
 #endif
 
 
@@ -144,7 +146,7 @@ namespace Zenautics
     ///
     /// Matrix A(nrows);  creates an nrowsx1 real 'vector'.
     /// A complex vector must be created using Matrix A(nrows,ncols,false);
-    Matrix(const unsigned nrows);
+    explicit Matrix(const unsigned nrows);
 
     /// \brief  A matrix style constructor.
     ///
@@ -157,6 +159,55 @@ namespace Zenautics
 
     /// \brief  A constructor reading data from a file.
     Matrix(const char* path, bool& itWorked);
+
+    /** \brief  A constructor initialized the matrix from a string.
+
+    There are two general possible interpretations of the string input. \n
+    
+    (1) Square bracket delimited matrix. e.g. \n
+    
+    \code
+    Matrix A = "[1 2 3; 4 5 6]"; // or 
+    Matrix A = "[1, 2, 3; 4, 5, 6]";
+    \endcode
+
+    In this case '[' donates the start of a matrix and ']' denotes the end. \n
+    Row vectors [1 2 3] and [4 5 6] are separated by ';'.  \n
+    Commas can delimit row vector data but are not needed. \n
+    Complex input: e.g. 
+    
+    \code
+    Matrix A = "[1+1i 2+3j 1-2i; 4 5 6]"; // or
+    Matrix A = "[1+1i, 2+3j, 1-2i; 4, 5, 6]";
+    \endcode
+    
+    (2) Free form delimited matrix. e.g. \n
+
+    \code
+    Matrix A = "1 2 3 \\n 4 5 6 \\n";
+    \endcode
+
+    In this case, the newline delimits different rows of the matrix. (\\r\\n also works). \n
+    Row vectors can still be delimited by ';' as well. \n
+    
+    \code
+    Matrix B = "1 2 3; 4 5 6; \\n 7 8 9";
+    \endcode 
+    
+    will set a 3x3 matrix == [1 2 3; 4 5 6; 7 8 9]. \n
+
+    Commas can delimit row vector data but are not needed. \n
+    Complex input: e.g. 
+    
+    \code
+    Matrix A = "[1+1i 2+3j 1-2i\\n 4 5 6]";   // or
+    Matrix A = "1+1i, 2+3j, 1-2i\\n 4, 5, 6"; // or
+    Matrix A = "1+1i 2+3j 1-2i; 4, 5, 6";   
+    \endcode 
+
+    All result in A = [1+1i 2+3i 1-2i; 4 5 6]; \n
+    */
+    Matrix(const char* strMatrix);
 
     /// \brief  The constructor as a copy from a static matrix.
     Matrix(const double mat[], const unsigned nrows, const unsigned ncols=1 ); 
@@ -419,7 +470,6 @@ namespace Zenautics
     /**
     \brief  Saves a matrix to the specified file path (a 'c' style string)
             using a proprietary compressed format.
-            ADVANCED EDITION ONLY. BASIC EDITION will return false.
     \code
     Matrix A;
     A = "[1,2,3; 4,5,6; 7,8,9]";
@@ -434,7 +484,6 @@ namespace Zenautics
     /**
     \brief  Saves a matrix to the specified file path (a std::string)
             using a proprietary compressed format.
-            ADVANCED EDITION ONLY. BASIC EDITION will return false.
             
     \code
     Matrix A;
@@ -731,7 +780,7 @@ namespace Zenautics
 
     \code
     Matrix A;
-    Matrix B(2,2);
+    atrix B(2,2);
     A = "[1.123 2.123; 3.123 4.123]";  // Set A using string notation.
     if( !A.AddColumn( B, 1 ) ) // Add second column of B to A.
       return false;
@@ -988,6 +1037,24 @@ namespace Zenautics
     \return true if successful, false otherwise.    
     */
     bool ZeroRow( const unsigned row );
+
+
+    /**
+    \brief  Efficiently swaps the contents of this matrix with matrix M.
+    The contents are exhanged without the need to copy matrix data.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = "[1 2; 3 4]";        
+    bool result;
+    result = A.Swap(B);    
+    result = A.PrintStdout();   // Print Matrix A. A = [1 2; 3 4]
+    result = B.PrintStdout();   // Print Matrix B. B = [1 2 3; 4 5 6; 7 8 9]
+    \endcode
+
+    \return true if successful, false otherwise.    
+    */
+    bool Swap( Matrix &M );
 
     /**
     \brief  Fill the matrix with the given value.
@@ -1552,6 +1619,26 @@ namespace Zenautics
     bool Inplace_PreMultiply( const Matrix &B );
 
     /**
+    \brief  Pre-Multiply this matrix by tranpose(B). A = tranpose(B)*A, inplace.
+    No transpose occurs and hence more efficient.
+
+    \code
+    Matrix A;
+    Matrix B;
+    A = "[1 2; 3 4]";
+    B = "[5 6; 7 8]";
+    if( !A.Inplace_TranposePreMultiply(B) )
+      return false;
+    // A 
+    // 26 38
+    // 30 44
+    \endcode  
+    
+    \return true if successful, false otherwise.
+    */
+    bool Inplace_TranposePreMultiply( const Matrix &B );
+
+    /**
     \brief  Post-Multiply this matrix by B. A = A*B, inplace.
 
     \code
@@ -1569,6 +1656,25 @@ namespace Zenautics
     \return true if successful, false otherwise.  
     */
     bool Inplace_PostMultiply( const Matrix &B );
+
+    /**
+    \brief  Post-Multiply this matrix by transpose(B). A = A*transpose(B), inplace.
+
+    \code
+    Matrix A;
+    Matrix B;
+    A = "[1 2; 3 4]";
+    B = "[5 6; 7 8]";
+    if( !A.Inplace_PostMultiplyTranspose(B) )
+      return false;
+    // A 
+    // 17 23
+    // 39 53
+    \endcode      
+    
+    \return true if successful, false otherwise.  
+    */
+    bool Inplace_PostMultiplyTranspose( const Matrix &B );
 
     /**
     \brief  Dot multiply A .*= B, inplace. A and B must have the same dimensions.
@@ -1799,6 +1905,26 @@ namespace Zenautics
     */
     bool Inplace_FFT();
 
+
+    /**
+    \brief  Compute the inplace Two-Dimensional Fourier Transform of the matrix.
+    FFT2 is equivalent to transpose( FFT( transpose( FFT(each column) ) ) )
+
+    \code
+    Matrix A;
+    Matrix B;
+    bool result;
+    result = A.Inplace_colon(1.0,1.0,32.0);
+    B = A*A.Transpose(); // (32x32 square matrix)
+    result = B.Inplace_FFT2();
+    \endcode
+
+    endcode
+
+    \return   true if successful, false if unable to perform the 2D FFT.
+    */
+    bool Inplace_FFT2();
+
     /**
     \brief  Compute the inplace inverse Fourier Transform of each column of the matrix.
 
@@ -1821,6 +1947,15 @@ namespace Zenautics
     \return   true if successful, false if unable to perform the FFT.
     */
     bool Inplace_IFFT();
+
+
+    /**
+    \brief  Compute the inplace inverse Fourier Transform of the matrix.
+    IFFT2 is equivalent to transpose( IFFT( transpose( IFFT(each column) ) ) )
+
+    \return   true if successful, false if unable to perform the FFT.
+    */
+    bool Inplace_IFFT2();
 
 
   public: // Safe operations that set the matrix. Safe in that they return a boolean.
@@ -1885,6 +2020,47 @@ namespace Zenautics
     */
     bool Multiply( const Matrix &B, const Matrix &C );
 
+
+    /**
+    \brief  Multiply A = transpose(B)*C. The result, A, is stored in this matrix. 
+    
+    \code
+    Matrix A;
+    Matrix B;
+    Matrix C;
+    B = "[1 2; 3 4]";
+    C = "[-1 2; -3 4]";
+    if( !A.TransposeMultiply( B, C ) )
+      return false;
+    // A
+    // -10  14
+    // -14  20
+    \endcode
+    
+    \return true if successful, false otherwise.
+    */
+    bool TransposeMultiply( const Matrix &B, const Matrix &C );
+
+
+    /**
+    \brief  Multiply A = B*transpose(C). The result, A, is stored in this matrix. 
+    
+    \code
+    Matrix A;
+    Matrix B;
+    Matrix C;
+    B = "[1 2; 3 4]";
+    C = "[-1 2; -3 4]";
+    if( !A.MultiplyTranspose( B, C ) )
+      return false;
+    // A
+    // 3  5
+    // 5  7
+    \endcode
+    
+    \return true if successful, false otherwise.
+    */
+    bool MultiplyTranspose( const Matrix &B, const Matrix &C );
     
 
   public: // Matlab/Octave style functions
@@ -2274,6 +2450,36 @@ namespace Zenautics
     \return true if successful, false otherwise.     
     */
     bool Inplace_ones( const unsigned nrows, const unsigned ncols );
+
+    
+    /**
+    \brief  Produce a matrix that is composed of pseudo-random numbers.
+    Values are elements are uniform distribution [0,1].
+
+    \code
+    Matrix A;
+    if( !A.Inplace_rand(1000,1) ) // create a 1000x1 vector with uniform distribution [0,1]
+      return false;
+    \endcode
+    
+    \return true if successful, false otherwise.      
+    */
+    bool Inplace_rand( const unsigned nrows, const unsigned ncols, const unsigned seed = rand() );
+
+    /**
+    \brief  Produce a matrix that is composed of pseudo-random numbers. 
+    Values are elements are standard normal distribution with mean zero, 
+    variance of one and standard of deviation one. N(0,1)
+
+    \code
+    Matrix A;
+    if( !A.Inplace_randn(1000,1) ) // create a 1000x1 vector with standard normal distribution N[0,1]
+      return false;
+    \endcode
+    
+    \return true if successful, false otherwise.      
+    */
+    bool Inplace_randn( const unsigned nrows, const unsigned ncols, const unsigned seed = rand() );
 
     /**
     \brief  Real part of the complex matrix. z = x+yi. real(z) = x.
@@ -2900,6 +3106,657 @@ namespace Zenautics
   public: // Advanced Functionality
 
     /**
+    \brief  Plot one series, X vs Y. The i'th column (x-axis) vs 
+            j'th column (y-axis) of the Matrix directly to a compressed 
+            (run-length-encoded) bitamp.
+    \code
+    bool TryPlot()
+    {
+      bool result;
+      Matrix T; // time
+      Matrix S; // sin(time)
+      Matrix TS; // time | sin(time)
+      double pi = 3.1415926535897;
+      result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+      if( !result )
+        return false;
+      S = T;
+      result = S.Inplace_sin();
+      if( !result )
+        return false;
+      TS = T;
+      result = TS.Concatonate( S );
+      if( !result )
+        return false;
+      result = TS.Plot( 0, 1 ); // makes plot.bmp
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, "test1.bmp", "A Sinusoid", "time (s)", "voltage (V)", "sinusoid", "(V)" ); 
+      if( !result )
+        return false;
+      return true;
+    }
+    \endcode
+    \return true if successful, false otherwise.
+    */
+    bool Plot( 
+      const unsigned x_col,                //!< The column index (0toN-1) with the x series data (if this is the same as y_col, then the index is plotted as x).
+      const unsigned y_col,                //!< The column index (0toN-1) with the y series data.      
+      const std::string bmpfilename = "plot.bmp", //!< The file name (or full path name) of the output bitmap file.
+      const std::string title = "",        //!< The plot title.
+      const std::string xlabel = "",       //!< The x-axis label.
+      const std::string ylabel = "",       //!< The y-axis label.
+      const std::string series_label = "", //!< The series label.
+      const std::string units = "",        //!< The series data units.
+      const bool isXGridOn = true,         //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn = true,         //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats = true,      //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats = 5,   //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm = 8,   //!< The plot height in cm.
+      const unsigned plot_width_cm = 10    //!< The plot width in cm.
+      );
+
+    /**
+    \brief  Plot two series, X vs Y1, Y2 using columns of the Matrix.
+            Plots directly to a compressed (run-length-encoded) bitamp.
+    \code
+    bool TryPlot2()
+    {
+      bool result;
+      Matrix T; // time
+      Matrix S; // sin(time)
+      Matrix C; // sin(time)
+      Matrix F; // time | sin(time) | cos(time)
+      double pi = 3.1415926535897;
+      result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+      if( !result )
+        return false;
+      S = T;
+      result = S.Inplace_sin();
+      if( !result )
+        return false;
+      C = T;
+      result = C.Inplace_cos();
+      if( !result )
+        return false;
+      F = T;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2 ); // makes plot2.bmp
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, "test2.bmp", "Two Sinusoids", "time (s)", "voltage (V)", "sine", "(V)", "cosine", "(V)" );   
+      if( !result )
+        return false;
+      return true;
+    }
+    \endcode
+    \return true if successful, false otherwise.
+    */
+    bool Plot( 
+      const unsigned x_col,                //!< The column index (0toN-1) with the x series data.
+      const unsigned y_col_1,              //!< The column index (0toN-1) with the y_1 series data.
+      const unsigned y_col_2,              //!< The column index (0toN-1) with the y_2 series data.      
+      const std::string bmpfilename = "plot2.bmp", //!< The file name (or full path name) of the output bitmap file.
+      const std::string title = "",           //!< The plot title.
+      const std::string xlabel = "",          //!< The x-axis label.
+      const std::string ylabel = "",          //!< The y-axis label.
+      const std::string series_label_1 = "",  //!< The series label.
+      const std::string units_1 = "",         //!< The series data units.
+      const std::string series_label_2 = "",  //!< The series label.
+      const std::string units_2 = "",         //!< The series data units.
+      const bool isXGridOn = true,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn = true,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats = true,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats = 5, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm = 8, //!< The plot height in cm.
+      const unsigned plot_width_cm = 10  //!< The plot width in cm.
+      );
+
+    /**
+    \brief  Plot three series, X vs Y1, Y2, Y3 using columns of the Matrix.
+            Plots directly to a compressed (run-length-encoded) bitamp.
+    \code
+    bool TryPlot3()
+    {
+      bool result;
+      Matrix T; // time
+      Matrix S; // sin(time)
+      Matrix C; // sin(time)
+      Matrix Sinc; // sin(time)
+      Matrix F; // time | sin(time) | cos(time) | sinc(time)
+      double pi = 3.1415926535897;
+      result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+      if( !result )
+        return false;
+      S = T;
+      result = S.Inplace_sin();
+      if( !result )
+        return false;
+      C = T;
+      result = C.Inplace_cos();
+      if( !result )
+        return false;
+      Sinc = T;
+      result = Sinc.Inplace_sinc();
+      if( !result )
+        return false;
+      F = T;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = F.Concatonate( Sinc );
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3 ); // makes plot3.bmp
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, "plot3test.bmp", "sin cos sinc", "time (s)", "voltage (V)", "sine", "(V)", "cosine", "(V)", "sinc", "(V)" );   
+      if( !result )
+        return false;
+      return true;
+    }
+    \endcode
+    \return true if successful, false otherwise.
+    */
+    bool Plot( 
+      const unsigned x_col,              //!< The column index (0toN-1) with the x series data.
+      const unsigned y_col_1,            //!< The column index (0toN-1) with the y_1 series data.
+      const unsigned y_col_2,            //!< The column index (0toN-1) with the y_2 series data.
+      const unsigned y_col_3,            //!< The column index (0toN-1) with the y_3 series data.      
+      const std::string bmpfilename = "plot3.bmp",     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title = "",           //!< The plot title.
+      const std::string xlabel = "",          //!< The x-axis label.
+      const std::string ylabel = "",          //!< The y-axis label.
+      const std::string series_label_1 = "",  //!< The series label.
+      const std::string units_1 = "",         //!< The series data units.
+      const std::string series_label_2 = "",  //!< The series label.
+      const std::string units_2 = "",         //!< The series data units.
+      const std::string series_label_3 = "",  //!< The series label.
+      const std::string units_3 = "",         //!< The series data units.      
+      const bool isXGridOn = true,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn = true,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats = true,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats = 5, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm = 8, //!< The plot height in cm.
+      const unsigned plot_width_cm = 10  //!< The plot width in cm.
+      );
+
+    /**
+    \brief  Plot four series, X vs Y1, Y2, Y3 using columns of the Matrix.
+            Plots directly to a compressed (run-length-encoded) bitamp.
+    \code
+    bool TryPlot3()
+    {
+      bool result;
+      Matrix T; // time
+      Matrix S; // sin(time)
+      Matrix C; // sin(time)
+      Matrix Sinc; // sin(time)
+      Matrix F; // time | sin(time) | cos(time) | sinc(time) | sin(time)+1
+      double pi = 3.1415926535897;
+      result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+      if( !result )
+        return false;
+      S = T;
+      result = S.Inplace_sin();
+      if( !result )
+        return false;
+      C = T;
+      result = C.Inplace_cos();
+      if( !result )
+        return false;
+      Sinc = T;
+      result = Sinc.Inplace_sinc();
+      if( !result )
+        return false;
+      F = T;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = F.Concatonate( Sinc );
+      if( !result )
+        return false;
+      S += 1.0;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, 4 ); // makes plot4.bmp
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, 4, "plot4test.bmp", "sin cos sinc sin+1", "time (s)", "voltage (V)", "sine", "(V)", "cosine", "(V)", "sinc", "(V)", "sin+1", "(V)" );   
+      if( !result )
+        return false;
+      return true;
+    }
+    \endcode
+    \return true if successful, false otherwise.
+    */
+    bool Plot( 
+      const unsigned x_col,              //!< The column index (0toN-1) with the x series data.
+      const unsigned y_col_1,            //!< The column index (0toN-1) with the y_1 series data.
+      const unsigned y_col_2,            //!< The column index (0toN-1) with the y_2 series data.
+      const unsigned y_col_3,            //!< The column index (0toN-1) with the y_3 series data.      
+      const unsigned y_col_4,            //!< The column index (0toN-1) with the y_4 series data.
+      const std::string bmpfilename = "plot4.bmp",     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title = "",           //!< The plot title.
+      const std::string xlabel = "",          //!< The x-axis label.
+      const std::string ylabel = "",          //!< The y-axis label.
+      const std::string series_label_1 = "",  //!< The series label.
+      const std::string units_1 = "",         //!< The series data units.
+      const std::string series_label_2 = "",  //!< The series label.
+      const std::string units_2 = "",         //!< The series data units.
+      const std::string series_label_3 = "",  //!< The series label.
+      const std::string units_3 = "",         //!< The series data units.      
+      const std::string series_label_4 = "",  //!< The series label.
+      const std::string units_4 = "",         //!< The series data units.            
+      const bool isXGridOn = true,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn = true,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats = true,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats = 5, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm = 8, //!< The plot height in cm.
+      const unsigned plot_width_cm = 10  //!< The plot width in cm.
+      );
+
+    /**
+    \brief  Plot five series, X vs Y1, Y2, Y3, Y4, Y5 using columns of the Matrix.
+            Plots directly to a compressed (run-length-encoded) bitamp.
+    \code
+    bool TryPlot3()
+    {
+      bool result;
+      Matrix T; // time
+      Matrix S; // sin(time)
+      Matrix C; // sin(time)
+      Matrix Sinc; // sin(time)
+      Matrix F; // time | sin(time) | cos(time) | sinc(time) | sin(time)+1 | cos(time)-1
+      double pi = 3.1415926535897;
+      result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+      if( !result )
+        return false;
+      S = T;
+      result = S.Inplace_sin();
+      if( !result )
+        return false;
+      C = T;
+      result = C.Inplace_cos();
+      if( !result )
+        return false;
+      Sinc = T;
+      result = Sinc.Inplace_sinc();
+      if( !result )
+        return false;
+      F = T;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = F.Concatonate( Sinc );
+      if( !result )
+        return false;
+      S += 1.0;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      C -= 1.0;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, 4, 5 ); // makes plot5.bmp
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, 4, 5, "plot5test.bmp", "sin cos sinc sin+1 cos-1", "time (s)", "voltage (V)", "sine", "(V)", "cosine", "(V)", "sinc", "(V)", "sin+1", "(V)", "cos-1", "(V)" );
+      if( !result )
+        return false;
+      return true;
+    }
+    \endcode
+    \return true if successful, false otherwise.
+    */
+    bool Plot( 
+      const unsigned x_col,              //!< The column index (0toN-1) with the x series data.
+      const unsigned y_col_1,            //!< The column index (0toN-1) with the y_1 series data.
+      const unsigned y_col_2,            //!< The column index (0toN-1) with the y_2 series data.
+      const unsigned y_col_3,            //!< The column index (0toN-1) with the y_3 series data.      
+      const unsigned y_col_4,            //!< The column index (0toN-1) with the y_4 series data.
+      const unsigned y_col_5,            //!< The column index (0toN-1) with the y_5 series data.
+      const std::string bmpfilename = "plot5.bmp",     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title = "",           //!< The plot title.
+      const std::string xlabel = "",          //!< The x-axis label.
+      const std::string ylabel = "",          //!< The y-axis label.
+      const std::string series_label_1 = "",  //!< The series label.
+      const std::string units_1 = "",         //!< The series data units.
+      const std::string series_label_2 = "",  //!< The series label.
+      const std::string units_2 = "",         //!< The series data units.
+      const std::string series_label_3 = "",  //!< The series label.
+      const std::string units_3 = "",         //!< The series data units.      
+      const std::string series_label_4 = "",  //!< The series label.
+      const std::string units_4 = "",         //!< The series data units.            
+      const std::string series_label_5 = "",  //!< The series label.
+      const std::string units_5 = "",         //!< The series data units.                  
+      const bool isXGridOn = true,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn = true,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats = true,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats = 5, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm = 8, //!< The plot height in cm.
+      const unsigned plot_width_cm = 10  //!< The plot width in cm.
+      );
+
+    /**
+    \brief  Plot six series, X vs Y1, Y2, Y3, Y4, Y5, Y6 using columns of the Matrix.
+            Plots directly to a compressed (run-length-encoded) bitamp.
+    \code
+    bool TryPlot3()
+    {
+      bool result;
+      Matrix T; // time
+      Matrix S; // sin(time)
+      Matrix C; // sin(time)
+      Matrix Sinc; // sin(time)
+      Matrix F; // time | sin(time) | cos(time) | sinc(time) | sin(time)+1 | cos(time)-1 | sinc^2(time)
+      double pi = 3.1415926535897;
+      result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+      if( !result )
+        return false;
+      S = T;
+      result = S.Inplace_sin();
+      if( !result )
+        return false;
+      C = T;
+      result = C.Inplace_cos();
+      if( !result )
+        return false;
+      Sinc = T;
+      result = Sinc.Inplace_sinc();
+      if( !result )
+        return false;
+      F = T;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = F.Concatonate( Sinc );
+      if( !result )
+        return false;
+      S += 1.0;
+      result = F.Concatonate( S );
+      if( !result )
+        return false;
+      C -= 1.0;
+      result = F.Concatonate( C );
+      if( !result )
+        return false;
+      result = Sinc.Inplace_Sqr();
+      if( !result )
+        return false;
+      result = F.Concatonate( Sinc );
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, 4, 5, 6 ); // makes plot6.bmp
+      if( !result )
+        return false;
+      result = F.Plot( 0, 1, 2, 3, 4, 5, 6, "plot6test.bmp", "sin cos sinc sin+1 cos-1 sinc^2", "time (s)", "voltage (V)", "sine", "(V)", "cosine", "(V)", "sinc", "(V)", "sin+1", "(V)", "cos-1", "(V)", "sinc^2", "(V)" );
+      if( !result )
+        return false;
+      return true;
+    }
+    \endcode
+    \return true if successful, false otherwise.
+    */
+    bool Plot( 
+      const unsigned x_col,              //!< The column index (0toN-1) with the x series data.
+      const unsigned y_col_1,            //!< The column index (0toN-1) with the y_1 series data.
+      const unsigned y_col_2,            //!< The column index (0toN-1) with the y_2 series data.
+      const unsigned y_col_3,            //!< The column index (0toN-1) with the y_3 series data.      
+      const unsigned y_col_4,            //!< The column index (0toN-1) with the y_4 series data.
+      const unsigned y_col_5,            //!< The column index (0toN-1) with the y_5 series data.
+      const unsigned y_col_6,            //!< The column index (0toN-1) with the y_5 series data.
+      const std::string bmpfilename = "plot6.bmp",     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title = "",           //!< The plot title.
+      const std::string xlabel = "",          //!< The x-axis label.
+      const std::string ylabel = "",          //!< The y-axis label.
+      const std::string series_label_1 = "",  //!< The series label.
+      const std::string units_1 = "",         //!< The series data units.
+      const std::string series_label_2 = "",  //!< The series label.
+      const std::string units_2 = "",         //!< The series data units.
+      const std::string series_label_3 = "",  //!< The series label.
+      const std::string units_3 = "",         //!< The series data units.      
+      const std::string series_label_4 = "",  //!< The series label.
+      const std::string units_4 = "",         //!< The series data units.            
+      const std::string series_label_5 = "",  //!< The series label.
+      const std::string units_5 = "",         //!< The series data units.                  
+      const std::string series_label_6 = "",  //!< The series label.
+      const std::string units_6 = "",         //!< The series data units.                        
+      const bool isXGridOn = true,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn = true,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats = true,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats = 5, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm = 8, //!< The plot height in cm.
+      const unsigned plot_width_cm = 10  //!< The plot width in cm.
+      );
+
+
+    friend bool Plot(
+      const std::string bmpfilename,     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title,           //!< The plot title.
+      const std::string xlabel,          //!< The x-axis label.
+      const std::string ylabel,          //!< The y-axis label.
+      Matrix &X,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label,    //!< The series label.
+      const std::string units,           //!< The series units.
+      const bool isConnected,     //!< Are the data points connected.
+      const MTX_enumColor color,  //!< The color of the data points/line.
+      const bool isXGridOn,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm, //!< The plot height in cm.
+      const unsigned plot_width_cm   //!< The plot width in cm.
+      );  
+
+    friend bool Plot(
+      const std::string bmpfilename,     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title,           //!< The plot title.
+      const std::string xlabel,          //!< The x-axis label.
+      const std::string ylabel,          //!< The y-axis label.
+      Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_1,    //!< The series label.
+      const std::string units_1,           //!< The series units.
+      Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_2,    //!< The series label.
+      const std::string units_2,           //!< The series units.
+      const bool isConnected_1,     //!< Are the data points connected.
+      const MTX_enumColor color_1,  //!< The color of the data points/line.
+      const bool isConnected_2,     //!< Are the data points connected.
+      const MTX_enumColor color_2,  //!< The color of the data points/line.    
+      const bool isXGridOn,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm, //!< The plot height in cm.
+      const unsigned plot_width_cm  //!< The plot width in cm.
+      );  
+
+    friend bool Plot(
+      const std::string bmpfilename,     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title,           //!< The plot title.
+      const std::string xlabel,          //!< The x-axis label.
+      const std::string ylabel,          //!< The y-axis label.
+      Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_1,    //!< The series label.
+      const std::string units_1,           //!< The series units.
+      Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_2,    //!< The series label.
+      const std::string units_2,           //!< The series units.
+      Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_3,    //!< The series label.
+      const std::string units_3,           //!< The series units.
+      const bool isConnected_1,     //!< Are the data points connected.
+      const MTX_enumColor color_1,  //!< The color of the data points/line.
+      const bool isConnected_2,     //!< Are the data points connected.
+      const MTX_enumColor color_2,  //!< The color of the data points/line.    
+      const bool isConnected_3,     //!< Are the data points connected.
+      const MTX_enumColor color_3,  //!< The color of the data points/line.        
+      const bool isXGridOn,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm, //!< The plot height in cm.
+      const unsigned plot_width_cm   //!< The plot width in cm.
+      );
+
+    friend bool Plot(
+      const std::string bmpfilename,     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title,           //!< The plot title.
+      const std::string xlabel,          //!< The x-axis label.
+      const std::string ylabel,          //!< The y-axis label.
+      Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_1,    //!< The series label.
+      const std::string units_1,           //!< The series units.
+      Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_2,    //!< The series label.
+      const std::string units_2,           //!< The series units.
+      Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_3,    //!< The series label.
+      const std::string units_3,           //!< The series units.
+      Matrix &X_4,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_4,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_4,    //!< The series label.
+      const std::string units_4,           //!< The series units.
+      const bool isConnected_1,     //!< Are the data points connected.
+      const MTX_enumColor color_1,  //!< The color of the data points/line.
+      const bool isConnected_2,     //!< Are the data points connected.
+      const MTX_enumColor color_2,  //!< The color of the data points/line.    
+      const bool isConnected_3,     //!< Are the data points connected.
+      const MTX_enumColor color_3,  //!< The color of the data points/line.        
+      const bool isConnected_4,     //!< Are the data points connected.
+      const MTX_enumColor color_4,  //!< The color of the data points/line.        
+      const bool isXGridOn,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm, //!< The plot height in cm.
+      const unsigned plot_width_cm   //!< The plot width in cm.
+      );
+
+    friend bool Plot(
+      const std::string bmpfilename,     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title,           //!< The plot title.
+      const std::string xlabel,          //!< The x-axis label.
+      const std::string ylabel,          //!< The y-axis label.
+      Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_1,    //!< The series label.
+      const std::string units_1,           //!< The series units.
+      Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_2,    //!< The series label.
+      const std::string units_2,           //!< The series units.
+      Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_3,    //!< The series label.
+      const std::string units_3,           //!< The series units.
+      Matrix &X_4,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_4,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_4,    //!< The series label.
+      const std::string units_4,           //!< The series units.
+      Matrix &X_5,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_5,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_5,    //!< The series label.
+      const std::string units_5,           //!< The series units.
+      const bool isConnected_1,     //!< Are the data points connected.
+      const MTX_enumColor color_1,  //!< The color of the data points/line.
+      const bool isConnected_2,     //!< Are the data points connected.
+      const MTX_enumColor color_2,  //!< The color of the data points/line.    
+      const bool isConnected_3,     //!< Are the data points connected.
+      const MTX_enumColor color_3,  //!< The color of the data points/line.        
+      const bool isConnected_4,     //!< Are the data points connected.
+      const MTX_enumColor color_4,  //!< The color of the data points/line.        
+      const bool isConnected_5,     //!< Are the data points connected.
+      const MTX_enumColor color_5,  //!< The color of the data points/line.        
+      const bool isXGridOn,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm, //!< The plot height in cm.
+      const unsigned plot_width_cm   //!< The plot width in cm.
+      );
+
+    friend bool Plot(
+      const std::string bmpfilename,     //!< The file name (or full path name) of the output bitmap file.
+      const std::string title,           //!< The plot title.
+      const std::string xlabel,          //!< The x-axis label.
+      const std::string ylabel,          //!< The y-axis label.
+      Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_1,    //!< The series label.
+      const std::string units_1,           //!< The series units.
+      Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_2,    //!< The series label.
+      const std::string units_2,           //!< The series units.
+      Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_3,    //!< The series label.
+      const std::string units_3,           //!< The series units.
+      Matrix &X_4,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_4,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_4,    //!< The series label.
+      const std::string units_4,           //!< The series units.
+      Matrix &X_5,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_5,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_5,    //!< The series label.
+      const std::string units_5,           //!< The series units.
+      Matrix &X_6,                         //!< The series must be [Nx1] or [1xN].
+      Matrix &Y_6,                         //!< The series must be [Nx1] or [1xN].
+      const std::string series_label_6,    //!< The series label.
+      const std::string units_6,           //!< The series units.
+      const bool isConnected_1,     //!< Are the data points connected.
+      const MTX_enumColor color_1,  //!< The color of the data points/line.
+      const bool isConnected_2,     //!< Are the data points connected.
+      const MTX_enumColor color_2,  //!< The color of the data points/line.    
+      const bool isConnected_3,     //!< Are the data points connected.
+      const MTX_enumColor color_3,  //!< The color of the data points/line.        
+      const bool isConnected_4,     //!< Are the data points connected.
+      const MTX_enumColor color_4,  //!< The color of the data points/line.        
+      const bool isConnected_5,     //!< Are the data points connected.
+      const MTX_enumColor color_5,  //!< The color of the data points/line.        
+      const bool isConnected_6,     //!< Are the data points connected.
+      const MTX_enumColor color_6,  //!< The color of the data points/line.        
+      const bool isXGridOn,       //!< A boolean to indicate if the x grid lines are on.
+      const bool isYGridOn,       //!< A boolean to indicate if the y grid lines are on.  
+      const bool includeStats,    //!< A boolean to indicate if statistics info should be included on the plot.  
+      const unsigned precisionStats, //!< The number of significant digits in the statistics.
+      const unsigned plot_height_cm, //!< The plot height in cm.
+      const unsigned plot_width_cm   //!< The plot width in cm.
+      );
+
+
+
+    /**
     \brief  Retrieve the matrix comment string. The string
     will be empty if none is available. The matrix comment string
     is often the header line read when using ReadFromFile(). \n
@@ -3008,36 +3865,78 @@ namespace Zenautics
 
     /**
     \brief  Return the column matrix specified by the column index. Returns (nrows x 1).
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.Column(1);
+    // B == [2; 5; 8]
+    \endcode
     */
     Matrix  Column(const unsigned col);
 
     /**
     \brief  Return the row matrix specified by the column index. Returns (ncols x 1).
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.Row(1);
+    // B == [4 5 6]
+    \endcode    
     */
     Matrix  Row(const unsigned row);
 
     /**
     \brief  Return the tranpose of the matrix.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.Transpose();
+    // B == "[1 4 7; 2 5 8; 3 6 9]";
+    \endcode        
     */
     Matrix  Transpose();
 
     /**
     \brief  Return the tranpose of the matrix.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.T();
+    // B == "[1 4 7; 2 5 8; 3 6 9]";
+    \endcode 
     */
     Matrix  T(); // short version
 
     /**
     \brief  Return the diagonal of the matrix as a vector.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.Diagonal();
+    // B == "[1; 5; 9]";
+    \endcode     
     */
     Matrix  Diagonal();
 
     /**
     \brief  Return the inverse of the matrix.
+
+    \code
+    Matrix A = "[1 0 1; -2 1 3; 4 -1 -6]";
+    Matrix B = A.Inverse();
+    // B == "[0.6 0.2 0.2; 0 2 1; 0.4 -0.2 -0.2]";
+    \endcode
     */
     Matrix  Inverse();
     
     /**
     \brief  Return the inverse of the matrix.
+
+    \code
+    Matrix A = "[1 0 1; -2 1 3; 4 -1 -6]";
+    Matrix B = A.Inv();
+    // B == "[0.6 0.2 0.2; 0 2 1; 0.4 -0.2 -0.2]";
+    \endcode    
     */
     Matrix  Inv(); // short version
 
@@ -3053,6 +3952,256 @@ namespace Zenautics
             Power of two uses IFFT, otherwise fast IDFT.
     */
     Matrix  IFFT();
+
+
+    /**
+    \brief  Return the Two Dimensional Fourier Transform of the matrix.
+    */
+    Matrix  FFT2();
+
+    /**
+    \brief  Return the Two Dimensional Inverse Fourier Transform of the matrix.
+    */
+    Matrix  IFFT2();
+
+    /**
+    \brief  Return the real part of the matrix            
+
+    \code
+    Matrix A = "[1-1i 2-2i 3-3i; 4-4i 5-5i 6-6i; 7-7i 8-8i 9-9i]";
+    Matrix B = A.Real();
+    // B == "[1 2 3; 4 5 6; 7 8 9]";
+    \endcode        
+    */
+    Matrix  Real();
+
+    /**
+    \brief  Return the imag part of the matrix            
+
+    \code
+    Matrix A = "[1-1i 2-2i 3-3i; 4-4i 5-5i 6-6i; 7-7i 8-8i 9-9i]";
+    Matrix B = A.Imag();
+    // B == "[-1 -2 -3; -4 -5 -6; -7 -8 -9]";
+    \endcode            
+    */
+    Matrix  Imag();
+
+    /**
+    \brief  Return the complex conjugate of the matrix            
+
+    \code
+    Matrix A = "[1-1i 2-2i 3-3i; 4-4i 5-5i 6-6i; 7-7i 8-8i 9-9i]";
+    Matrix B = A.conj();
+    // B == "[1+1i 2+2i 3+3i; 4+4i 5+5i 6+6i; 7+7i 8+8i 9+9i]";
+    \endcode    
+    */
+    Matrix  conj();
+
+
+    /** 
+    \brief  Returns the matrix plus Identity.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.AddIdentity();
+    // B == "[2 2 3; 4 6 6; 7 8 10]";
+    \endcode    
+    */
+    Matrix AddIdentity();
+
+    /** 
+    \brief  Returns the matrix minus Identity.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.MinusIdentity();
+    // B == "[0 2 3; 4 4 6; 7 8 8]";
+    \endcode    
+    */
+    Matrix MinusIdentity();
+
+    /** 
+    \brief  Returns Identity minus the matrix.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.IdentityMinusMe();
+    // B == "[0 -2 -3; -4 -4 -6; -7 -8 -8]";
+    \endcode    
+    */
+    Matrix IdentityMinusMe();
+
+    /** 
+    \brief  Returns the matrix * -1. This is more efficient than A *= -1.
+
+    \code
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B = A.Negate();
+    // B == "[-1 -2 -3; -4 -5 -6; -7 -8 -9]";
+    \endcode    
+    */
+    Matrix Negate();
+
+    /** 
+    \brief  Sets the matrix as the NxN hilbert matrix. H_ij = 1.0 / (i+j-1.0) for i=1:N, j=1:N.
+
+    \code
+    Matrix H;
+    bool result;
+    result = H.Hilbert(3);
+    // H == "[1 1/2 1/3; 1/2 1/3 1/4; 1/3 1/4 1/5]";
+    \endcode    
+    */
+    bool Hilbert( const unsigned N );
+
+    /**
+    \brief  Return the square root of each element in the matrix.
+
+    \code
+    Matrix A = "[-1 4 9;16 25 36;49 64 81]";
+    Matrix B = A.Sqrt();
+    // B == "[0+1i 2 3;4 5 6; 7 8 9]";
+    \endcode        
+    */
+    Matrix  Sqrt();
+
+    /**
+    \brief  Return the exponent of each element in the matrix.
+    */
+    Matrix  Exp();
+
+    /**
+    \brief  Return the logarithm of each element in the matrix.
+    */
+    Matrix  Ln();
+
+    /**
+    \brief  Return the cosine of each element in the matrix.
+    */
+    Matrix  cos();
+
+    /**
+    \brief  Return the arc-cosine of each element in the matrix.
+    */
+    Matrix  acos();
+
+    /**
+    \brief  Return the sine of each element in the matrix.
+    */
+    Matrix  sin();
+
+    /**
+    \brief  Return the arc-sine of each element in the matrix.
+    */
+    Matrix  asin();
+
+    /**
+    \brief  Return the tangent of each element in the matrix.
+    */
+    Matrix  tan();
+
+    /**
+    \brief  Return the arc-tangent of each element in the matrix.
+    */
+    Matrix  atan();
+
+    /**
+    \brief  Return the hyperbolic cosine of each element in the matrix.
+    */
+    Matrix  cosh();
+
+    /**
+    \brief  Return the inverse hyperbolic cosine of each element in the matrix.
+    */
+    Matrix  acosh();
+
+    /**
+    \brief  Return the hyperbolic sine of each element in the matrix.
+    */
+    Matrix  sinh();
+
+    /**
+    \brief  Return the inverse hyperbolic sine of each element in the matrix.
+    */
+    Matrix  asinh();
+
+    /**
+    \brief  Return the hyperbolic tangent of each element in the matrix.
+    */
+    Matrix  tanh();
+
+    /**
+    \brief  Return the inverse hyperbolic tangent of each element in the matrix.
+    */
+    Matrix  atanh();
+
+    /**
+    \brief  Return the cotangent of each element in the matrix.
+    */
+    Matrix  cot();
+
+    /**
+    \brief  Return the hyperbolic cotangent of each element in the matrix.
+    */
+    Matrix  coth();
+
+    /**
+    \brief  Return the absolute value (magnitude if complex) of each element in the matrix.
+    */
+    Matrix  abs();
+
+    /**
+    \brief  Return the phase angle in radians of the elements in the matrix.
+    If M is a real matrix, Phase is a zero matrix.
+    If M is a complex matrix, Phase is a real matrix = atan2(im,re).
+    */
+    Matrix  angle();
+
+    /**
+    \brief  Return a matrix with all elements in raised to the power X^(power_re + power_im*i).
+    */
+    Matrix  pow(const double power_re, const double power_im = 0.0);
+
+    /**
+    \brief  Return a matrix with elements rounded to the specified precision.\n
+    e.g. precision = 0    1.8    -> 2     \n
+    e.g. precision = 1,   1.45   -> 1.5   \n
+    e.g. precision = 2    1.456  -> 1.46  \n
+    e.g. precision = 3,   1.4566 -> 1.457 \n
+    precision has a maximum of 32. After which no rounding occurs.
+    */
+    Matrix  round(const unsigned precision);
+
+    /**
+    \brief  Return a matrix with elements rounded to the nearest integers towards minus infinity.
+    */
+    Matrix  floor();
+
+    /**
+    \brief  Return a matrix with elements rounded to the nearest integers towards infinity.
+    */
+    Matrix  ceil();
+
+    /**
+    \brief  Return a matrix with elements rounded to the nearest integers towards zero.
+    */
+    Matrix  fix();
+
+    /**
+    \brief  Return a matrix with all elements inverted (1/x).
+    */
+    Matrix  dotInvert();
+
+    /**
+    \brief  Return a matrix with each element subtracted from 1.0. i.e. 1-X.
+    */
+    Matrix  oneMinusMe();
+
+    /**
+    \brief  Return the matrix that has each element multiplied by each element of B.
+    This matrix must be the same dimensions as B unless B is a scalar.
+    */
+    Matrix  DotMultiply(const Matrix& B);
 
 
   public:
@@ -3416,6 +4565,368 @@ namespace Zenautics
     /// \brief  This indicates if the mtx core engine been initialized.
     static bool m_IsMTXInitialized; 
   };
+
+
+
+    /**
+  \brief  Plot a single X vs Y series directly to a compressed (run-length-encoded) bitmap file.  
+  
+  \code
+  bool TryPlot()
+  {
+    Matrix T;
+    Matrix S;
+    bool result;
+    double pi = 3.1415926535897;
+    result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+    if( !result )
+      return false;
+    S = T;
+    result = S.Inplace_sin();  
+    if( !result )
+      return false;
+    result = Plot( "sine.bmp", "Testing Plot", "time (s)", "voltage (V)", T, S, "sine", "(V)" );
+    if( !result )
+      return false;
+    return true;
+  }
+  \endcode
+
+  \return true if successful, false otherwise.
+  */
+  bool Plot(
+    const std::string bmpfilename,        //!< The file name (or full path name) of the output bitmap file.
+    const std::string title,              //!< The plot title.
+    const std::string xlabel,             //!< The x-axis label.
+    const std::string ylabel,             //!< The y-axis label.
+    Matrix &X,                            //!< The series must be [Nx1] or [1xN].
+    Matrix &Y,                            //!< The series must be [Nx1] or [1xN].
+    const std::string series_label,       //!< The series label.
+    const std::string units,              //!< The series units.
+    const bool isConnected = true,        //!< Are the data points connected.
+    const MTX_enumColor color = MTX_BLUE, //!< The color of the data points/line.
+    const bool isXGridOn = true,          //!< A boolean to indicate if the x grid lines are on.
+    const bool isYGridOn = true,          //!< A boolean to indicate if the y grid lines are on.  
+    const bool includeStats = true,       //!< A boolean to indicate if statistics info should be included on the plot.  
+    const unsigned precisionStats = 5,    //!< The number of significant digits in the statistics.
+    const unsigned plot_height_cm = 8,    //!< The plot height in cm.
+    const unsigned plot_width_cm = 10     //!< The plot width in cm.
+    );
+
+  /**
+  \brief  Plot two X vs Y series directly to a compressed (run-length-encoded) bitmap file.  
+  
+  \code
+  bool TryPlot2()
+  {
+    Matrix T;
+    Matrix S;
+    bool result;
+    double pi = 3.1415926535897;
+    result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+    if( !result )
+      return false;
+    S = T;
+    result = S.Inplace_sin();  
+    if( !result )
+      return false;
+    result = Plot( "sine.bmp", "Testing Plot", "time (s)", "voltage (V)", T, S, "sine", "(V)", T, S+1.0, "sine+1", "(V)" );
+    if( !result )
+      return false;
+    return true;
+  }
+  \endcode
+
+  \return true if successful, false otherwise.
+  */  
+  bool Plot(
+    const std::string bmpfilename,          //!< The file name (or full path name) of the output bitmap file.
+    const std::string title,                //!< The plot title.
+    const std::string xlabel,               //!< The x-axis label.
+    const std::string ylabel,               //!< The y-axis label.
+    Matrix &X_1,                            //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_1,                            //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_1,       //!< The series label.
+    const std::string units_1,              //!< The series units.
+    Matrix &X_2,                            //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_2,                            //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_2,       //!< The series label.
+    const std::string units_2,              //!< The series units.
+    const bool isConnected_1 = true,        //!< Are the data points connected.
+    const MTX_enumColor color_1 = MTX_BLUE, //!< The color of the data points/line.
+    const bool isConnected_2 = true,        //!< Are the data points connected.
+    const MTX_enumColor color_2 = MTX_LIMEGREEN,  //!< The color of the data points/line.    
+    const bool isXGridOn = true,            //!< A boolean to indicate if the x grid lines are on.
+    const bool isYGridOn = true,            //!< A boolean to indicate if the y grid lines are on.  
+    const bool includeStats = true,         //!< A boolean to indicate if statistics info should be included on the plot.  
+    const unsigned precisionStats = 5,      //!< The number of significant digits in the statistics.
+    const unsigned plot_height_cm = 8,      //!< The plot height in cm.
+    const unsigned plot_width_cm = 10       //!< The plot width in cm.
+    );  
+
+  /**
+  \brief  Plot three X vs Y series directly to a compressed (run-length-encoded) bitmap file.  
+  
+  \code
+  bool TryPlot3()
+  {
+    Matrix T;
+    Matrix S;
+    bool result;
+    double pi = 3.1415926535897;
+    result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+    if( !result )
+      return false;
+    S = T;
+    result = S.Inplace_sin();  
+    if( !result )
+      return false;
+    result = Plot( "sine.bmp", "Testing Plot", "time (s)", "voltage (V)", T, S, "sine", "(V)", T, S+1.0, "sine+1", "(V)", T, S+2.0, "sine+2", "(V)" );
+    if( !result )
+      return false;
+    return true;
+  }
+  \endcode
+
+  \return true if successful, false otherwise.
+  */  
+  bool Plot(
+    const std::string bmpfilename,       //!< The file name (or full path name) of the output bitmap file.
+    const std::string title,             //!< The plot title.
+    const std::string xlabel,            //!< The x-axis label.
+    const std::string ylabel,            //!< The y-axis label.
+    Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_1,    //!< The series label.
+    const std::string units_1,           //!< The series units.
+    Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_2,    //!< The series label.
+    const std::string units_2,           //!< The series units.
+    Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_3,    //!< The series label.
+    const std::string units_3,           //!< The series units.
+    const bool isConnected_1 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_1 = MTX_BLUE,  //!< The color of the data points/line.
+    const bool isConnected_2 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_2 = MTX_LIMEGREEN,  //!< The color of the data points/line.    
+    const bool isConnected_3 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_3 = MTX_RED,  //!< The color of the data points/line.        
+    const bool isXGridOn = true,         //!< A boolean to indicate if the x grid lines are on.
+    const bool isYGridOn = true,         //!< A boolean to indicate if the y grid lines are on.  
+    const bool includeStats = true,      //!< A boolean to indicate if statistics info should be included on the plot.  
+    const unsigned precisionStats = 5,   //!< The number of significant digits in the statistics.
+    const unsigned plot_height_cm = 8,   //!< The plot height in cm.
+    const unsigned plot_width_cm = 10    //!< The plot width in cm.
+    );
+
+  /**
+  \brief  Plot four X vs Y series directly to a compressed (run-length-encoded) bitmap file.  
+  
+  \code
+  bool TryPlot4()
+  {
+    Matrix T;
+    Matrix S;
+    bool result;
+    double pi = 3.1415926535897;
+    result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+    if( !result )
+      return false;
+    S = T;
+    result = S.Inplace_sin();  
+    if( !result )
+      return false;
+    result = Plot( "sine.bmp", "Testing Plot", "time (s)", "voltage (V)", T, S, "sine", "(V)", T, S+1.0, "sine+1", "(V)", T, S+2.0, "sine+2", "(V)", T, S+3.0, "sine+3", "(V)" );
+    if( !result )
+      return false;
+    return true;
+  }
+  \endcode
+
+  \return true if successful, false otherwise.
+  */  
+  bool Plot(
+    const std::string bmpfilename,       //!< The file name (or full path name) of the output bitmap file.
+    const std::string title,             //!< The plot title.
+    const std::string xlabel,            //!< The x-axis label.
+    const std::string ylabel,            //!< The y-axis label.
+    Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_1,    //!< The series label.
+    const std::string units_1,           //!< The series units.
+    Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_2,    //!< The series label.
+    const std::string units_2,           //!< The series units.
+    Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_3,    //!< The series label.
+    const std::string units_3,           //!< The series units.
+    Matrix &X_4,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_4,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_4,    //!< The series label.
+    const std::string units_4,           //!< The series units.
+    const bool isConnected_1 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_1 = MTX_BLUE,  //!< The color of the data points/line.
+    const bool isConnected_2 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_2 = MTX_LIMEGREEN,  //!< The color of the data points/line.    
+    const bool isConnected_3 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_3 = MTX_RED,  //!< The color of the data points/line.        
+    const bool isConnected_4 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_4 = MTX_PURPLE,  //!< The color of the data points/line.            
+    const bool isXGridOn = true,         //!< A boolean to indicate if the x grid lines are on.
+    const bool isYGridOn = true,         //!< A boolean to indicate if the y grid lines are on.  
+    const bool includeStats = true,      //!< A boolean to indicate if statistics info should be included on the plot.  
+    const unsigned precisionStats = 5,   //!< The number of significant digits in the statistics.
+    const unsigned plot_height_cm = 8,   //!< The plot height in cm.
+    const unsigned plot_width_cm = 10    //!< The plot width in cm.
+    );
+
+  /**
+  \brief  Plot five X vs Y series directly to a compressed (run-length-encoded) bitmap file.  
+  
+  \code
+  bool TryPlot5()
+  {
+    Matrix T;
+    Matrix S;
+    bool result;
+    double pi = 3.1415926535897;
+    result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+    if( !result )
+      return false;
+    S = T;
+    result = S.Inplace_sin();  
+    if( !result )
+      return false;
+    result = Plot( "sine.bmp", "Testing Plot", "time (s)", "voltage (V)", T, S, "sine", "(V)", T, S+1.0, "sine+1", "(V)", T, S+2.0, "sine+2", "(V)", T, S+3.0, "sine+3", "(V)", T, S+4.0, "sine+4", "(V)" );
+    if( !result )
+      return false;
+    return true;
+  }
+  \endcode
+
+  \return true if successful, false otherwise.
+  */  
+  bool Plot(
+    const std::string bmpfilename,       //!< The file name (or full path name) of the output bitmap file.
+    const std::string title,             //!< The plot title.
+    const std::string xlabel,            //!< The x-axis label.
+    const std::string ylabel,            //!< The y-axis label.
+    Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_1,    //!< The series label.
+    const std::string units_1,           //!< The series units.
+    Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_2,    //!< The series label.
+    const std::string units_2,           //!< The series units.
+    Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_3,    //!< The series label.
+    const std::string units_3,           //!< The series units.
+    Matrix &X_4,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_4,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_4,    //!< The series label.
+    const std::string units_4,           //!< The series units.
+    Matrix &X_5,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_5,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_5,    //!< The series label.
+    const std::string units_5,           //!< The series units.
+    const bool isConnected_1 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_1 = MTX_BLUE,  //!< The color of the data points/line.
+    const bool isConnected_2 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_2 = MTX_LIMEGREEN,  //!< The color of the data points/line.    
+    const bool isConnected_3 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_3 = MTX_RED,  //!< The color of the data points/line.        
+    const bool isConnected_4 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_4 = MTX_PURPLE,  //!< The color of the data points/line.        
+    const bool isConnected_5 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_5 = MTX_ORANGE,  //!< The color of the data points/line.        
+    const bool isXGridOn = true,         //!< A boolean to indicate if the x grid lines are on.
+    const bool isYGridOn = true,         //!< A boolean to indicate if the y grid lines are on.  
+    const bool includeStats = true,      //!< A boolean to indicate if statistics info should be included on the plot.  
+    const unsigned precisionStats = 5,   //!< The number of significant digits in the statistics.
+    const unsigned plot_height_cm = 8,   //!< The plot height in cm.
+    const unsigned plot_width_cm = 10    //!< The plot width in cm.
+    );
+
+  /**
+  \brief  Plot six X vs Y series directly to a compressed (run-length-encoded) bitmap file.  
+  
+  \code
+  bool TryPlot6()
+  {
+    Matrix T;
+    Matrix S;
+    bool result;
+    double pi = 3.1415926535897;
+    result = T.Inplace_colon( -2*pi, 0.01, 2*pi );
+    if( !result )
+      return false;
+    S = T;
+    result = S.Inplace_sin();  
+    if( !result )
+      return false;
+    result = Plot( "sine.bmp", "Testing Plot", "time (s)", "voltage (V)", T, S, "sine", "(V)", T, S+1.0, "sine+1", "(V)", T, S+2.0, "sine+2", "(V)", T, S+3.0, "sine+3", "(V)", T, S+4.0, "sine+4", "(V)", T, S+5.0, "sine+5", "(V)" );
+    if( !result )
+      return false;
+    return true;
+  }
+  \endcode
+
+  \return true if successful, false otherwise.
+  */  
+  bool Plot(
+    const std::string bmpfilename,       //!< The file name (or full path name) of the output bitmap file.
+    const std::string title,             //!< The plot title.
+    const std::string xlabel,            //!< The x-axis label.
+    const std::string ylabel,            //!< The y-axis label.
+    Matrix &X_1,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_1,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_1,    //!< The series label.
+    const std::string units_1,           //!< The series units.
+    Matrix &X_2,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_2,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_2,    //!< The series label.
+    const std::string units_2,           //!< The series units.
+    Matrix &X_3,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_3,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_3,    //!< The series label.
+    const std::string units_3,           //!< The series units.
+    Matrix &X_4,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_4,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_4,    //!< The series label.
+    const std::string units_4,           //!< The series units.
+    Matrix &X_5,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_5,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_5,    //!< The series label.
+    const std::string units_5,           //!< The series units.
+    Matrix &X_6,                         //!< The series must be [Nx1] or [1xN].
+    Matrix &Y_6,                         //!< The series must be [Nx1] or [1xN].
+    const std::string series_label_6,    //!< The series label.
+    const std::string units_6,           //!< The series units.
+    const bool isConnected_1 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_1 = MTX_BLUE,  //!< The color of the data points/line.
+    const bool isConnected_2 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_2 = MTX_LIMEGREEN,  //!< The color of the data points/line.    
+    const bool isConnected_3 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_3 = MTX_RED,  //!< The color of the data points/line.        
+    const bool isConnected_4 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_4 = MTX_PURPLE,  //!< The color of the data points/line.        
+    const bool isConnected_5 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_5 = MTX_ORANGE,  //!< The color of the data points/line.        
+    const bool isConnected_6 = true,     //!< Are the data points connected.
+    const MTX_enumColor color_6 = MTX_GREEN,  //!< The color of the data points/line.        
+    const bool isXGridOn = true,         //!< A boolean to indicate if the x grid lines are on.
+    const bool isYGridOn = true,         //!< A boolean to indicate if the y grid lines are on.  
+    const bool includeStats = true,      //!< A boolean to indicate if statistics info should be included on the plot.  
+    const unsigned precisionStats = 5,   //!< The number of significant digits in the statistics.
+    const unsigned plot_height_cm = 8,   //!< The plot height in cm.
+    const unsigned plot_width_cm = 10    //!< The plot width in cm.
+    );
 
 } // end namespace Zenautics
 

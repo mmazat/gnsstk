@@ -50,7 +50,7 @@ SUCH DAMAGE.
 #include "troposphere.h"
 #include "time_conversion.h"
 
-//#define DEBUG_THE_ESTIMATOR
+#define DEBUG_THE_ESTIMATOR
 #define GNSS_CYCLESLIP_THREADHOLD 3
 //#define KO_SECTION
 
