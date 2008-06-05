@@ -60,9 +60,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../../../lib/cmatrix_basic.lib"
 				LinkIncremental="2"
-				IgnoreDefaultLibraryNames="libcmt.lib"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -135,7 +134,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../../../lib/cmatrix_basic.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -205,6 +203,14 @@
 				Name="c"
 				>
 				<File
+					RelativePath="..\..\..\src\cmatrix.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\cplot.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\geodesy.c"
 					>
 				</File>
@@ -214,6 +220,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\ionosphere.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\kiss_fft.c"
 					>
 				</File>
 				<File
@@ -275,6 +285,10 @@
 				Name="c"
 				>
 				<File
+					RelativePath="..\..\..\src\_kiss_fft_guts.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\basictypes.h"
 					>
 				</File>
@@ -300,6 +314,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\ionosphere.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\kiss_fft.h"
 					>
 				</File>
 				<File

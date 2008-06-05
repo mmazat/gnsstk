@@ -947,8 +947,7 @@ bool OutputPVT(
       GNSS_ERROR_MSG( "if( !PVT.AddColumn( data, 0 ) )" );
       return false;
     }
-  }
-  
+  }  
   return true;
 }
 
