@@ -17385,6 +17385,7 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
   unsigned n; // the number of rows in M
   double tmpre;
   double tmpim;
+  int s; // sign value +1 or -1
 
   unsigned *index = NULL;
   double *scale = NULL;
@@ -17641,20 +17642,38 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
         }
       }
 
-      // compute the product of the psychologically 'diagonal' terms
+
+	  // compute the product of the psychologically 'diagonal' terms
       det.re = 1;
       det.im = 0;
       for( j = 0; j < n; j++ )
       {
-        if( index[j] < j ) // permutations change signs of the determinant
+        det.re *= U.data[j][index[j]];        
+      }
+
+      /*
+      since permutations change the sign of the determinant, calculate det(P)
+      e.g. 
+      P = [1 0 0 0 0;
+           0 0 0 1 0;
+           0 0 0 0 1;
+           0 0 1 0 0;
+           0 1 0 0 0];
+      The following code uses the +/- rule recursively and to determine if 
+      there is a sign change. 
+      */
+      s = 1; // det(P) is either 1 or -1
+      for( j = 0; j < n-1; j++ )
+      {
+        if( index[j]%2!=0 )
+          s *= -1;
+        for( i=j+1; i < n; i++ )
         {
-          det.re *= -1.0*U.data[j][index[j]];
-        }
-        else
-        {
-          det.re *= U.data[j][index[j]];
+          if( index[i] > j )
+            index[i]--;
         }
       }
+      det.re *= s;
 
       *re = det.re;
       // *im is already 0
@@ -17758,7 +17777,8 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
         }
       }
 
-      // compute the product of the psychologically 'diagonal' terms
+
+	   // compute the product of the psychologically 'diagonal' terms
       j = 0;
       det.re = U.cplx[j][index[j]].re;
       det.im = U.cplx[j][index[j]].im;
@@ -17767,17 +17787,34 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
         tmpre = det.re * U.cplx[j][index[j]].re - det.im * U.cplx[j][index[j]].im;
         tmpim = det.re * U.cplx[j][index[j]].im + det.im * U.cplx[j][index[j]].re;
 
-        if( index[j] < j ) // permutations change signs of the determinant
+        det.re = tmpre;
+        det.im = tmpim;        
+      }
+
+      /*
+      since permutations change the sign of the determinant, calculate det(P)
+      e.g. 
+      P = [1 0 0 0 0;
+           0 0 0 1 0;
+           0 0 0 0 1;
+           0 0 1 0 0;
+           0 1 0 0 0];
+      The following code uses the +/- rule recursively and to determine if 
+      there is a sign change. 
+      */
+      s = 1; // det(P) is either 1 or -1
+      for( j = 0; j < n-1; j++ )
+      {
+        if( index[j]%2!=0 )
+          s *= -1;
+        for( i=j+1; i < n; i++ )
         {
-          det.re = -tmpre;
-          det.im = -tmpim;
-        }
-        else
-        {
-          det.re = tmpre;
-          det.im = tmpim;
+          if( index[i] > j )
+            index[i]--;
         }
       }
+      det.re *= s;
+      det.im *= s;
 
       // the final result (output)
       *re = det.re;
