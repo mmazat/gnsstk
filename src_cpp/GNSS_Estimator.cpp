@@ -50,7 +50,7 @@ SUCH DAMAGE.
 #include "troposphere.h"
 #include "time_conversion.h"
 
-#define DEBUG_THE_ESTIMATOR
+//#define DEBUG_THE_ESTIMATOR
 #define GNSS_CYCLESLIP_THREADHOLD 3
 //#define KO_SECTION
 
@@ -4794,7 +4794,7 @@ namespace GNSS
       if( rxData->m_ObsArray[i].flags.isActive &&
         rxData->m_ObsArray[i].flags.isPsrUsedInSolution )
       {
-        m_RTK.r[j] = rxData->m_ObsArray[i].stdev_psr*rxData->m_ObsArray[i].stdev_psr;
+        m_RTK.r[j] = 2*rxData->m_ObsArray[i].stdev_psr*rxData->m_ObsArray[i].stdev_psr;
         j++;
       }
     }
@@ -4806,7 +4806,7 @@ namespace GNSS
           rxData->m_ObsArray[i].flags.isDopplerUsedInSolution )
         {
           stdev = rxData->m_ObsArray[i].stdev_doppler * GPS_WAVELENGTHL1;
-          m_RTK.r[j] = stdev*stdev;
+          m_RTK.r[j] = 2*stdev*stdev;
           j++;
         }
       }
@@ -4819,6 +4819,7 @@ namespace GNSS
           rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
         {
           stdev = rxData->m_ObsArray[i].stdev_adr * GPS_WAVELENGTHL1;
+		  /*
           double elevation = rxData->m_ObsArray[i].satellite.elevation*RAD2DEG;
 
           // GDM_HACK scaling the stdev for adr when below 30 degrees elevation.
@@ -4835,8 +4836,9 @@ namespace GNSS
           {
             stdev *= 3.0;
           }
+		  */
 
-          m_RTK.r[j] = stdev*stdev;
+          m_RTK.r[j] = 2*stdev*stdev;
           j++;
         }
       }
