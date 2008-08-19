@@ -565,9 +565,9 @@ namespace GNSS
       const double referenceLatitude,  //!< Reference position latitude [rad].
       const double referenceLongitude, //!< Reference position longitude [rad].
       const double referenceHeight,    //!< Reference position height [m].
-      unsigned& nrBytesInBuffer );      //!< The number of bytes set in the buffer.  
-  
-  public:
+      unsigned& nrBytesInBuffer );     //!< The number of bytes set in the buffer.  
+
+ public:
 
     /// The array of GNSS measurements.
     GNSS_structMeasurement m_ObsArray[GNSS_RXDATA_NR_CHANNELS];

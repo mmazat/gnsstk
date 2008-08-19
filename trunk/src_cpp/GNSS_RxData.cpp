@@ -2388,12 +2388,9 @@ namespace GNSS
         }
       }
     }
-      
-    
 
-    return true;
+	return true;
   }
-
 
 } // end namespace GNSS
 
