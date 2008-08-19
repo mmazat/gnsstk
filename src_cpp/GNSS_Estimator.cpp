@@ -1931,12 +1931,12 @@ namespace GNSS
 
   bool GNSS_Estimator::DetermineUsableAdrMeasurements_GPSL1( 
     GNSS_RxData &rxData,   //!< The receiver data.
-    unsigned &nrUsableAdr  //!< The number of usable GPS L1 adr measurements.
+    unsigned &nrUsableAdr  //!< The number of usable GPS L1 adr measurements.    
     )
   {
     unsigned i = 0;
     unsigned char isGood = 0;
-
+    
     rxData.m_pvt.nrAdrObsAvailable = 0;
     rxData.m_pvt.nrAdrObsUsed = 0;
     rxData.m_pvt.nrAdrObsRejected = 0;
@@ -4358,6 +4358,7 @@ namespace GNSS
     unsigned nrDifferentialPsr = 0;     // The number of differential psr.
     unsigned nrDifferentialDoppler = 0; // The number of differential Doppler.
     unsigned nrDifferentialAdr = 0;     // The number of differntial adr.
+    int index_of_highest = 0; // The index of the highest elevation satellite with a valid measurement.
     bool isDifferential = false;
     unsigned u = 0;
     bool setToUseOnlyDifferential = true;
@@ -4504,7 +4505,7 @@ namespace GNSS
     }
     if( m_FilterType == GNSS_FILTER_TYPE_RTK4 || m_FilterType == GNSS_FILTER_TYPE_RTK8 )
     {
-      result = DetermineUsableAdrMeasurements_GPSL1( *rxData, nrUsableAdr );
+      result = DetermineUsableAdrMeasurements_GPSL1( *rxData, index_of_highest, nrUsableAdr );
       if( !result )
       {
         GNSS_ERROR_MSG( "DetermineUsableAdrMeasurements_GPSL1 returned false." );
@@ -4549,7 +4550,7 @@ namespace GNSS
       }
       if( m_FilterType == GNSS_FILTER_TYPE_RTK4 || m_FilterType == GNSS_FILTER_TYPE_RTK8 )
       {
-        result = DetermineUsableAdrMeasurements_GPSL1( *rxBaseData, nrUsableAdr_base );
+        result = DetermineUsableAdrMeasurements_GPSL1( *rxBaseData, index_of_highest, nrUsableAdr_base );
         if( !result )
         {
           GNSS_ERROR_MSG( "DetermineUsableAdrMeasurements_GPSL1 returned false." );
@@ -4557,7 +4558,7 @@ namespace GNSS
         }
       }
 
-      // When in differential mode, only differntial measurements will be used
+      // When in differential mode, only differential measurements will be used
       result = DetermineBetweenReceiverDifferentialIndex(
         rxData,
         rxBaseData,
@@ -5326,6 +5327,71 @@ namespace GNSS
       GNSS_ERROR_MSG( "ComputeDOP returned false." );
       return false;
     }
+
+
+    if( m_FilterType == GNSS_FILTER_TYPE_RTK4 || m_FilterType == GNSS_FILTER_TYPE_RTK8 )
+    {
+      bool findNewBaseSat = true;
+      int index_base = -1;
+
+      // Determine the base satellite based on elevation angle but restrict changes
+      // in base satellite such that there are few base satellite changes.
+      // 1) Select the highest elevation satellite
+      // 2) Select a new base satellite if the base satellite drops below 30 degrees.
+
+      // First check for existing base satellite, then check its elevation angle.
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isActive &&                    
+            rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+        {
+          if( rxData->m_ObsArray[i].flags.isBaseSatellite )
+          {
+            if( rxData->m_ObsArray[i].satellite.elevation < 30.0*PI/180.0 )
+            {
+              // potentially select a new base satellite.
+              rxData->m_ObsArray[i].flags.isBaseSatellite = 0;              
+              findNewBaseSat = true;
+            }
+            else
+            {
+              findNewBaseSat = false;
+              index_base = i;
+            }
+            break;
+          }
+        }
+      }
+
+      // If needed find the base satellite based on elevation angle.
+      if( findNewBaseSat )
+      {
+        double elev_high = -90*PI/180.0;
+        int index_high = -1;
+        
+        for( i = 0; i < rxData->m_nrValidObs; i++ )
+        {
+          if( rxData->m_ObsArray[i].flags.isActive &&                    
+            rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+          {
+            if( rxData->m_ObsArray[i].satellite.elevation > elev_high )
+              elev_high = rxData->m_ObsArray[i].satellite.elevation;
+          }
+        }
+        if( index_high < 0 )
+        {
+          GNSS_ERROR_MSG( "Failed to find a valid base satellite based on elevation angle." );
+          return false;
+        }
+        rxData->m_ObsArray[index_high].flags.isBaseSatellite = 1;
+        index_base = index_high;
+      }
+
+      // Form the double difference ambiguities.
+
+    }
+
+
 
 #ifdef DEBUG_THE_ESTIMATOR
     char supermsg[8192];

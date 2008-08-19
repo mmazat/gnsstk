@@ -88,10 +88,12 @@ typedef struct
   unsigned useTropoCorrection:1;         //!< Indicates that the tropospheric correction should be applied.
   unsigned useBroadcastIonoCorrection:1; //!< Indicates that the broadcast ionospheric correction should be applied.
 
-  unsigned isTimeDifferntialPsrAvailable:1;
-  unsigned isTimeDifferntialDopplerAvailable:1;
+  unsigned isTimeDifferentialPsrAvailable:1;
+  unsigned isTimeDifferentialDopplerAvailable:1;
 
-  unsigned reserved:2;
+  unsigned isBaseSatellite:1; //!< Indicates if this channel corresponds to a base satellite used in double differencing.
+
+  unsigned reserved:1;
 } GNSS_structFlagsBitField;
 
 /// \brief    An enumerated for a GNSS code modulation type.
