@@ -990,6 +990,27 @@ namespace Zenautics
     */
     bool InsertSubMatrix( const Matrix &src, const unsigned dst_row, const unsigned dst_col );
 
+
+    /**
+    \brief  Extract a submatrix (dst) from this matrix from (inclusive) 
+            the rows and columns specified.
+    \code 
+    Matrix A = "[1 2 3; 4 5 6; 7 8 9]";
+    Matrix B;
+    bool result = A.ExtractSubMatrix( B, 1, 0, 2, 2 );
+    // B == [4 5 6; 7 8 9]
+    \endcode
+
+    \return true if successful, false otherwise.
+    */
+    bool ExtractSubMatrix( 
+      Matrix &dst,             //!< The destination matrix to contain the submatrix.
+      const unsigned from_row, //!< The zero-based index for the from row.
+      const unsigned from_col, //!< The zero-based index for the from column.
+      const unsigned to_row,   //!< The zero-based index for the to row.
+      const unsigned to_col    //!< The zero-based index for the to column.
+      );
+
     /**
     \brief  Zero the entire matrix.
     
@@ -3061,6 +3082,48 @@ namespace Zenautics
     */
     bool GetLUFactorization( bool &isFullRank, Matrix &P, Matrix &L, Matrix &U );
 
+
+    /**
+    \brief  Lower x Diagonal x transpose(Lower): matrix factorization.
+    This method avoids using square roots and can be used for any square, full rank, symmetrical matrix .
+
+    \code
+    Matrix LDLt = "[3 6;6 16]";
+    Matrix L;
+    Matrix d;
+    bool result = LDLt.GetLDLt( L, d );
+    // L == [1 0;2 1]
+    // d == [3; 4]; i.e. D == [3 0;0 4]
+    \endcode
+
+    \return true if successful, false otherwise.  
+    */
+    bool GetLDLt( 
+      Matrix& L,  //!< A unit lower triangular matrix.
+      Matrix& d,  //!< The diagonal vector from the diagonal of the D matrix.
+      bool checkSymmetric = true //!< Enforce a symmetry check. Runs faster if disabled.
+      );
+
+    /**
+    \brief  Upper x Diagonal x transpose(Upper): matrix factorization.
+    This method avoids using square roots and can be used for any square, full rank, symmetrical matrix .
+
+    \code
+    Matrix UDUt = "[19 8;8 4]";
+    Matrix U;
+    Matrix d;
+    bool result = UDUt.GetUDUt( U, d );
+    // U == [1 0;2 1]
+    // d == [3; 4]; i.e. D == [3 0;0 4]
+    \endcode
+
+    \return true if successful, false otherwise.  
+    */
+    bool GetUDUt( 
+      Matrix& U,  //!< A unit upper triangular matrix.
+      Matrix& d,  //!< The diagonal vector from the diagonal of the D matrix.
+      bool checkSymmetric = true //!< Enforce a symmetry check. Runs faster if disabled.
+      );
 
     /**
     /// \brief  Retrieve the elements of the matrix specified by the index vectors. 

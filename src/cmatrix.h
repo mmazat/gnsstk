@@ -311,6 +311,33 @@ BOOL MTX_CopyRowIntoAColumnMatrix( const MTX *src, const unsigned row, MTX *dst 
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_InsertSubMatrix( MTX *dst, const MTX *src, const unsigned dst_row, const unsigned dst_col );
 
+/**
+\brief  Extract a submatrix (dst) from this matrix from (inclusive) 
+        the rows and columns specified.
+\code 
+MTX A;
+MTX B;
+BOOL result;
+MTX_Init( &A );
+MTX_Init( &B );
+
+result = MTX_SetFromMatrixString( &A, "[1 2 3; 4 5 6; 7 8 9]" );
+result = MTX_ExtractSubMatrix( &A, &B, 1, 0, 2, 2 );
+// B == [4 5 6; 7 8 9]
+\endcode
+
+\return TRUE if successful, FALSE otherwise.
+*/
+BOOL MTX_ExtractSubMatrix( 
+  const MTX* src,          //!< The source matrix.                        
+  MTX* dst,                //!< The destination matrix to contain the submatrix.
+  const unsigned from_row, //!< The zero-based index for the from row.
+  const unsigned from_col, //!< The zero-based index for the from column.
+  const unsigned to_row,   //!< The zero-based index for the to row.
+  const unsigned to_col    //!< The zero-based index for the to column.
+  );
+
+
 /// \brief  Zero the entire matrix.
 ///
 /// \return TRUE if successful, FALSE otherwise.
@@ -1796,6 +1823,33 @@ BOOL MTX_Swap( MTX* A, MTX *B );
   #define MTX_ERROR_MSG( msg ) {}
 
 #endif
+
+
+/// \brief  Compute the LDLt decomposition of a square matrix. 
+///         This method avoids using square roots and can be used 
+///         for any square, full rank, symmetrical matrix.  
+///
+/// \return TRUE if succesful, FALSE otherwise. FALSE if not full rank.
+BOOL MTX_LDLt( 
+  MTX* src,           //!< src = L*D*Lt
+  MTX *L,             //!< src = L*D*Lt
+  MTX* d,             //!< src = L*D*Lt, d it the vector diagonal of D.
+  BOOL checkSymmetric //!< Option to enable/disable checking the src matrix for symmetry. Runs faster if the input is known to be symmetric.
+  );
+
+/// \brief  Compute the UDUt decomposition of a square matrix.
+///         This method avoids using square roots and can be used 
+///         for any square, full rank, symmetrical matrix.  
+///
+/// \return TRUE if succesful, FALSE otherwise. FALSE if not full rank.
+BOOL MTX_UDUt( 
+  MTX* src,           //!< src = U*D*Ut
+  MTX *U,             //!< src = U*D*Ut
+  MTX* d,             //!< src = U*D*Ut, d it the vector diagonal of D.
+  BOOL checkSymmetric //!< Option to enable/disable checking the src matrix for symmetry.
+  );
+
+
 
 #ifdef __cplusplus
 }

@@ -58,7 +58,7 @@ necessary. \n
 #include "Matrix.h"
 #include "cmatrix.h"
 
-// deal with msvc empry projects
+// deal with msvc empty projects
 #ifndef WIN32
   #ifdef _WIN32
     #define WIN32
@@ -1038,6 +1038,25 @@ namespace Zenautics
     else 
     {
       MTX_ERROR_MSG( "MTX_InsertSubMatrix returned false." );
+      return false;
+    }
+  }
+
+  bool Matrix::ExtractSubMatrix( 
+    Matrix &dst,             //!< The destination matrix to contain the submatrix.
+    const unsigned from_row, //!< The zero-based index for the from row.
+    const unsigned from_col, //!< The zero-based index for the from column.
+    const unsigned to_row,   //!< The zero-based index for the to row.
+    const unsigned to_col    //!< The zero-based index for the to column.
+    )
+  {
+    if( MTX_ExtractSubMatrix( &m_Matrix, &dst.m_Matrix, from_row, from_col, to_row, to_col ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_ExtractSubMatrix returned false." );
       return false;
     }
   }
@@ -2997,6 +3016,40 @@ namespace Zenautics
         isFullRank = false;
 
       MTX_ERROR_MSG( "MTX_LUFactorization returned false." );
+      return false;
+    }
+  }
+
+  bool Matrix::GetLDLt( 
+    Matrix& L,   //!< A unit lower triangular matrix.
+    Matrix& d,   //!< The diagonal vector from the diagonal of the D matrix.
+    bool checkSymmetric //!< Enforce a symmetry check. Runs faster if disabled.
+    )
+  {
+    if( MTX_LDLt( &m_Matrix, &L.m_Matrix, &d.m_Matrix, checkSymmetric ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_LDLt returned false." );
+      return false;
+    }
+  }
+
+  bool Matrix::GetUDUt( 
+    Matrix& U,  //!< A unit upper triangular matrix.
+    Matrix& d,  //!< The diagonal vector from the diagonal of the D matrix.
+    bool checkSymmetric //!< Enforce a symmetry check. Runs faster if disabled.
+    )
+  {
+    if( MTX_UDUt( &m_Matrix, &U.m_Matrix, &d.m_Matrix, checkSymmetric ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_UDUt returned false." );
       return false;
     }
   }

@@ -1,48 +1,6 @@
-/**
-\file     cmatrix.c
-\brief    'c' functions for vector and matrix operations.
-\author   Glenn D. MacGougan (GDM)
-\date     2008-05-07
-\version  0.05 Beta
-
-\b Version \b Information \n
-This is the open source version (BSD license). The Professional Version
-is avaiable via http://www.zenautics.com. The Professional Version
-is highly optimized using SIMD for INTEL processors and includes 
-optimization for multi-code processors.
-
-\b License \b Information \n
-Copyright (c) 2008, Glenn D. MacGougan, Zenautics Technologies Inc. \n
-
-Redistribution and use in source and binary forms, with or without
-modification, of the specified files is permitted provided the following 
-conditions are met: \n
-
-- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer. \n
-- Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in the
-  documentation and/or other materials provided with the distribution. \n
-- The name(s) of the contributor(s) may not be used to endorse or promote 
-  products derived from this software without specific prior written 
-  permission. \n
-
-THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
-OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
-OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
-SUCH DAMAGE.
-
-\b NOTES: \n
-This code was developed using rigourous unit testing for every function 
-and operation. Despite any rigorous development process, bugs are
-inevitable. Please report bugs and suggested fixes to glenn @ zenautics.com.\n
+/*!
+\file cmatrix.c
+\brief 'c' functions for vector and matrix operations
 */
 #include <stdio.h>  // for FILE*
 #include <stdlib.h> // for calloc, malloc, free
@@ -73,7 +31,7 @@ inevitable. Please report bugs and suggested fixes to glenn @ zenautics.com.\n
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
-#include "kiss_fft.h" // Uses kiss FFT
+#include "kiss_fft.h" // Use kiss FFT, when INTEL_IPPS is disabled
 
 //#define MTX_DEBUG
 #ifdef MTX_DEBUG
@@ -2420,6 +2378,96 @@ BOOL MTX_InsertSubMatrix( MTX *dst, const MTX *src, const unsigned dst_row, cons
         memcpy( &(dst->cplx[dst_col+j][dst_row]), src->cplx[j], sizeof(stComplex)*src->nrows );
       }
     }
+  }
+  return TRUE;
+}
+
+BOOL MTX_ExtractSubMatrix( 
+  const MTX* src,          //!< The source matrix.                        
+  MTX* dst,                //!< The destination matrix to contain the submatrix.
+  const unsigned from_row, //!< The zero-based index for the from row.
+  const unsigned from_col, //!< The zero-based index for the from column.
+  const unsigned to_row,   //!< The zero-based index for the to row.
+  const unsigned to_col    //!< The zero-based index for the to column.
+  )
+{
+  unsigned i;
+  unsigned j;
+  unsigned k;
+  unsigned m;
+
+  if( src == NULL )
+  {
+    MTX_ERROR_MSG( "NULL source matrix" );
+    return FALSE;
+  }
+  if( dst == NULL )
+  {
+    MTX_ERROR_MSG( "NULL destination matrix" );
+    return FALSE;
+  }
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "NULL source matrix" );
+    return FALSE;
+  }
+
+  if( to_row - from_row < 0 )
+  {
+    MTX_ERROR_MSG( "The destination matrix has invalid dimension. to_row - from_row < 0" );
+    return FALSE;
+  }
+  if( to_col - from_col < 0 )
+  {
+    MTX_ERROR_MSG( "The destination matrix has invalid dimension. to_col - from_col < 0" );
+    return FALSE;
+  }
+
+  if( from_row >= src->nrows )
+  {
+    MTX_ERROR_MSG( "from_row > number of source rows" );
+    return FALSE;
+  }
+  if( from_col >= src->ncols )
+  {
+    MTX_ERROR_MSG( "from_col > number of source columns" );
+    return FALSE;
+  }
+  if( to_row >= src->nrows )
+  {
+    MTX_ERROR_MSG( "to_row > number of source rows" );
+    return FALSE;
+  }
+  if( to_col >= src->ncols )
+  {
+    MTX_ERROR_MSG( "to_col > number of source columns" );
+    return FALSE;
+  }
+
+  if( !MTX_Malloc( dst, to_row-from_row+1, to_col-from_col+1, src->isReal ) )
+  {
+    MTX_ERROR_MSG( "MTX_Malloc returned FALSE." );
+    return FALSE;
+  }
+
+  m = 0;
+  for( j = from_col; j <= to_col; j++ )
+  {
+    k = 0;
+    for( i = from_row; i <= to_row; i++ )
+    {
+      if( src->isReal )
+      {
+        dst->data[m][k] = src->data[j][i];
+      }
+      else
+      {
+        dst->cplx[m][k].re = src->cplx[j][i].re;
+        dst->cplx[m][k].im = src->cplx[j][i].im;
+      }
+      k++;
+    }
+    m++;
   }
 
   return TRUE;
@@ -17385,7 +17433,7 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
   unsigned n; // the number of rows in M
   double tmpre;
   double tmpim;
-  int s; // sign value +1 or -1
+  int s; // a sign value 1 or -1.
 
   unsigned *index = NULL;
   double *scale = NULL;
@@ -17522,7 +17570,7 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
     unsigned i;
     unsigned j;
     unsigned k;
-    unsigned tempi;
+    unsigned tempi;    
 
     double r = 0.0,
       rmax = 0.0,
@@ -17561,7 +17609,6 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
       MTX_static_Det_cleanup( index, scale, &U, &magMtx );
       return FALSE;
     }
-
 
     // deal with the real and complex cases separately
     if( M->isReal )
@@ -17642,8 +17689,9 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
         }
       }
 
+      //MTX_PrintAutoWidth( &U, "U.txt", 10, FALSE ); 
 
-	  // compute the product of the psychologically 'diagonal' terms
+      // compute the product of the psychologically 'diagonal' terms
       det.re = 1;
       det.im = 0;
       for( j = 0; j < n; j++ )
@@ -17777,8 +17825,7 @@ BOOL MTX_Det( const MTX *M, double *re, double *im )
         }
       }
 
-
-	   // compute the product of the psychologically 'diagonal' terms
+      // compute the product of the psychologically 'diagonal' terms
       j = 0;
       det.re = U.cplx[j][index[j]].re;
       det.im = U.cplx[j][index[j]].im;
@@ -20750,5 +20797,247 @@ BOOL MTX_Swap( MTX* A, MTX *B )
   B->nrows = C.nrows;
 
   // C does not need MTX_Free
+  return TRUE;
+}
+
+
+BOOL MTX_LDLt( 
+  MTX* src,           //!< src = L*D*Lt
+  MTX *L,             //!< src = L*D*Lt
+  MTX* d,             //!< src = L*D*Lt, d it the vector diagonal of D.
+  BOOL checkSymmetric //!< Option to enable/disable checking the src matrix for symmetry.
+  )
+{
+  int i;
+  int j;
+  int k;
+  int n;
+  BOOL isSymmetric = TRUE; // assume true
+  double val;
+  double maxdif;
+  double dtmp;
+
+  if( src == NULL || L == NULL || d == NULL )
+  {
+    MTX_ERROR_MSG( "An input Matrix is NULL" );
+    return FALSE;
+  }
+
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "NULL Matrix" );
+    return FALSE;
+  }
+
+  if( !MTX_isSquare( src ) )
+  {
+    MTX_ERROR_MSG( "src Matrix is not square" );
+    return FALSE;
+  }
+
+  if( !src->isReal )
+  {
+    MTX_ERROR_MSG( "Complex LDLt not supported yet" );
+    return FALSE;
+  }
+
+  // get the square dimension
+  n = src->ncols;
+
+  if( checkSymmetric )
+  {    
+    // check symmetric
+    for( i = 0; i < n; i++ )
+    {
+      for( j = i+1; j < n; j++ )
+      {
+        val = src->data[j][i];
+        maxdif = fabs( val )*1e-14;
+        // Why 1e-14? it works well for most matrices expected.
+        
+        dtmp = fabs( val - src->data[i][j] );
+        if( dtmp > maxdif )
+        {
+          isSymmetric = FALSE;
+          break;
+        }
+      }
+      if( !isSymmetric )
+        break;
+    }
+    if( !isSymmetric )
+    {
+      MTX_ERROR_MSG( "src is not symmetric" );
+      return FALSE;
+    }
+  }
+
+  if( !MTX_Copy( src, L ) )
+  {
+    MTX_ERROR_MSG( "MTX_Copy returned FALSE." );
+    return FALSE;
+  }
+
+  if( !MTX_Calloc( d, n, 1, TRUE ) )
+  {
+    MTX_ERROR_MSG( "MTX_Calloc returned FALSE." );
+    return FALSE;
+  }
+  
+  // Perform LDLt decomposition without square roots
+  // refer http://en.wikipedia.org/wiki/Cholesky_decomposition
+  // The algorithm below performs everything inplace on a copy of the input matrix.
+  for( j = 0; j < n; j++ )
+  {
+    dtmp = 0;
+    for( k = 0; k < j; k++ )
+    {     
+      val = L->data[k][j];
+      dtmp += val * val * L->data[k][k];
+    }
+    L->data[j][j] -= dtmp; // the diagonal element of D
+
+    for( i = j + 1; i < n; i++ )
+    {
+      for( k = 0; k < j; k++ )
+        L->data[j][i] -= L->data[k][i] * L->data[k][j] * L->data[k][k];
+
+      if( L->data[j][j] == 0.0 )
+        return FALSE;
+
+      L->data[j][i] /= L->data[j][j];
+    }
+  }
+
+  // form the explicit diagonal vector and L matrix
+  for( i = 0; i < n; i++ )
+  {
+    d->data[0][i] = L->data[i][i];
+    L->data[i][i] = 1.0;
+
+    for( j = i+1; j < n; j++ )
+    {
+      L->data[j][i] = 0.0;
+    }
+  }
+
+  return TRUE;
+}
+
+BOOL MTX_UDUt( 
+  MTX* src,           //!< src = U*D*Ut
+  MTX *U,             //!< src = U*D*Ut
+  MTX* d,             //!< src = U*D*Ut, d it the vector diagonal of D.
+  BOOL checkSymmetric //!< Option to enable/disable checking the src matrix for symmetry.
+  )
+{
+  int i;
+  int j;
+  int k;
+  int n;
+  BOOL isSymmetric = TRUE; // assume true
+  double val;
+  double maxdif;
+  double dtmp;
+  double alpha;
+  double beta;
+
+  if( src == NULL || U == NULL || d == NULL )
+  {
+    MTX_ERROR_MSG( "An input Matrix is NULL" );
+    return FALSE;
+  }
+
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "NULL Matrix" );
+    return FALSE;
+  }
+
+  if( !MTX_isSquare( src ) )
+  {
+    MTX_ERROR_MSG( "src Matrix is not square" );
+    return FALSE;
+  }
+
+  if( !src->isReal )
+  {
+    MTX_ERROR_MSG( "Complex LDLt not supported yet" );
+    return FALSE;
+  }
+
+  // get the square dimension
+  n = src->ncols;
+
+  if( checkSymmetric )
+  {    
+    // check symmetric
+    for( i = 0; i < n; i++ )
+    {
+      for( j = i+1; j < n; j++ )
+      {
+        val = src->data[j][i];
+        maxdif = fabs( val )*1e-14;
+        // Why 1e-14? it works well for most matrices expected.
+        
+        dtmp = fabs( val - src->data[i][j] );
+        if( dtmp > maxdif )
+        {
+          isSymmetric = FALSE;
+          break;
+        }
+      }
+      if( !isSymmetric )
+        break;
+    }
+    if( !isSymmetric )
+    {
+      MTX_ERROR_MSG( "src is not symmetric" );
+      return FALSE;
+    }
+  }
+
+  if( !MTX_Copy( src, U ) )
+  {
+    MTX_ERROR_MSG( "MTX_Copy returned FALSE." );
+    return FALSE;
+  }
+  
+  if( !MTX_Calloc( d, n, 1, TRUE ) )
+  {
+    MTX_ERROR_MSG( "MTX_Calloc returned FALSE." );
+    return FALSE;
+  }
+  
+  // Perform UDUt decomposition without square roots, inplace as U is initialized as a copy.
+  for( j = n-1; j >= 1; j-- )
+  {
+    dtmp = U->data[j][j];
+    d->data[0][j] = dtmp;
+    if( dtmp == 0.0 )
+      return FALSE;
+
+    alpha = 1.0/dtmp;
+    for( k = 0; k <= j-1; k++ )
+    {
+      beta = U->data[j][k];
+      U->data[j][k] = alpha*beta;
+      for( i = 0; i <= k; i++ )
+      {
+        U->data[k][i] -= beta*U->data[j][i];        
+      }
+    }
+  }
+  d->data[0][0] = U->data[0][0];
+
+  // form the explicit U matrix
+  for( i = 0; i < n; i++ )
+  {
+    U->data[i][i] = 1.0;
+    for( j = 0; j < i; j++ )
+    {
+      U->data[j][i] = 0.0;
+    }
+  }
   return TRUE;
 }

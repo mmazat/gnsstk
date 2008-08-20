@@ -1062,8 +1062,8 @@ bool OutputObservationData( GNSS_RxData* rxData, bool isRover )
         rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable,     //!< Indicates if a matching ADR observation is available from another receiver.
         rxData->m_ObsArray[i].flags.useTropoCorrection,         //!< Indicates that the tropospheric correction should be applied.
         rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection, //!< Indicates that the broadcast ionospheric correction should be applied.
-        rxData->m_ObsArray[i].flags.isTimeDifferntialPsrAvailable,
-        rxData->m_ObsArray[i].flags.isTimeDifferntialDopplerAvailable );
+        rxData->m_ObsArray[i].flags.isTimeDifferentialPsrAvailable,
+        rxData->m_ObsArray[i].flags.isTimeDifferentialDopplerAvailable );
 
       fprintf( fid, "%.3f,%.3f,%.3f,",
         rxData->m_ObsArray[i].stdev_psr,         //!< The estimated pseudorange measurement standard deviation [m].
