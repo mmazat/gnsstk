@@ -4505,7 +4505,7 @@ namespace GNSS
     }
     if( m_FilterType == GNSS_FILTER_TYPE_RTK4 || m_FilterType == GNSS_FILTER_TYPE_RTK8 )
     {
-      result = DetermineUsableAdrMeasurements_GPSL1( *rxData, index_of_highest, nrUsableAdr );
+      result = DetermineUsableAdrMeasurements_GPSL1( *rxData, nrUsableAdr );
       if( !result )
       {
         GNSS_ERROR_MSG( "DetermineUsableAdrMeasurements_GPSL1 returned false." );
@@ -4550,7 +4550,7 @@ namespace GNSS
       }
       if( m_FilterType == GNSS_FILTER_TYPE_RTK4 || m_FilterType == GNSS_FILTER_TYPE_RTK8 )
       {
-        result = DetermineUsableAdrMeasurements_GPSL1( *rxBaseData, index_of_highest, nrUsableAdr_base );
+        result = DetermineUsableAdrMeasurements_GPSL1( *rxBaseData, nrUsableAdr_base );
         if( !result )
         {
           GNSS_ERROR_MSG( "DetermineUsableAdrMeasurements_GPSL1 returned false." );
@@ -5328,8 +5328,12 @@ namespace GNSS
       return false;
     }
 
+    if( nrDifferentialAdr < 2 )
+    {
+      return true;
+    }
 
-    if( m_FilterType == GNSS_FILTER_TYPE_RTK4 || m_FilterType == GNSS_FILTER_TYPE_RTK8 )
+    if( m_FilterType == GNSS_FILTER_TYPE_RTK4 )
     {
       bool findNewBaseSat = true;
       int index_base = -1;
@@ -5375,7 +5379,10 @@ namespace GNSS
             rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
           {
             if( rxData->m_ObsArray[i].satellite.elevation > elev_high )
+            {
               elev_high = rxData->m_ObsArray[i].satellite.elevation;
+              index_high = i;
+            }
           }
         }
         if( index_high < 0 )
@@ -5387,11 +5394,229 @@ namespace GNSS
         index_base = index_high;
       }
 
-      // Form the double difference ambiguities.
+      m_RTK.x.Redim( 4+nrDifferentialAdr, 1 );
+      m_RTK.x[0] = rxData->m_pvt.latitude;
+      m_RTK.x[1] = rxData->m_pvt.longitude;
+      m_RTK.x[2] = rxData->m_pvt.height;
+      m_RTK.x[3] = rxData->m_pvt.clockOffset;
+
+      k = 4;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isActive &&                    
+          rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+        {
+          m_RTK.x[k] = rxData->m_ObsArray[i].ambiguity;
+          k++;
+        }
+      }       
+
+      
+      // Form the double difference ambiguities and the transformation matrix for the 
+      // state variance covariance matrix.
+      Matrix D( 4+nrDifferentialAdr-2, 4+nrDifferentialAdr );
+
+      // e.g.
+      // D = [1 0 0 0 ...
+      //      0 1 0 0 ...
+      //      0 0 1 0 ...
+      //      0 0 0 0 -1 1 0 0 0 0 ...
+      //      0 0 0 0 -1 0 1 0 0 0 ...
+      //      0 0 0 0 -1 0 0 1 0 0 ...
+      //      0 0 0 0 -1 0 0 0 1 0 ... ]
+      // Retains the position states. 
+      // Removes the clock state. 
+      // Performs the ambiguity state differencing.
+
+      D[0][0] = 1;
+      D[1][1] = 1;
+      D[2][2] = 1;
+      
+      int state_index_base = rxData->m_ObsArray[index_base].index_ambiguity_state;
+      if( state_index_base < 0 )
+      {
+        GNSS_ERROR_MSG( "Unexpected - state index of the base satellite ambiguity is invalid." );        
+        return false;
+      }
+
+      //m_RTKDD.x.Resize( 3 + nrDifferentialAdr - 1 );
+
+      int state_index = 0;
+      k = 3;
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( i == index_base )
+          continue;
+
+        if( rxData->m_ObsArray[i].flags.isActive &&                    
+          rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
+        {
+          // compute the double difference ambiguity
+          rxData->m_ObsArray[i].ambiguity_dd = rxData->m_ObsArray[i].ambiguity - rxData->m_ObsArray[index_base].ambiguity;
+
+          D[k][state_index_base] = -1;
+          D[k][rxData->m_ObsArray[i].index_ambiguity_state] = 1;
+          //m_RTKDD.x[k] = rxData->m_ObsArray[i].ambiguity_dd;
+          k++;           
+        }
+      }  
+
+      // D.Print( "D.txt", 6 );
+
+      m_RTKDD.P = D*m_RTK.P*D.Transpose();
+      m_RTKDD.x = D*m_RTK.x;
+
+      // m_RTK.P.Print( "P.txt", 8 );
+      m_RTKDD.P.Print( "Pdd.txt", 8 );            
+
+      Matrix Q; // Decorrelated variance/covariance matrix
+      Matrix Z; // Z-transformation matrix
+      Matrix L; // L matrix (from LtDL-decomposition of Q)
+      //Matrix D; // D matrix (from LtDL-decomposition of Q)
+      Matrix d; // The diagonal of D.
+      Matrix z; // Transformed ambiguities
+      Matrix a; // The ambiguities 
+      Matrix Zti;
+      
+      m_RTKDD.P.ExtractSubMatrix( Q, 3, 3, m_RTKDD.P.nrows()-1, m_RTKDD.P.ncols()-1 );
+
+      Q.Print( "Q.txt", 9 );
+
+      n = Q.nrows();
+      Zti.Identity(n);
+      unsigned i1   = n - 1;
+      int sw   = 1;
+
+      a.Resize( n );
+      for( k = 3; k < m_RTKDD.x.nrows(); k++ )
+        a[k-3] = m_RTKDD.x[k];
+
+      a.Print( "a.txt", 9 );
+
+
+      result = Q.GetUDUt( L, d, false ); // skipping the symmetry check!
+      if( !result )
+      {
+        GNSS_ERROR_MSG( "Q.GetUDUt returned false." );
+        return false;
+      }
+      L = L.Transpose(); // L is Lt, make it L for the algorithm below
+
+      L.Print( "L.txt", 9 );
+
+      Matrix mu(1);
+      double delta;
+      double lambda;
+      double eta;
+      double tmpd;
+      
+      // now apply the actual decorrelation procedure
+      while( sw == 1 )
+      {
+        i  = n;
+        sw = 0;
+        while( !sw && i > 1 )
+        {
+          i = i - 1;
+          if( i <= i1 )
+          {
+            for( j = i+1; j <= n; j++ )
+            {
+              mu[0] = L[j-1][i-1];
+              mu = mu.round(0);
+              if( mu[0] != 0 )
+              {
+                for( k = j; k <= n; k++ )
+                {
+                  L[k-1][i-1] -= mu[0] * L[k-1][j-1];
+                  // L(j:n,i) = L(j:n,i) - mu * L(j:n,j);
+
+                  Zti[k-1][j-1] += mu[0] * Zti[k-1][i-1];
+                  // Zti(1:n,j) = Zti(1:n,j) + mu * Zti(1:n,i);
+                }
+              }
+            }           
+          }
+          //tmpd = L[i+1-1][i-1];
+          //delta = d[i-1] + tmpd*tmpd * d[i+1-1];
+          tmpd = L[i][i-1];
+          delta = d[i-1] + tmpd*tmpd * d[i];
+          //delta = D(i) + L(i+1,i)^2 * D(i+1);
+
+          if( delta < d[i] )
+          {
+            lambda         = d[i] * L[i][i-1] / delta;
+            //lambda(3)    = D(i+1) * L(i+1,i) / delta;
+            eta            = d[i-1] / delta;
+            //eta          = D(i) / delta;
+            d[i-1]         = eta * d[i];
+            //D(i)         = eta * D(i+1);
+            d[i]           = delta;
+            //D(i+1)       = delta;
+
+
+            Matrix Helper;
+
+            if( i-1 > 0 )
+            {
+              Helper.Resize( i-1 );
+              for( j = 1; j <= i-1; j++ )
+              {
+                Helper[j-1]  = L[i][j-1] - L[i][i-1] * L[i-1][j-1];
+                //Helper     = L(i+1,1:i-1) - L(i+1,i) .* L(i,1:i-1);
+  
+                L[i][j-1]    = lambda * L[i][j-1] + eta * L[i-1][j-1];
+                //L(i+1,1:i-1) = lambda(3) * L(i+1,1:i-1) + eta * L(i,1:i-1);
+  
+                L[i-1][j-1]  = Helper[j-1];
+                //L(i,1:i-1)   = Help;             
+              }
+            }
+            L[i][i-1]    = lambda;
+            //L(i+1,i)     = lambda(3);
+
+            if( n-(i+2)+1 > 0 )
+            {              
+              Helper.Resize( n-(i+2)+1 );
+              for( j = i+2; j <= n; j++ )
+              {
+                Helper[j-1] = L[j-1][i]; // GDM_TODO not j-1 for Helper
+                //Help      = L(i+2:n,i);
+                L[j-1][i-1] = L[j-1][i];
+                //L(i+2:n,i)   = L(i+2:n,i+1);
+                L[j-1][i] = Helper[j-1];
+                //L(i+2:n,i+1) = Help;
+              }
+            }
+
+            Helper.Resize( n );
+            for( j = 1; j <= n; j++ )
+            {          
+              Helper[j-1]   = Zti[j-1][i-1];
+              //Help        = Zti(1:n,i);
+              Zti[j-1][i-1] = Zti[j-1][i];
+              //Zti(1:n,i)   = Zti(1:n,i+1);
+              Zti[j-1][i]   = Helper[j-1];
+              //Zti(1:n,i+1) = Help;
+            }
+
+            i1           = i;
+            sw           = 1;
+          }
+        }
+      }
+
+      // Determine the transformed Q-matrix and the transformation-matrix
+      // Determine the decorrelated ambiguities, if they were supplied
+      Z = Zti.Inv().round(0);
+      Q = Z.Transpose() * Q * Z;    
+      z = Z.Transpose() * a;
+
+      Z.Print( "Z.txt", 9 );
+      Q.Print( "Qd.txt", 9 );
+      z.Print( "za.txt", 9 );
 
     }
-
-
 
 #ifdef DEBUG_THE_ESTIMATOR
     char supermsg[8192];

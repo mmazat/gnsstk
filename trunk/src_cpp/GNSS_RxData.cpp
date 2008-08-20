@@ -1353,9 +1353,7 @@ namespace GNSS
             m_ObsArray[i].psr_smoothed      = 0.0;
             m_ObsArray[i].psr_predicted     = 0.0;
             m_ObsArray[i].doppler_predicted = 0.0;
-            m_ObsArray[i].azimuthRads       = 0.0;
-            m_ObsArray[i].elevationRads     = 0.0;
-
+            
             m_ObsArray[i].flags.isActive = 1;
             m_ObsArray[i].flags.isCodeLocked   = obsArray[i].trackingStatus.isCodeLocked;
             m_ObsArray[i].flags.isPhaseLocked  = obsArray[i].trackingStatus.isPhaseLocked;
@@ -1914,8 +1912,8 @@ namespace GNSS
       X[j][i] = m_ObsArray[i].flags.isDifferentialAdrAvailable; j++;     //!< Indicates if a matching ADR observation is available from another receiver.
       X[j][i] = m_ObsArray[i].flags.useTropoCorrection; j++;         //!< Indicates that the tropospheric correction should be applied.
       X[j][i] = m_ObsArray[i].flags.useBroadcastIonoCorrection; j++; //!< Indicates that the broadcast ionospheric correction should be applied.
-      X[j][i] = m_ObsArray[i].flags.isTimeDifferntialPsrAvailable; j++;
-      X[j][i] = m_ObsArray[i].flags.isTimeDifferntialDopplerAvailable; j++;
+      X[j][i] = m_ObsArray[i].flags.isTimeDifferentialPsrAvailable; j++;
+      X[j][i] = m_ObsArray[i].flags.isTimeDifferentialDopplerAvailable; j++;
 
       X[j][i] = m_ObsArray[i].week; j++;  //!< The measurement gps week (at 'transmit' time) [weeks].
       X[j][i] = m_ObsArray[i].tow; j++;   //!< The measurement gps time of week (at 'transmit' time) [s].
@@ -1941,10 +1939,7 @@ namespace GNSS
       X[j][i] = m_ObsArray[i].psr_predicted; j++;     //!< The predicted pseudorange based on the satellite position, user position, and current clock offset [m].
       X[j][i] = m_ObsArray[i].ambiguity; j++;         //!< The estimated integer component of the adr. This may be the single or double differenced ambiguity [].
       X[j][i] = m_ObsArray[i].doppler_predicted; j++; //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
-      X[j][i] = m_ObsArray[i].azimuthRads; j++;       //!< The associated satellite azimuth for this channel [rad].
-      X[j][i] = m_ObsArray[i].elevationRads; j++;     //!< The associated satellite elevation for this channel  [rad].
-
-
+      
       X[j][i] = m_ObsArray[i].index_differential; j++;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
       X[j][i] = m_ObsArray[i].index_time_differential; j++; //!< The channel index of a matching time differential observation. -1 means there is no matching channel.
 

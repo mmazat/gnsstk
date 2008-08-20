@@ -263,7 +263,6 @@ typedef struct
   double   psr_misclosure_lsq;     //!< The measured psr minus the computed psr estimate using least squares [m].
   double   doppler_misclosure_lsq; //!< The measured Doppler minus the computed Doppler estimate using least squares [m/s].
   
-  float    elevationRads;     //!< The associated satellite elevation for this channel  [rad].
   short index_differential;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
   short index_time_differential; //!< The channel index of a matching time differential observation. -1 means there is no matching channel.
 
