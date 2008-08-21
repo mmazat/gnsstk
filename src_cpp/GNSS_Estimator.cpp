@@ -69,6 +69,23 @@ namespace GNSS
   25.188, 26.757, 28.300, 29.819, 31.319, 32.801, 34.267, 35.718, 37.156, 38.582, \
   39.997, 41.401, 42.796, 44.181, 45.558, 46.928, 48.290, 49.645, 50.993, 52.336, 53.672 }
 
+  /// A look up table for gamma(index/2). 
+  /// gamma(0/2) == INF but here it is zero. It should not be indexed at zero anyway.
+  /// from gamma(0),gamma(1/2),...gamma(40/2) where gamma(0) is invalid.
+  #define GNSS_GAMMA_NDIV2 { \
+  0, 1.772453850905516,1,0.8862269254527581,1,1.329340388179137,2,3.323350970447843, \
+  6,11.63172839656745,24,52.34277778455353,120,287.8852778150444,720, \
+  1871.254305797788,5040,14034.40729348341,40320,119292.461994609,362880, \
+  1133278.388948786,3628800,11899423.08396225,39916800,136843365.4655662, \
+  479001600,1710542068.319572,6227020800,23092317922.31435,87178291200, \
+  334838609873.5552,1307674368000,5189998453040.109,20922789888000, \
+  85634974475162.22,355687428096000,1498612053315333,6402373705728000, \
+  2.772432298633363e+016,1.21645100408832e+017 }
+
+  /// \brief evaulate gamma(n/2) using a look up table since n is an integer.
+  /// n has a maximum value of 40 and n = 0 should not be used.
+  static double fast_gamma_ndiv2( unsigned n );
+
 
   GNSS_Estimator::GNSS_Estimator()
    : m_debug(NULL), m_FilterType(GNSS_FILTER_TYPE_INVALID)
@@ -5484,7 +5501,7 @@ namespace GNSS
 
       n = Q.nrows();
       Zti.Identity(n);
-      unsigned i1   = n - 1;
+      int i1   = n - 1;
       int sw   = 1;
 
       a.Resize( n );
@@ -5503,6 +5520,7 @@ namespace GNSS
       L = L.Transpose(); // L is Lt, make it L for the algorithm below
 
       L.Print( "L.txt", 9 );
+      d.Print( "d.txt", 9 );
 
       Matrix mu(1);
       double delta;
@@ -5518,19 +5536,22 @@ namespace GNSS
         while( !sw && i > 1 )
         {
           i = i - 1;
-          if( i <= i1 )
+          if( (int)i <= i1 )
           {
             for( j = i+1; j <= n; j++ )
             {
               mu[0] = L[j-1][i-1];
               mu = mu.round(0);
+              //mu = round(L(j,i));              
               if( mu[0] != 0 )
               {
                 for( k = j; k <= n; k++ )
                 {
                   L[k-1][i-1] -= mu[0] * L[k-1][j-1];
                   // L(j:n,i) = L(j:n,i) - mu * L(j:n,j);
-
+                }                  
+                for( k = 1; k <=n; k++ )
+                {
                   Zti[k-1][j-1] += mu[0] * Zti[k-1][i-1];
                   // Zti(1:n,j) = Zti(1:n,j) + mu * Zti(1:n,i);
                 }
@@ -5553,50 +5574,38 @@ namespace GNSS
             //D(i)         = eta * D(i+1);
             d[i]           = delta;
             //D(i+1)       = delta;
-
-
-            Matrix Helper;
-
-            if( i-1 > 0 )
+            
+            for( j = 1; j <= i-1; j++ )
             {
-              Helper.Resize( i-1 );
-              for( j = 1; j <= i-1; j++ )
-              {
-                Helper[j-1]  = L[i][j-1] - L[i][i-1] * L[i-1][j-1];
-                //Helper     = L(i+1,1:i-1) - L(i+1,i) .* L(i,1:i-1);
+              tmpd = L[i][j-1] - L[i][i-1] * L[i-1][j-1];
+              //Helper     = L(i+1,1:i-1) - L(i+1,i) .* L(i,1:i-1);
   
-                L[i][j-1]    = lambda * L[i][j-1] + eta * L[i-1][j-1];
-                //L(i+1,1:i-1) = lambda(3) * L(i+1,1:i-1) + eta * L(i,1:i-1);
+              L[i][j-1]    = lambda * L[i][j-1] + eta * L[i-1][j-1];
+              //L(i+1,1:i-1) = lambda(3) * L(i+1,1:i-1) + eta * L(i,1:i-1);
   
-                L[i-1][j-1]  = Helper[j-1];
-                //L(i,1:i-1)   = Help;             
-              }
+              L[i-1][j-1]  = tmpd;
+              //L(i,1:i-1)   = Help;             
             }
             L[i][i-1]    = lambda;
             //L(i+1,i)     = lambda(3);
 
-            if( n-(i+2)+1 > 0 )
-            {              
-              Helper.Resize( n-(i+2)+1 );
-              for( j = i+2; j <= n; j++ )
-              {
-                Helper[j-1] = L[j-1][i]; // GDM_TODO not j-1 for Helper
-                //Help      = L(i+2:n,i);
-                L[j-1][i-1] = L[j-1][i];
-                //L(i+2:n,i)   = L(i+2:n,i+1);
-                L[j-1][i] = Helper[j-1];
-                //L(i+2:n,i+1) = Help;
-              }
+            for( j = i+2; j <= n; j++ )
+            {
+              tmpd = L[j-1][i-1]; 
+              //Help      = L(i+2:n,i);
+              L[j-1][i-1] = L[j-1][i];
+              //L(i+2:n,i)   = L(i+2:n,i+1);
+              L[j-1][i] = tmpd;
+              //L(i+2:n,i+1) = Help;
             }
 
-            Helper.Resize( n );
             for( j = 1; j <= n; j++ )
             {          
-              Helper[j-1]   = Zti[j-1][i-1];
+              tmpd   = Zti[j-1][i-1];
               //Help        = Zti(1:n,i);
               Zti[j-1][i-1] = Zti[j-1][i];
               //Zti(1:n,i)   = Zti(1:n,i+1);
-              Zti[j-1][i]   = Helper[j-1];
+              Zti[j-1][i]   = tmpd;
               //Zti(1:n,i+1) = Help;
             }
 
@@ -5608,13 +5617,14 @@ namespace GNSS
 
       // Determine the transformed Q-matrix and the transformation-matrix
       // Determine the decorrelated ambiguities, if they were supplied
-      Z = Zti.Inv().round(0);
+      Z = Zti.Transpose().Inv().round(0);
       Q = Z.Transpose() * Q * Z;    
       z = Z.Transpose() * a;
 
       Z.Print( "Z.txt", 9 );
       Q.Print( "Qd.txt", 9 );
       z.Print( "za.txt", 9 );
+      int gaa = 99;
 
     }
 
@@ -5634,6 +5644,168 @@ namespace GNSS
     return true;
   }
 
+
+
+
+  /**
+  \brief  Computes the initial size of the search ellipsoid
+
+  This routine computes or approximates the initial size of the search
+  ellipsoid. If the requested number of candidates is not more than the
+  dimension + 1, this is done by computing the squared distances of partially
+  conditionally rounded float vectors to the float vector in the metric of the
+  covariance matrix. Otherwise an approximation is used.
+
+  \return true if successful, false otherwise.
+  */
+  bool GNSS_Estimator::chistart( 
+    Matrix& d,       //!< (input) d vector of the diagonal D from LtDL-decomposition of the variance-covariance matrix of the float ambiguities (preferably decorrelated)
+    Matrix& L,       //!< (input) from LtDL-decomposition of the variance-covariance matrix of the float ambiguities (preferably decorrelated)
+    Matrix& a,       //!< (input) float ambiguites (preferably decorrelated)
+    double& Chi2,    //!< (output) The size of the search ellipsoid
+    unsigned ncands, //!< (input) Requested number of candidates (default = 2)
+    double factor    //!< (input) Multiplication factor for the volume of the resulting search ellipsoid (default = 1.5)
+    )
+  {
+    bool result;
+    unsigned i;
+    unsigned j;
+    unsigned k;
+    unsigned n;
+    double dw;
+    double dtmp;
+    Matrix afloat;
+    Matrix afixed;
+    Matrix roundme(1);
+    Matrix Chi;
+    Matrix tmpM;
+    Matrix tmpV;
+    Matrix Pa;
+
+    n = a.nrows();
+    
+    // compute inv(L'*D*L)
+    Pa = L.Transpose();
+    tmpM.Resize( n, n );
+    for( i = 0; i < n; i++ )
+      tmpM[i][i] = d[i];
+    result = Pa.Inplace_PostMultiply( tmpM );
+    if( !result )
+    {
+      GNSS_ERROR_MSG( "Pa.Inplace_PostMultiply returned false." );
+      return false;
+    }
+    result = Pa.Inplace_PostMultiply( L );
+    if( !result )
+    {
+      GNSS_ERROR_MSG( "Pa.Inplace_PostMultiply returned false." );
+      return false;
+    }
+    result = Pa.Inplace_Invert();
+    if( !result )
+    {
+      GNSS_ERROR_MSG( "Pa.Inplace_Invert returned false." );
+      return false;
+    }
+
+
+    // The computation depends on the number of candidates to be computed
+    if( ncands <= n+1 )
+    {
+      // Computation based on the bootstrapping estimator
+    
+      // for k = n:-1:0;
+      for( k = n; k >= 0; k-- )
+      {
+        afloat = a;
+        afixed = a;
+  
+        //for i = n:-1:1;
+        for( i = n; i >= 0; i-- )
+        {
+          dw = 0;
+          //for j = n:-1:i;
+          for( j = n; j >= i; j-- )
+          {
+            dw = dw + L[j-1][i-1] * (afloat[j-1] - afixed[j-1]);
+            //dw = dw + L(j,i) * (afloat(j) - afixed(j));
+          }
+          
+          afloat[i-1] = afloat[i-1] - dw;
+          //afloat(i) = afloat(i) - dw;
+          if(i != k)
+          {
+            roundme[0] = afloat[i-1];
+            roundme.Inplace_round(0);
+            afixed[i-1] = roundme[0];
+	          //afixed(i) = round (afloat(i));
+          }
+          else
+          { 
+            //if isequal (afloat(i),afixed(i));
+            if( fabs( afloat[i-1] - afixed[i-1] ) < 1e-18 )
+            {	        
+              roundme[0] = afixed[i-1] + 1;
+              roundme.Inplace_round();
+              afixed[i-1] = roundme[0];
+	            //afixed(i) = round(afixed(i) + 1);
+            }
+            else
+            {
+              if( afloat[i-1] - afixed[i-1] < 0 )                
+                roundme[0] = afloat[i-1] - 1;
+              else
+                roundme[0] = afloat[i-1] + 1;
+              roundme.Inplace_round();              
+              afixed[i-1] = roundme[0];
+              //afixed(i) = round (afloat(i) + sign (afloat(i) - afixed(i)));
+            }
+          }
+        }
+
+        tmpV = a-afixed; // nx1
+        tmpM = tmpV.Transpose() * Pa * tmpV; // 1xn * nxn * nx1 = 1x1
+        Chi.Concatonate( tmpM ); // 1x1 concatonation, creates a row vector
+        //Chi = [Chi (a-afixed)' * inv(L'*diag(D)*L) * (a-afixed)];
+      }
+      
+      // Sort the results, and return the appropriate number
+      // Add an "eps", to make sure there is no boundary problem
+      Chi.Inplace_Transpose();
+      Chi.Inplace_SortAscending();
+      //Chi  = sort(Chi);
+      
+      Chi2 = Chi[ncands-1] + 1e-6;
+    } 
+    else
+    {
+      // An approximation for the squared norm is computed
+  
+      //Linv = inv(L); not needed?
+      //Dinv = 1./D;
+
+      // compute (prod(1 ./ Dinv), this is prod( D )
+      dtmp = 1.0;
+      for( i = 0; i < n; i++ )
+        dtmp *= d[i];
+
+      double Vn = 2.0/((double)n) * pow( PI, ((double)n)/2.0 ) / fast_gamma_ndiv2( n );
+      // Vn   = (2/n) * (pi ^ (n/2) / gamma(n/2));
+
+      Chi2 = factor * (ncands / sqrt( dtmp * Vn));
+      Chi2 = pow( Chi2, 2.0/((double)n) );
+      // Chi2 = factor * (ncands / sqrt( (prod(1 ./ Dinv)) * Vn)) ^ (2/n);
+    }
+
+    return true;
+  }
+
+  double fast_gamma_ndiv2( unsigned n )
+  {
+    static double gamma_lut[41] = GNSS_GAMMA_NDIV2;
+
+    return gamma_lut[n];    
+  }
 
   bool GNSS_Estimator::ComputeDOP( 
     GNSS_RxData *rxData,       //!< The receiver data.
