@@ -1659,9 +1659,9 @@ BOOL MTX_Concatonate( MTX *dst, const MTX *src )
   double **dptr = NULL;
   stComplex **cptr = NULL;
 
-  if( MTX_isNull( dst ) )
+  if( dst == NULL )
   {
-    MTX_ERROR_MSG( "NULL Matrix" );
+    MTX_ERROR_MSG( "dst is a NULL Matrix" );
     return FALSE;
   }
 
@@ -1671,7 +1671,11 @@ BOOL MTX_Concatonate( MTX *dst, const MTX *src )
     return FALSE;
   }
 
-  if( dst->nrows != src->nrows )
+  if( dst->nrows == 0 && dst->ncols == 0 )
+  {
+    return MTX_Copy( src, dst );
+  }
+  else if( dst->nrows != src->nrows )
   {
     MTX_ERROR_MSG( "if( dst->nrows != src->nrows )" );
     return FALSE;
