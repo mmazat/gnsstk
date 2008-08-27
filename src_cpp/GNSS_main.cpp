@@ -777,7 +777,7 @@ bool OutputPVT(
     fprintf( fid, "STDEV latitude (m), STDEV longitude (m), STDEV height (m), STDEV Velocity North (m/s), STDEV Velocity East (m/s), STDEV Velocity Up (m/s), STDEV Clock Offset (m), STDEV Clock Drift (m/s), " );
     fprintf( fid, "NR PSR Available, NR PSR Used, NR Doppler Available, NR Doppler Used, NR ADR Available, NR ADR Used," );
     fprintf( fid, "NDOP,EDOP,VDOP,HDOP,PDOP,TDOP,GDOP,");    
-    fprintf( fid, "APVF Position, APVF Velocity\n");    
+    fprintf( fid, "APVF Position, APVF Velocity, latitude_fixed (deg), longitude_fixed (deg), height_fixed (m), Error_N_fixed, Error_E_fixed, Error_Up_fixed \n");    
     once = false;
   }
 
@@ -846,10 +846,37 @@ bool OutputPVT(
     rxData.m_pvt.dop.gdop
     );
 
-  fprintf( fid, "%.5g,%.5g\n",
+  fprintf( fid, "%.5g,%.5g",
     rxData.m_pvt.pos_apvf,
     rxData.m_pvt.vel_apvf
     );
+
+   result = GEODESY_ComputePositionDifference(
+    GEODESY_REFERENCE_ELLIPSE_WGS84,
+    datumLatitudeRads,
+    datumLongitudeRads,
+    datumHeight,
+    rxData.m_pvt_fixed.latitude,
+    rxData.m_pvt_fixed.longitude,
+    rxData.m_pvt_fixed.height,
+    &northing,
+    &easting,
+    &up );
+
+   fprintf( fid, "%.13g,%.14g,%.8g,%.7g,%.7g,%.7g\n", 
+     rxData.m_pvt_fixed.latitudeDegs,
+     rxData.m_pvt_fixed.longitudeDegs,
+     rxData.m_pvt_fixed.height,
+     northing,
+     easting, 
+     up
+    );
+
+  if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ComputePositionDifference returned FALSE." );
+    return false;
+  }
 
   fflush( fid );
 
@@ -872,7 +899,7 @@ bool OutputPVT(
   double easting = 0.0;
   double up = 0.0;
   unsigned i = 0;
-  const unsigned nr_items = 37;
+  const unsigned nr_items = 37+6;
   Matrix data(nr_items,1);
 
   result = GEODESY_ComputePositionDifference(
@@ -935,6 +962,33 @@ bool OutputPVT(
     
   data[i] = rxData.m_pvt_lsq.pos_apvf; i++;
   data[i] = rxData.m_pvt_lsq.vel_apvf; i++;
+
+  data[i] = rxData.m_pvt_fixed.latitudeDegs; i++;
+  data[i] = rxData.m_pvt_fixed.longitudeDegs; i++;
+  data[i] = rxData.m_pvt_fixed.height; i++;
+
+  result = GEODESY_ComputePositionDifference(
+    GEODESY_REFERENCE_ELLIPSE_WGS84,
+    datumLatitudeRads,
+    datumLongitudeRads,
+    datumHeight,
+    rxData.m_pvt_fixed.latitude,
+    rxData.m_pvt_fixed.longitude,
+    rxData.m_pvt_fixed.height,
+    &northing,
+    &easting,
+    &up );
+
+  data[i] = northing; i++;
+  data[i] = easting; i++;
+  data[i] = up; i++;
+
+  if( result == FALSE )
+  {
+    GNSS_ERROR_MSG( "GEODESY_ComputePositionDifference returned FALSE." );
+    return false;
+  }
+
 
   if( PVT.isEmpty() )
   {
