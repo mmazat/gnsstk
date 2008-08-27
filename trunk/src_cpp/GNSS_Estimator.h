@@ -901,32 +901,6 @@ namespace GNSS
 	    Matrix &H,
 	    Matrix &w);
 
-
-    /**
-    \brief  Computes the initial size of the search ellipsoid
-
-    This routine computes or approximates the initial size of the search
-    ellipsoid. If the requested number of candidates is not more than the
-    dimension + 1, this is done by computing the squared distances of partially
-    conditionally rounded float vectors to the float vector in the metric of the
-    covariance matrix. Otherwise an approximation is used.
-
-    \author GDM
-
-    GDM_TODO This should be moved to a LAMBDA class.
-
-    \return true if successful, false otherwise.
-    */
-    bool GNSS_Estimator::chistart( 
-      Matrix& d,       //!< (input) d vector of the diagonal D from LtDL-decomposition of the variance-covariance matrix of the float ambiguities (preferably decorrelated)
-      Matrix& L,       //!< (input) from LtDL-decomposition of the variance-covariance matrix of the float ambiguities (preferably decorrelated)
-      Matrix& a,       //!< (input) float ambiguites (preferably decorrelated)
-      double& Chi2,    //!< (output) The size of the search ellipsoid
-      unsigned ncands, //!< (input) Requested number of candidates (default = 2)
-      double factor    //!< (input) Multiplication factor for the volume of the resulting search ellipsoid (default = 1.5)
-      );
-  
-
     // Publically accessable data
   public: 
 

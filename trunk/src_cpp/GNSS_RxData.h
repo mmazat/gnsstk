@@ -588,6 +588,9 @@ namespace GNSS
     /// The receiver's position, velocity, and time information.
     GNSS_structPVT  m_pvt;
 
+    /// The receiver's position, velocity, and time information based on fixed ambiguities.
+    GNSS_structPVT  m_pvt_fixed;
+
     /// The receiver's previous position, velocity, and time information.
     GNSS_structPVT  m_prev_pvt;
 
