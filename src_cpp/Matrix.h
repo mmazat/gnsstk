@@ -509,7 +509,7 @@ namespace Zenautics
 
     \return true if successful, false otherwise
     */
-    bool Print( const char *path, const unsigned precision, bool append = false );
+    bool Print( const char *path, const unsigned precision = 9, bool append = false );
 
     /**
     \brief  Print the matrix to a file with automatically determined column width 

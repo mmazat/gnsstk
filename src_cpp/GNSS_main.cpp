@@ -71,7 +71,12 @@ bool OutputPVT(
   bool isStatic //!< Indicates if the rover receiver is in static mode.
   );
 
-bool OutputObservationData( GNSS_RxData* rxData, bool isRover );
+bool OutputObservationData( 
+  Matrix* ptrObsMatrixArray,  //!< An array of n Matrices. e.g. {Matrix ObsMatrixArray[32]; Matrix* ptrObsMatrixArray = ObsMatrixArray;} for index by id (prn)
+  const unsigned n,           //!< The number of Obs Matrices in the array. e.g. 32.
+  GNSS_RxData* rxData, 
+  bool isRover 
+  );
 
 /// \brief    Try to sychronize the base and rover measurement sources.
 /// \return   true if successful, false if error.
@@ -119,6 +124,7 @@ int main( int argc, char* argv[] )
 
   FILE *fid = NULL; 
   FILE *fid_pvt = NULL;
+  FILE *fid_obs = NULL;
   
   GNSS_OptionFile opt;
 
@@ -134,6 +140,7 @@ int main( int argc, char* argv[] )
   char fname[24];
 
   Matrix PVT;
+  Matrix SatObs[33]; // GPS L1, C/A code, observation information, index by prn, SatObs[0] is empty
 
   try
   {
@@ -152,28 +159,6 @@ int main( int argc, char* argv[] )
       return 1;
     }
 
-    // Delete any GPSL1_svXX.csv files in the working directory.
-    for( i = 0; i < 32; i++ )
-    {
-      sprintf( fname, "GPSL1_PRN%02d.csv", i );
-      fid = fopen( fname, "r" );
-      if( fid )
-      {
-        fclose(fid);
-        remove( fname );
-        fid = NULL;
-      }
-      sprintf( fname, "GPSL1_PRN%02d_BASE.csv", i );
-      fid = fopen( fname, "r" );
-      if( fid )
-      {
-        fclose(fid);
-        remove( fname );
-        fid = NULL;
-      }
-    }
-
-    
     // Set the start time.
     start_time = opt.m_StartTime.GPSWeek*SECONDS_IN_WEEK + opt.m_StartTime.GPSTimeOfWeek;
 
@@ -496,10 +481,12 @@ int main( int argc, char* argv[] )
       // Enable constraints if any.
       if( opt.m_isPositionConstrained )
       {
+        rxData.m_pvt_lsq.isPositionConstrained = true;
         rxData.m_pvt.isPositionConstrained = true;
       }
       else if( opt.m_isHeightConstrained )
       {
+        rxData.m_pvt_lsq.isPositionConstrained = true;
         rxData.m_pvt.isHeightConstrained = true;
       }
 
@@ -684,6 +671,13 @@ int main( int argc, char* argv[] )
         return 1;
       }
 
+      if( !OutputObservationData( SatObs, 32, &rxData, true ) )
+      {
+        sprintf( msg, "%.3Lf %d OutputObservationData returned false.\n", rxData.m_pvt.time.gps_tow, rxData.m_pvt.time.gps_week );
+        GNSS_ERROR_MSG( msg );
+        return 1;
+      }
+
       /*
       if( !OutputObservationData( &rxData, true ) )
       {
@@ -698,14 +692,25 @@ int main( int argc, char* argv[] )
         return 1;
       }
       */
-    }
+    }    
+  }
+  catch( MatrixException& matrixException )
+  {
+    printf( "%s", matrixException.GetExceptionMessage().c_str() );
+  }
+  catch ( ... )
+  {
+    printf( "\nCaught unknown exception\n" );
+  }
 
+  if( !PVT.isEmpty() )
+  {
     if( !PVT.Inplace_Transpose() )
     {
       GNSS_ERROR_MSG( "if( !PVT.Inplace_Transpose() )" );
       return 1;
     }
-    
+
     // Open the PVT output file
     fid_pvt = fopen( "pvt.csv", "w" );
     if( !fid_pvt )
@@ -730,16 +735,44 @@ int main( int argc, char* argv[] )
       GNSS_ERROR_MSG( "if( !PVT.PrintDelimited( \"pvt.csv\", 12, ',', true )  )" );
       return 1;
     }
-
-
   }
-  catch( MatrixException& matrixException )
+
+  for( i = 1; i <= 32; i++ )
   {
-    printf( "%s", matrixException.GetExceptionMessage().c_str() );
-  }
-  catch ( ... )
-  {
-    printf( "\nCaught unknown exception\n" );
+    if( !SatObs[i].isEmpty() )
+    {
+      sprintf( fname, "obs_%02d.csv", i );
+      fid_obs = fopen( fname, "w" );
+      if( !fid_obs )
+      {
+         sprintf( msg, "Unable to open %s.", fname );
+         GNSS_ERROR_MSG( msg );
+         return 1;
+      }
+
+      fprintf( fid_obs, "GPS time of week(s),GPS week,ID,Channel," );
+      fprintf( fid_obs, "System,Code Type,Frequency Type," );
+      fprintf( fid_obs, "Elevation (deg), Azimuth (deg)," );
+      fprintf( fid_obs, "PSR (m), ADR (cycles), PSR-ADR (m), Doppler (Hz),C/No (dB-Hz),Lock Time (s)," );
+      fprintf( fid_obs, "isActive,isCodeLocked,isPhaseLocked,isParityValid,isPsrValid,isAdrValid,isDopplerValid,isGrouped,isAutoAssigned,isCarrierSmoothed," );
+      fprintf( fid_obs, "isEphemerisValid,isAlmanacValid,isAboveElevationMask,isAboveCNoMask,isAboveLockTimeMask,isNotUserRejected,isNotPsrRejected,isNotAdrRejected,isNotDopplerRejected,isNoCycleSlipDetected," );
+      fprintf( fid_obs, "isPsrUsedInSolution,isDopplerUsedInSolution,isAdrUsedInSolution,isDifferentialPsrAvailable,isDifferentialDopplerAvailable,isDifferentialAdrAvailable,useTropoCorrection,useBroadcastIonoCorrection,isBaseSatellite," );
+      fprintf( fid_obs, "stdev PSR (m),stdev adr (cycles),stdev Doppler (Hz)," );
+      fprintf( fid_obs, "PSR misclosure (m), Doppler misclosure (m/s), ADR misclosure (m)," );
+      fprintf( fid_obs, "SD_ambiguity (m), DD_ambiguity (m), DD_fixed_ambiguity (cycles), SD ADR residual (m), DD ADR residual (m)\n" );
+      fclose( fid_obs );
+
+      if( !SatObs[i].Inplace_Transpose() )
+      {
+        GNSS_ERROR_MSG( "if( !SatObs[i].Inplace_Transpose() )" );
+        return 1;
+      }
+      if( !SatObs[i].PrintDelimited( fname, 12, ',', true )  )
+      {
+        GNSS_ERROR_MSG( "if( !SatObs[i].PrintDelimited( fname, 12, ',', true )  )" );
+        return 1;
+      }
+    }
   }
 
   return 0;
@@ -899,7 +932,7 @@ bool OutputPVT(
   double easting = 0.0;
   double up = 0.0;
   unsigned i = 0;
-  const unsigned nr_items = 37+6;
+  const unsigned nr_items = 44;
   Matrix data(nr_items,1);
 
   result = GEODESY_ComputePositionDifference(
@@ -965,7 +998,7 @@ bool OutputPVT(
 
   data[i] = rxData.m_pvt_fixed.latitudeDegs; i++;
   data[i] = rxData.m_pvt_fixed.longitudeDegs; i++;
-  data[i] = rxData.m_pvt_fixed.height; i++;
+  data[i] = rxData.m_pvt_fixed.height; i++;  
 
   result = GEODESY_ComputePositionDifference(
     GEODESY_REFERENCE_ELLIPSE_WGS84,
@@ -979,16 +1012,17 @@ bool OutputPVT(
     &easting,
     &up );
 
-  data[i] = northing; i++;
-  data[i] = easting; i++;
-  data[i] = up; i++;
-
   if( result == FALSE )
   {
     GNSS_ERROR_MSG( "GEODESY_ComputePositionDifference returned FALSE." );
     return false;
   }
 
+  data[i] = northing; i++;
+  data[i] = easting; i++;
+  data[i] = up; i++;
+
+  data[i] = rxData.m_ambiguity_validation_ratio; i++;  
 
   if( PVT.isEmpty() )
   {
@@ -1007,139 +1041,140 @@ bool OutputPVT(
 
 
 
-bool OutputObservationData( GNSS_RxData* rxData, bool isRover )
+
+
+
+bool OutputObservationData( 
+  Matrix* ptrObsMatrixArray,  //!< An array of n Matrices. e.g. {Matrix ObsMatrixArray[32]; Matrix* ptrObsMatrixArray = ObsMatrixArray;} for index by id (prn)
+  const unsigned n,           //!< The number of Obs Matrices in the array. e.g. 32.
+  GNSS_RxData* rxData, 
+  bool isRover 
+  )
 {
   unsigned i = 0;
-  char msg[256];
-  char fname[24];
-  FILE* fid = NULL;
-  
+  unsigned j = 0;
+  unsigned index = 0;
+  bool result = false;  
+  Matrix* ptr = ptrObsMatrixArray;
+
+  const unsigned nr_items = 56;
+  Matrix data(nr_items,1);
+
+  if( ptr == NULL )
+    return false;
+
+  if( n != 32 )
+    return false;
+
   for( i = 0; i < rxData->m_nrValidObs; i++ )
   {
-    fid = NULL;
-
-    if( rxData->m_ObsArray[i].freqType == GNSS_GPSL1 )
+    if( rxData->m_ObsArray[i].codeType != GNSS_CACode ||
+      rxData->m_ObsArray[i].freqType != GNSS_GPSL1 ||
+      rxData->m_ObsArray[i].system != GNSS_GPS )
     {
-      if( isRover )
-        sprintf( fname, "GPSL1_PRN%02d.csv", rxData->m_ObsArray[i].id );
-      else
-        sprintf( fname, "GPSL1_PRN%02d_BASE.csv", rxData->m_ObsArray[i].id );
-      
-      // check if file exists
-      fid = fopen( fname, "r" );
-      if( !fid )
-      {
-        fid = fopen( fname, "w" );
-        if( !fid )
-        {
-          sprintf( msg, "Unable to open %s\n", fname );
-          GNSS_ERROR_MSG( msg );
-          return false;
-        }
-        fprintf( fid, "GPS time of week(s),GPS week, ID,Channel," );
-        fprintf( fid, "System,Code Type,Frequency Type," );
-        fprintf( fid, "Elevation (deg), Azimuth (deg)," );
-        fprintf( fid, "PSR (m), ADR (cycles), PSR-ADR (m), Doppler (Hz),C/No (dB-Hz),Lock Time (s)," );
-        fprintf( fid, "isActive,isCodeLocked,isPhaseLocked,isParityValid,isPsrValid,isAdrValid,isDopplerValid,isGrouped,isAutoAssigned,isCarrierSmoothed," );
-        fprintf( fid, "isEphemerisValid,isAlmanacValid,isAboveElevationMask,isAboveCNoMask,isAboveLockTimeMask,isNotUserRejected,isNotPsrRejected,isNotAdrRejected,isNotDopplerRejected,isNoCycleSlipDetected," );
-        fprintf( fid, "isPsrUsedInSolution,isDopplerUsedInSolution,isAdrUsedInSolution,isDifferentialPsrAvailable,isDifferentialDopplerAvailable,isDifferentialAdrAvailable,useTropoCorrection,useBroadcastIonoCorrection,isTimeDifferntialPsrAvailable,isTimeDifferntialDopplerAvailable," );
-        fprintf( fid, "stdev PSR (m),stdev adr (cycles),stdev Doppler (Hz)," );
-        fprintf( fid, "PSR residual (m), Doppler residual (m/s), ADR residual (m)," );
-        fprintf( fid, "ambiguity\n" );
-      }
-      else
-      {
-        fclose(fid);
-        fid = NULL;
-        fid = fopen( fname, "a+" );
-        if( !fid )
-        {
-          sprintf( msg, "Unable to open %s\n", fname );
-          GNSS_ERROR_MSG( msg );
-          return false;
-        }
-      }
-
-      fprintf( fid, "%.3Lf,%d,%d,%d,",
-        rxData->m_pvt.time.gps_tow,
-        rxData->m_pvt.time.gps_week,
-        rxData->m_ObsArray[i].id,
-        rxData->m_ObsArray[i].channel );
-
-      fprintf( fid, "%d,%d,%d,",
-        rxData->m_ObsArray[i].system,   //!< The satellite system associated with this channel.
-        rxData->m_ObsArray[i].codeType, //!< The code type for this channel.
-        rxData->m_ObsArray[i].freqType ); //!< The frequency type for this channel.
-
-      fprintf( fid, "%.2Lf,%.2Lf,", 
-        rxData->m_ObsArray[i].satellite.elevation*RAD2DEG,
-        rxData->m_ObsArray[i].satellite.azimuth*RAD2DEG );
-
-      fprintf( fid, "%.4Lf,%.4Lf,%.4Lf,%.3Lf,%.1f,%.2f,",
-        rxData->m_ObsArray[i].psr,
-        rxData->m_ObsArray[i].adr,
-        rxData->m_ObsArray[i].psr-(rxData->m_ObsArray[i].adr*GPS_WAVELENGTHL1),
-        rxData->m_ObsArray[i].doppler,
-        rxData->m_ObsArray[i].cno,
-        rxData->m_ObsArray[i].locktime );
-
-      fprintf( fid, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
-        rxData->m_ObsArray[i].flags.isActive,                //!< This flag indicates that the channel is active for use. If this is not set, no other flags are valid for use.
-        rxData->m_ObsArray[i].flags.isCodeLocked,            //!< Indicates if the code tracking is locked.
-        rxData->m_ObsArray[i].flags.isPhaseLocked,           //!< Indicates if the phase tracking is locked.
-        rxData->m_ObsArray[i].flags.isParityValid,           //!< Indicates if the phase parity if valid.      
-        rxData->m_ObsArray[i].flags.isPsrValid,              //!< Indicates if the pseudorange valid for use.
-        rxData->m_ObsArray[i].flags.isAdrValid,              //!< Indicates if the ADR is valid for use.
-        rxData->m_ObsArray[i].flags.isDopplerValid,          //!< Indicates if the Doppler if valid for use.
-        rxData->m_ObsArray[i].flags.isGrouped,               //!< Indicates if this channel has another associated channel. eg. L1 and L2 measurements.
-        rxData->m_ObsArray[i].flags.isAutoAssigned,          //!< Indicates if the channel was receiver assigned (otherwise, the user forced this channel assignment).
-        rxData->m_ObsArray[i].flags.isCarrierSmoothed );       //!< Indicates if the pseudorange has carrier smoothing enabled.
-        
-      fprintf( fid, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
-        rxData->m_ObsArray[i].flags.isEphemerisValid,        //!< Indicates if this channel has valid associated ephemeris information. 
-        rxData->m_ObsArray[i].flags.isAlmanacValid,          //!< Indicates if this channel has valid associated almanac information.
-        rxData->m_ObsArray[i].flags.isAboveElevationMask,    //!< Indicates if the satellite tracked is above the elevation mask.    
-        rxData->m_ObsArray[i].flags.isAboveCNoMask,          //!< Indciates if the channel's C/No is above a threshold value.
-        rxData->m_ObsArray[i].flags.isAboveLockTimeMask,     //!< Indicates if the channel's locktime is above a treshold value.
-        rxData->m_ObsArray[i].flags.isNotUserRejected,       //!< Indicates if the user has not forced the rejection of this channel or PRN.
-        rxData->m_ObsArray[i].flags.isNotPsrRejected,        //!< Indicates if the pseudorange was not rejetced (ie Fault Detection and Exclusion).
-        rxData->m_ObsArray[i].flags.isNotAdrRejected,        //!< Indicates if the ADR was not rejetced (ie Fault Detection and Exclusion).
-        rxData->m_ObsArray[i].flags.isNotDopplerRejected,    //!< Indicates if the Doppler was not rejected (ie Fault Detection and Exclusion).
-        rxData->m_ObsArray[i].flags.isNoCycleSlipDetected );   //!< Indicates that no cycle slip has occurred at this epoch.
-        
-      fprintf( fid, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
-        rxData->m_ObsArray[i].flags.isPsrUsedInSolution,     //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
-        rxData->m_ObsArray[i].flags.isDopplerUsedInSolution, //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
-        rxData->m_ObsArray[i].flags.isAdrUsedInSolution,     //!< Indicates if the the ADR is used in the solution.
-        rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable,     //!< Indicates if a matching pseudrange observation is available from another receiver.
-        rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable, //!< Indicates if a matching Doppler observation is available from another receiver.
-        rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable,     //!< Indicates if a matching ADR observation is available from another receiver.
-        rxData->m_ObsArray[i].flags.useTropoCorrection,         //!< Indicates that the tropospheric correction should be applied.
-        rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection, //!< Indicates that the broadcast ionospheric correction should be applied.
-        rxData->m_ObsArray[i].flags.isTimeDifferentialPsrAvailable,
-        rxData->m_ObsArray[i].flags.isTimeDifferentialDopplerAvailable );
-
-      fprintf( fid, "%.3f,%.3f,%.3f,",
-        rxData->m_ObsArray[i].stdev_psr,         //!< The estimated pseudorange measurement standard deviation [m].
-        rxData->m_ObsArray[i].stdev_adr,         //!< The estimated accumulated Doppler range measurement standard deviation [cycles].
-        rxData->m_ObsArray[i].stdev_doppler );     //!< The estimated Doppler measurement standard deviation [Hz].
-
-      fprintf( fid, "%.3f,%.3f,%.3f,",
-        rxData->m_ObsArray[i].psr_misclosure,     //!< The measured psr minus the computed psr estimate [m].
-        rxData->m_ObsArray[i].doppler_misclosure, //!< The measured Doppler minus the computed Doppler estimate [m].
-        rxData->m_ObsArray[i].adr_misclosure );   //!< The measured ADR minus the computed ADR estimate [m]. This is the between receiver differential adr misclosure.
-
-      fprintf( fid, "%.3Lf\n",  
-        rxData->m_ObsArray[i].ambiguity );         //!< The estimated float ambiguity [m].    
-
-      fclose( fid );
+      continue;
     }
+
+    index = rxData->m_ObsArray[i].id;
+    if( index > n )
+      return false;
+
+    j = 0;
+    
+    data[j] = rxData->m_pvt.time.gps_tow;
+    j++; data[j] = rxData->m_pvt.time.gps_week;
+    j++; data[j] = rxData->m_ObsArray[i].id;
+    j++; data[j] = rxData->m_ObsArray[i].channel;
+
+    j++; data[j] = rxData->m_ObsArray[i].system; 
+    j++; data[j] = rxData->m_ObsArray[i].codeType;
+    j++; data[j] = rxData->m_ObsArray[i].freqType;
+
+    j++; data[j] = rxData->m_ObsArray[i].satellite.elevation*RAD2DEG;
+    j++; data[j] = rxData->m_ObsArray[i].satellite.azimuth*RAD2DEG;
+
+    j++; data[j] = rxData->m_ObsArray[i].psr;
+    j++; data[j] = rxData->m_ObsArray[i].adr;
+    j++; data[j] = rxData->m_ObsArray[i].psr-(rxData->m_ObsArray[i].adr*GPS_WAVELENGTHL1);
+    j++; data[j] = rxData->m_ObsArray[i].doppler;
+    j++; data[j] = rxData->m_ObsArray[i].cno;
+    j++; data[j] = rxData->m_ObsArray[i].locktime;
+
+
+    j++; data[j] = rxData->m_ObsArray[i].flags.isActive;                //!< This flag indicates that the channel is active for use. If this is not set, no other flags are valid for use.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isCodeLocked;            //!< Indicates if the code tracking is locked.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isPhaseLocked;           //!< Indicates if the phase tracking is locked.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isParityValid;           //!< Indicates if the phase parity if valid.      
+    j++; data[j] = rxData->m_ObsArray[i].flags.isPsrValid;              //!< Indicates if the pseudorange valid for use.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAdrValid;              //!< Indicates if the ADR is valid for use.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isDopplerValid;          //!< Indicates if the Doppler if valid for use.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isGrouped;               //!< Indicates if this channel has another associated channel. eg. L1 and L2 measurements.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAutoAssigned;          //!< Indicates if the channel was receiver assigned (otherwise, the user forced this channel assignment).
+    j++; data[j] = rxData->m_ObsArray[i].flags.isCarrierSmoothed;       //!< Indicates if the pseudorange has carrier smoothing enabled.
+
+    j++; data[j] = rxData->m_ObsArray[i].flags.isEphemerisValid;        //!< Indicates if this channel has valid associated ephemeris information. 
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAlmanacValid;          //!< Indicates if this channel has valid associated almanac information.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAboveElevationMask;    //!< Indicates if the satellite tracked is above the elevation mask.    
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAboveCNoMask;          //!< Indciates if the channel's C/No is above a threshold value.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAboveLockTimeMask;     //!< Indicates if the channel's locktime is above a treshold value.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isNotUserRejected;       //!< Indicates if the user has not forced the rejection of this channel or PRN.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isNotPsrRejected;        //!< Indicates if the pseudorange was not rejetced (ie Fault Detection and Exclusion).
+    j++; data[j] = rxData->m_ObsArray[i].flags.isNotAdrRejected;        //!< Indicates if the ADR was not rejetced (ie Fault Detection and Exclusion).
+    j++; data[j] = rxData->m_ObsArray[i].flags.isNotDopplerRejected;    //!< Indicates if the Doppler was not rejected (ie Fault Detection and Exclusion).
+    j++; data[j] = rxData->m_ObsArray[i].flags.isNoCycleSlipDetected;   //!< Indicates that no cycle slip has occurred at this epoch.
+
+    j++; data[j] = rxData->m_ObsArray[i].flags.isPsrUsedInSolution;            //!< Indicates if some part (pseudorange) of this channel's measurement was used in the position solution.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isDopplerUsedInSolution;        //!< Indicates if some part (Doppler) of this channel's measurement was used in the velocity solution.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isAdrUsedInSolution;            //!< Indicates if the the ADR is used in the solution.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isDifferentialPsrAvailable;     //!< Indicates if a matching pseudrange observation is available from another receiver.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isDifferentialDopplerAvailable; //!< Indicates if a matching Doppler observation is available from another receiver.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isDifferentialAdrAvailable;     //!< Indicates if a matching ADR observation is available from another receiver.
+    j++; data[j] = rxData->m_ObsArray[i].flags.useTropoCorrection;             //!< Indicates that the tropospheric correction should be applied.
+    j++; data[j] = rxData->m_ObsArray[i].flags.useBroadcastIonoCorrection;     //!< Indicates that the broadcast ionospheric correction should be applied.
+    j++; data[j] = rxData->m_ObsArray[i].flags.isBaseSatellite;
+    
+    j++; data[j] = rxData->m_ObsArray[i].stdev_psr;         //!< The estimated pseudorange measurement standard deviation [m].
+    j++; data[j] = rxData->m_ObsArray[i].stdev_adr;         //!< The estimated accumulated Doppler range measurement standard deviation [cycles].
+    j++; data[j] = rxData->m_ObsArray[i].stdev_doppler;     //!< The estimated Doppler measurement standard deviation [Hz].
+
+    j++; data[j] = rxData->m_ObsArray[i].psr_misclosure;     //!< The measured psr minus the computed psr estimate [m].
+    j++; data[j] = rxData->m_ObsArray[i].doppler_misclosure; //!< The measured Doppler minus the computed Doppler estimate [m].
+    j++; data[j] = rxData->m_ObsArray[i].adr_misclosure;     //!< The measured ADR minus the computed ADR estimate [m]. This is the between receiver differential adr misclosure.
+
+    j++; data[j] = rxData->m_ObsArray[i].ambiguity;          //!< The estimated single difference float ambiguity [m].
+    j++; data[j] = rxData->m_ObsArray[i].ambiguity_dd;       //!< The estimated double difference float ambiguity [m].
+    j++; data[j] = rxData->m_ObsArray[i].ambiguity_dd_fixed; //!< The estimated double difference fixed ambiguity [m].
+
+    j++; data[j] = rxData->m_ObsArray[i].adr_residual_sd; //!< The single difference adr residual [m].
+    j++; data[j] = rxData->m_ObsArray[i].adr_residual_dd; //!< The double difference adr residual [m].
+    j++; data[j] = rxData->m_ObsArray[i].adr_residual_dd_fixed; //!< The double difference adr residual based on the fixed solution [m].
+
+
+    /*
+    fprintf( fid, "GPS time of week(s),GPS week, ID,Channel," );
+    fprintf( fid, "System,Code Type,Frequency Type," );
+    fprintf( fid, "Elevation (deg), Azimuth (deg)," );
+    fprintf( fid, "PSR (m), ADR (cycles), PSR-ADR (m), Doppler (Hz),C/No (dB-Hz),Lock Time (s)," );
+    fprintf( fid, "isActive,isCodeLocked,isPhaseLocked,isParityValid,isPsrValid,isAdrValid,isDopplerValid,isGrouped,isAutoAssigned,isCarrierSmoothed," );
+    fprintf( fid, "isEphemerisValid,isAlmanacValid,isAboveElevationMask,isAboveCNoMask,isAboveLockTimeMask,isNotUserRejected,isNotPsrRejected,isNotAdrRejected,isNotDopplerRejected,isNoCycleSlipDetected," );
+    fprintf( fid, "isPsrUsedInSolution,isDopplerUsedInSolution,isAdrUsedInSolution,isDifferentialPsrAvailable,isDifferentialDopplerAvailable,isDifferentialAdrAvailable,useTropoCorrection,useBroadcastIonoCorrection,isBaseSatellite," );
+    fprintf( fid, "stdev PSR (m),stdev adr (cycles),stdev Doppler (Hz)," );
+    fprintf( fid, "PSR residual (m), Doppler residual (m/s), ADR residual (m)," );
+    fprintf( fid, "SD_ambiguity, DD_ambiguity, DD_fixed_ambiguity\n" );
+    fclose( fid );
+    */
+
+    result = ptr[index].Concatonate( data );
+    if( !result )
+    {
+      GNSS_ERROR_MSG( "result = ptr[index].Concatonate( data );" );
+      return false;
+    }  
   }
 
+  
   return true;
 }
-
-
 
 
 bool GetNextSetOfSynchronousMeasurements( 

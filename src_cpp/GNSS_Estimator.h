@@ -556,7 +556,76 @@ namespace GNSS
       GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
       GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
       );
+
+
+    /**
+    \brief    Compute all the single difference GPS L1 ADR residuals (Post-Update).
+    
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[index].flags.isAdrUsedInSolution  \n
+    rxData->m_ObsArray[index].satellite.clkdrift         \n
+    rxData->m_ObsArray[index].corrections.prcTropoDry    \n
+    rxData->m_ObsArray[index].corrections.prcTropoWet    \n
+    rxData->m_ObsArray[index].corrections.prcIono        \n
+    rxData->m_ObsArray[index].range                      \n
+    rxData->m_pvt.clockOffset                        \n
+    if diffential, the same above for rxBaseData.
+    
+    \post     The following is set:     \n
+    rxData.m_ObsArray[index].adr_residual_sd \n
+    
+    \return   true if successful, false if error.    
+    */    
+    bool DetermineSingleDifferenceADR_Residuals_GPSL1( 
+      GNSS_RxData *rxData,    //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData //!< The pointer to the reference receiver data. NULL if not available.        
+      );
+
+
+    /**
+    \brief    Compute all the double difference GPS L1 ADR residuals (Post-Update).
+    
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[index].flags.isAdrUsedInSolution  \n
+    rxData->m_ObsArray[index].flags.isBaseSatellite      \n
+    rxData->m_ObsArray[index].adr_residual_sd            \n
+    
+    \post     The following is set:     \n
+    rxData.m_ObsArray[index].adr_residual_dd \n
+    
+    \return   true if successful, false if error.    
+    */    
+    bool DetermineDoubleDifferenceADR_Residuals_GPSL1( 
+      GNSS_RxData *rxData,          //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData,      //!< The pointer to the reference receiver data. NULL if not available.        
+      const unsigned index_baseSat  //!< The index into rxData->m_ObsArray for the base satellite observation data.
+      );
+
+
+    /**
+    \brief    Compute all the double difference GPS L1 ADR residuals (Post-Update).
+    
+    \pre      The following must be valid:           \n
+    rxData->m_ObsArray[index].flags.isAdrUsedInSolution  \n
+    rxData->m_ObsArray[index].flags.isBaseSatellite      \n
+    rxData->m_ObsArray[index].adr_residual_sd            \n
+    rxData->m_ObsArray[index].ambiguity \n
+    rxData->m_ObsArray[index].ambiguity_dd_fixed \n
+    
+    \post     The following is set:     \n
+    rxData.m_ObsArray[index].adr_residual_dd_fixed \n
+    
+    \return   true if successful, false if error.    
+    */        
+    bool DetermineDoubleDifferenceADR_Residuals_GPSL1_Fixed( 
+      GNSS_RxData *rxData,          //!< The pointer to the receiver data.    
+      GNSS_RxData *rxBaseData,      //!< The pointer to the reference receiver data. NULL if not available.        
+      const unsigned index_baseSat  //!< The index into rxData->m_ObsArray for the base satellite observation data.
+      );
   
+  
+  
+    /*  
     /// \brief    Compute the double differntial GPS L1 ADR misclosures.
     ///
     /// \pre      The following must be valid:           \n
@@ -580,6 +649,7 @@ namespace GNSS
       const unsigned n,        //!< The number of DD misclosures required.
       Matrix &w                //!< The adr misclosure vector [n x 1].
       );
+      */
 
     /// \brief    Determine the usable GPS L1 Doppler measurements.
     /// \pre      The rxData.m_ObsArray[i].flags values must be set 

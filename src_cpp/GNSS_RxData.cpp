@@ -1332,14 +1332,14 @@ namespace GNSS
               m_nrGPSL1Obs++;
             }
 
-            m_ObsArray[i].psr       = obsArray[i].psr;
-            m_ObsArray[i].adr       = -1.0*obsArray[i].adr;
-            m_ObsArray[i].doppler   = obsArray[i].doppler;
-            m_ObsArray[i].cno       = obsArray[i].cno;
-            m_ObsArray[i].locktime  = obsArray[i].locktime;
+            m_ObsArray[i].psr       = obsArray[i].psr;       // [m]
+            m_ObsArray[i].adr       = -1.0*obsArray[i].adr;  // [cycles]
+            m_ObsArray[i].doppler   = obsArray[i].doppler;   // [Hz]
+            m_ObsArray[i].cno       = obsArray[i].cno;       // [dB-Hz]
+            m_ObsArray[i].locktime  = obsArray[i].locktime;  // [s]
     
             if( obsArray[i].psrstd < 0.1 )
-              m_ObsArray[i].stdev_psr     = 0.20f;
+              m_ObsArray[i].stdev_psr     = 0.10f;
             else
               m_ObsArray[i].stdev_psr     = obsArray[i].psrstd; 
 
@@ -1912,8 +1912,6 @@ namespace GNSS
       X[j][i] = m_ObsArray[i].flags.isDifferentialAdrAvailable; j++;     //!< Indicates if a matching ADR observation is available from another receiver.
       X[j][i] = m_ObsArray[i].flags.useTropoCorrection; j++;         //!< Indicates that the tropospheric correction should be applied.
       X[j][i] = m_ObsArray[i].flags.useBroadcastIonoCorrection; j++; //!< Indicates that the broadcast ionospheric correction should be applied.
-      X[j][i] = m_ObsArray[i].flags.isTimeDifferentialPsrAvailable; j++;
-      X[j][i] = m_ObsArray[i].flags.isTimeDifferentialDopplerAvailable; j++;
 
       X[j][i] = m_ObsArray[i].week; j++;  //!< The measurement gps week (at 'transmit' time) [weeks].
       X[j][i] = m_ObsArray[i].tow; j++;   //!< The measurement gps time of week (at 'transmit' time) [s].

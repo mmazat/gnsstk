@@ -591,6 +591,9 @@ namespace GNSS
     /// The receiver's position, velocity, and time information based on fixed ambiguities.
     GNSS_structPVT  m_pvt_fixed;
 
+    /// GDM_TODO - comment here
+    double m_ambiguity_validation_ratio;
+
     /// The receiver's previous position, velocity, and time information.
     GNSS_structPVT  m_prev_pvt;
 

@@ -180,6 +180,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src_cpp\GNSS_Lambda.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src_cpp\GNSS_main.cpp"
 				>
 			</File>
@@ -202,10 +206,6 @@
 			<Filter
 				Name="c"
 				>
-				<File
-					RelativePath="..\..\..\src\cmatrix.c"
-					>
-				</File>
 				<File
 					RelativePath="..\..\..\src\cplot.c"
 					>
@@ -359,6 +359,10 @@
 		<Filter
 			Name="Matrix"
 			>
+			<File
+				RelativePath="..\..\..\src\cmatrix.c"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\cmatrix.h"
 				>
