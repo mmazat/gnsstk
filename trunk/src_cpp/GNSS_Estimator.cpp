@@ -2603,6 +2603,390 @@ namespace GNSS
 
 
 
+  bool GNSS_Estimator::DetermineSingleDifferenceADR_Residuals_GPSL1( 
+    GNSS_RxData *rxData,    //!< The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData //!< The pointer to the reference receiver data. NULL if not available.        
+    )
+  {
+    unsigned i = 0;
+    unsigned index = 0;
+    int k = 0;
+    double adr_base = 0;
+    double range_base = 0;
+    double adr_measured = 0;
+    double adr_computed = 0;
+
+    // Check the pointers.
+    if( rxData == NULL || rxBaseData == NULL )
+    {
+      GNSS_ERROR_MSG( "if( rxData == NULL || rxBaseData == NULL )" );
+      return false;
+    }
+
+    for( index = 0; index < rxData->m_nrValidObs; index++ )
+    {
+      if( rxData->m_ObsArray[index].flags.isActive && rxData->m_ObsArray[index].flags.isAdrUsedInSolution )
+      {
+        if( rxData->m_ObsArray[index].system == GNSS_GPS && rxData->m_ObsArray[index].freqType == GNSS_GPSL1 )
+        {
+          adr_measured = rxData->m_ObsArray[index].adr * GPS_WAVELENGTHL1;
+
+          // Add the satellite clock correction.
+          adr_measured += rxData->m_ObsArray[index].satellite.clk;
+
+          // Compensate for the ionospheric delay if indicated.
+          // The corrections must be determined beforehand.
+          if( rxData->m_ObsArray[index].flags.useBroadcastIonoCorrection )
+          {
+            // Compensate for the ionospheric delay
+            adr_measured += rxData->m_ObsArray[index].corrections.prcIono;
+          }
+
+          // Compensate for the tropospheric delay if indicated.
+          // The corrections must be determined beforehand.
+          if( rxData->m_ObsArray[index].flags.useTropoCorrection )
+          {
+            // Compensate for the tropospheric delay
+            adr_measured -= rxData->m_ObsArray[index].corrections.prcTropoDry;
+            adr_measured -= rxData->m_ObsArray[index].corrections.prcTropoWet;
+          }
+
+          range_base = 0;
+          if( rxBaseData != NULL )
+          {    
+            if( rxData->m_ObsArray[index].flags.isDifferentialAdrAvailable )
+            {
+              k = rxData->m_ObsArray[index].index_differential;
+              if( k != -1 )
+              {
+                adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
+                adr_base += rxBaseData->m_ObsArray[k].satellite.clk;
+
+                // Compensate for the ionospheric delay if indicated.
+                // The corrections must be determined beforehand.
+                if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
+                {
+                  // Compensate for the ionospheric delay
+                  adr_base += rxBaseData->m_ObsArray[k].corrections.prcIono;
+                }
+
+                // Compensate for the tropospheric delay if indicated.
+                // The corrections must be determined beforehand.
+                if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
+                {
+                  // Compensate for the tropospheric delay
+                  adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
+                  adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
+                }                  
+
+                range_base = rxBaseData->m_ObsArray[k].range;
+
+                // Compute the differential adr.
+                adr_measured -= adr_base;
+              }
+              else
+              {
+                // This residual cannot be computed since no differential measurements is available
+                // and a differential clock offset is computed.
+                rxData->m_ObsArray[index].adr_misclosure = 0.0;
+                return true;
+              }
+            }
+          }
+
+          // Calculate the computed adr = geometric range + clock offset (m)
+          // The range value and the clock offset must be determined beforehand.
+          // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
+          adr_computed = rxData->m_ObsArray[index].range - range_base;
+          adr_computed += rxData->m_pvt.clockOffset;          
+          adr_computed += rxData->m_ObsArray[index].ambiguity; 
+
+          // The misclosure is the corrected measured value minus the computed valid.
+          rxData->m_ObsArray[index].adr_residual_sd = adr_measured - adr_computed;            
+        }
+        else
+        {
+          rxData->m_ObsArray[index].adr_residual_sd = 0.0;            
+        }
+      }    
+    }
+
+    return true;
+  }
+
+
+  bool GNSS_Estimator::DetermineDoubleDifferenceADR_Residuals_GPSL1( 
+    GNSS_RxData *rxData,          //!< The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData,      //!< The pointer to the reference receiver data. NULL if not available.        
+    const unsigned index_baseSat  //!< The index into rxData->m_ObsArray for the base satellite observation data.
+    )
+  {
+    unsigned index = 0;
+    double sd_adr_residual_baseSat = 0;
+
+    // Check the pointers.
+    if( rxData == NULL || rxBaseData == NULL )
+    {
+      GNSS_ERROR_MSG( "if( rxData == NULL || rxBaseData == NULL )" );
+      return false;
+    }
+
+    // Get the base satellite single difference residual value.
+    if( rxData->m_ObsArray[index_baseSat].flags.isActive && 
+      rxData->m_ObsArray[index_baseSat].flags.isAdrUsedInSolution &&
+      rxData->m_ObsArray[index_baseSat].system == GNSS_GPS && 
+      rxData->m_ObsArray[index_baseSat].freqType == GNSS_GPSL1 )
+    {
+      sd_adr_residual_baseSat = rxData->m_ObsArray[index_baseSat].adr_residual_sd;
+    }
+    else
+    {
+      GNSS_ERROR_MSG( "Invalid base satellite index into rxData->m_ObsArray" );
+      return false;
+    }
+
+    for( index = 0; index < rxData->m_nrValidObs; index++ )
+    {
+      if( rxData->m_ObsArray[index].flags.isActive && 
+        rxData->m_ObsArray[index].flags.isAdrUsedInSolution &&
+        rxData->m_ObsArray[index].system == GNSS_GPS && 
+        rxData->m_ObsArray[index].freqType == GNSS_GPSL1 &&
+        !rxData->m_ObsArray[index].flags.isBaseSatellite )
+      {
+        rxData->m_ObsArray[index].adr_residual_dd = rxData->m_ObsArray[index].adr_residual_sd - sd_adr_residual_baseSat;
+      }
+    }
+    return true;
+  }
+
+
+
+
+  bool GNSS_Estimator::DetermineDoubleDifferenceADR_Residuals_GPSL1_Fixed( 
+    GNSS_RxData *rxData,          //!< The pointer to the receiver data.    
+    GNSS_RxData *rxBaseData,      //!< The pointer to the reference receiver data. NULL if not available.        
+    const unsigned index_baseSat  //!< The index into rxData->m_ObsArray for the base satellite observation data.
+    )
+  {
+    unsigned index = 0;
+    double sd_adr_residual_baseSat = 0;
+    double sd_adr_residual = 0;
+
+    // Check the pointers.
+    if( rxData == NULL || rxBaseData == NULL )
+    {
+      GNSS_ERROR_MSG( "if( rxData == NULL || rxBaseData == NULL )" );
+      return false;
+    }
+
+    // Get the base satellite single difference residual value.
+    if( rxData->m_ObsArray[index_baseSat].flags.isActive && 
+      rxData->m_ObsArray[index_baseSat].flags.isAdrUsedInSolution &&
+      rxData->m_ObsArray[index_baseSat].system == GNSS_GPS && 
+      rxData->m_ObsArray[index_baseSat].freqType == GNSS_GPSL1 )
+    {
+      sd_adr_residual_baseSat = rxData->m_ObsArray[index_baseSat].adr_residual_sd;
+      // remove the single difference float ambiguity
+      sd_adr_residual_baseSat -= rxData->m_ObsArray[index_baseSat].ambiguity; 
+    }
+    else
+    {
+      GNSS_ERROR_MSG( "Invalid base satellite index into rxData->m_ObsArray" );
+      return false;
+    }
+
+    for( index = 0; index < rxData->m_nrValidObs; index++ )
+    {
+      if( rxData->m_ObsArray[index].flags.isActive && 
+        rxData->m_ObsArray[index].flags.isAdrUsedInSolution &&
+        rxData->m_ObsArray[index].system == GNSS_GPS && 
+        rxData->m_ObsArray[index].freqType == GNSS_GPSL1 &&
+        !rxData->m_ObsArray[index].flags.isBaseSatellite )
+      {
+        // remove the single difference float ambiguity
+        sd_adr_residual = rxData->m_ObsArray[index].adr_residual_sd;
+        sd_adr_residual -= rxData->m_ObsArray[index].ambiguity; 
+        rxData->m_ObsArray[index].adr_residual_dd_fixed = (sd_adr_residual - sd_adr_residual_baseSat) + rxData->m_ObsArray[index].ambiguity_dd_fixed*GPS_WAVELENGTHL1;
+      }
+    }
+    return true;
+  }
+
+
+
+
+  /*
+
+      // Compute the base satellite single difference adr residual.
+      if( rxData->m_ObsArray[index_baseSat].flags.isActive && 
+        rxData->m_ObsArray[index_baseSat].system == GNSS_GPS && 
+        rxData->m_ObsArray[index_baseSat].freqType == GNSS_GPSL1 &&
+        rxData->m_ObsArray[index_baseSat].flags.isAdrUsedInSolution )
+      {
+        adr_measured = rxData->m_ObsArray[index_baseSat].adr * GPS_WAVELENGTHL1;
+        // Add the satellite clock correction.
+        adr_measured += rxData->m_ObsArray[index_baseSat].satellite.clk;
+
+        // Compensate for the ionospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index_baseSat].flags.useBroadcastIonoCorrection )
+        {
+          // Compensate for the ionospheric delay
+          adr_measured += rxData->m_ObsArray[index_baseSat].corrections.prcIono;
+        }
+
+        // Compensate for the tropospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index_baseSat].flags.useTropoCorrection )
+        {
+          // Compensate for the tropospheric delay
+          adr_measured -= rxData->m_ObsArray[index_baseSat].corrections.prcTropoDry;
+          adr_measured -= rxData->m_ObsArray[index_baseSat].corrections.prcTropoWet;
+        }
+
+        range_base = 0;
+        if( rxBaseData != NULL )
+        {    
+          if( rxData->m_ObsArray[index_baseSat].flags.isDifferentialAdrAvailable )
+          {
+            k = rxData->m_ObsArray[index_baseSat].index_differential;
+            if( k != -1 )
+            {
+              adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
+              adr_base += rxBaseData->m_ObsArray[k].satellite.clk;
+
+              // Compensate for the ionospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
+              {
+                // Compensate for the ionospheric delay
+                adr_base += rxBaseData->m_ObsArray[k].corrections.prcIono;
+              }
+
+              // Compensate for the tropospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
+              {
+                // Compensate for the tropospheric delay
+                adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
+                adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
+              }                  
+
+              range_base = rxBaseData->m_ObsArray[k].range;
+
+              // Compute the differential adr.
+              adr_measured -= adr_base;
+            }
+            else
+            {
+              GNSS_ERROR_MSG( "A single difference observation cannot be computed for the base satellite indicated for double differencing." );
+              return false;            
+            }
+          }
+        }
+      }
+
+      // Calculate the computed adr = geometric range + clock offset (m)
+      // The range value and the clock offset must be determined beforehand.
+      // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
+      adr_computed = rxData->m_ObsArray[index_baseSat].range - range_base;
+      adr_computed += rxData->m_pvt.clockOffset;          
+      adr_computed += rxData->m_ObsArray[index_baseSat].ambiguity; 
+
+      // The misclosure is the corrected measured value minus the computed valid.
+      rxData->m_ObsArray[index_baseSat].adr_misclosure = adr_measured - adr_computed;
+    }
+
+    if( rxData->m_ObsArray[index].flags.isActive && rxData->m_ObsArray[index].flags.isAdrUsedInSolution )
+    {
+      if( rxData->m_ObsArray[index].system == GNSS_GPS && rxData->m_ObsArray[index].freqType == GNSS_GPSL1 )
+      {
+        adr_measured = rxData->m_ObsArray[index].adr * GPS_WAVELENGTHL1;
+
+        // Add the satellite clock correction.
+        adr_measured += rxData->m_ObsArray[index].satellite.clk;
+
+        // Compensate for the ionospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index].flags.useBroadcastIonoCorrection )
+        {
+          // Compensate for the ionospheric delay
+          adr_measured += rxData->m_ObsArray[index].corrections.prcIono;
+        }
+
+        // Compensate for the tropospheric delay if indicated.
+        // The corrections must be determined beforehand.
+        if( rxData->m_ObsArray[index].flags.useTropoCorrection )
+        {
+          // Compensate for the tropospheric delay
+          adr_measured -= rxData->m_ObsArray[index].corrections.prcTropoDry;
+          adr_measured -= rxData->m_ObsArray[index].corrections.prcTropoWet;
+        }
+
+        range_base = 0;
+        if( rxBaseData != NULL )
+        {    
+          if( rxData->m_ObsArray[index].flags.isDifferentialAdrAvailable )
+          {
+            k = rxData->m_ObsArray[index].index_differential;
+            if( k != -1 )
+            {
+              adr_base  = rxBaseData->m_ObsArray[k].adr * GPS_WAVELENGTHL1;
+              adr_base += rxBaseData->m_ObsArray[k].satellite.clk;
+
+              // Compensate for the ionospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useBroadcastIonoCorrection )
+              {
+                // Compensate for the ionospheric delay
+                adr_base += rxBaseData->m_ObsArray[k].corrections.prcIono;
+              }
+
+              // Compensate for the tropospheric delay if indicated.
+              // The corrections must be determined beforehand.
+              if( rxBaseData->m_ObsArray[k].flags.useTropoCorrection )
+              {
+                // Compensate for the tropospheric delay
+                adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoDry;
+                adr_base -= rxBaseData->m_ObsArray[k].corrections.prcTropoWet;
+              }                  
+
+              range_base = rxBaseData->m_ObsArray[k].range;
+
+              // Compute the differential adr.
+              adr_measured -= adr_base;
+            }
+            else
+            {
+              // This misclosure cannot be computed since no differential measurements is available
+              // and a differential clock offset is computed.
+              rxData->m_ObsArray[index].adr_misclosure = 0.0;
+              return true;
+            }
+          }
+        }
+
+        // Calculate the computed adr = geometric range + clock offset (m)
+        // The range value and the clock offset must be determined beforehand.
+        // If differential, range_base != 0, and the ambiguity is the single differnce ambiguity [m].
+        adr_computed = rxData->m_ObsArray[index].range - range_base;
+        adr_computed += rxData->m_pvt.clockOffset;          
+        adr_computed += rxData->m_ObsArray[index].ambiguity; 
+
+        // The misclosure is the corrected measured value minus the computed valid.
+        rxData->m_ObsArray[index].adr_misclosure = adr_measured - adr_computed;            
+      }
+      else
+      {
+        rxData->m_ObsArray[index].adr_misclosure = 0.0;            
+      }
+    }    
+    return true;
+  }
+*/
+
+
+
   bool GNSS_Estimator::DetermineSingleDifferenceADR_Misclosures_GPSL1( 
     GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
     GNSS_RxData *rxBaseData  //!< The pointer to the reference receiver data. NULL if not available.    
@@ -2622,6 +3006,7 @@ namespace GNSS
   }
 
 
+  /*
   bool GNSS_Estimator::DetermineDoubleDifferenceADR_Misclosures_GPSL1( 
     GNSS_RxData *rxData,     //!< The pointer to the receiver data.    
     GNSS_RxData *rxBaseData, //!< The pointer to the reference receiver data. NULL if not available. 
@@ -2776,6 +3161,7 @@ namespace GNSS
 
     return true;
   }
+  */
 
 
   bool GNSS_Estimator::DetermineDopplerMisclosure_GPSL1( 
@@ -4756,6 +5142,28 @@ namespace GNSS
     }
     
     // Form r, the combined measurement variance-covariance matrix diagonal.
+    if( rxData->m_pvt.isPositionConstrained )
+    {
+      if( isEightStateModel )
+      {
+        n += 6;
+      }
+      else
+      {
+        n += 3;
+      }
+    }
+    else if( rxData->m_pvt.isHeightConstrained )
+    {
+      if( isEightStateModel )
+      {
+        n += 2;
+      }
+      else
+      {
+        n += 1;
+      }
+    }
     if( !m_RTK.r.Resize( n ) )
     {
       GNSS_ERROR_MSG( "if( !m_RTK.r.Resize( n ) )" );
@@ -4821,7 +5229,7 @@ namespace GNSS
           rxData->m_ObsArray[i].flags.isAdrUsedInSolution )
         {
           stdev = rxData->m_ObsArray[i].stdev_adr * GPS_WAVELENGTHL1;
-		  /*
+		  
           double elevation = rxData->m_ObsArray[i].satellite.elevation*RAD2DEG;
 
           // GDM_HACK scaling the stdev for adr when below 30 degrees elevation.
@@ -4838,7 +5246,6 @@ namespace GNSS
           {
             stdev *= 3.0;
           }
-		  */
 
           m_RTK.r[j] = 2*stdev*stdev;
           j++;
@@ -5322,6 +5729,13 @@ namespace GNSS
 
     // All measurments have been including in the update!
 
+    // Compute the single difference adr residuals.
+    if( !DetermineSingleDifferenceADR_Residuals_GPSL1( rxData, rxBaseData ) )
+    {
+      GNSS_ERROR_MSG( "DetermineSingleDifferenceADR_Residuals_GPSL1 returned false." );
+      return false;
+    }
+
     // Compute the DOP values.
     if( !ComputeDOP( rxData, false ) )
     {
@@ -5395,6 +5809,12 @@ namespace GNSS
         index_base = index_high;
       }
 
+      if( !DetermineDoubleDifferenceADR_Residuals_GPSL1( rxData, rxBaseData, index_base ) )
+      {
+        GNSS_ERROR_MSG( "DetermineDoubleDifferenceADR_Residuals_GPSL1 returned false." );
+        return false;
+      }
+
       m_RTK.x.Redim( 4+nrDifferentialAdr, 1 );
       m_RTK.x[0] = rxData->m_pvt.latitude;
       m_RTK.x[1] = rxData->m_pvt.longitude;
@@ -5457,7 +5877,7 @@ namespace GNSS
 
           D[k][state_index_base] = -1;
           D[k][rxData->m_ObsArray[i].index_ambiguity_state] = 1;
-          //m_RTKDD.x[k] = rxData->m_ObsArray[i].ambiguity_dd;
+          rxData->m_ObsArray[i].index_ambiguity_state_dd = k;
           k++;           
         }
       }  
@@ -5466,9 +5886,9 @@ namespace GNSS
 
       m_RTKDD.P = D*m_RTK.P*D.Transpose();
       m_RTKDD.x = D*m_RTK.x;
-
+     
       // m_RTK.P.Print( "P.txt", 8 );
-      m_RTKDD.P.Print( "Pdd.txt", 8 );            
+      //m_RTKDD.P.Print( "Pdd.txt", 8 );            
 
       Matrix Q;  // Variance/covariance matrux of ambiguities (original)
       Matrix Z;  // Z-transformation matrix
@@ -5491,19 +5911,19 @@ namespace GNSS
       for( k = 0; k < n; k++ )
         Q[k][k] /= GPS_WAVELENGTHL1; // scale the diagonal
       
-      Q.Print( "Q.txt", 18 );      
-      a.Print( "a.txt", 18 );
+      //Q.Print( "Q.txt", 18 );      
+      //a.Print( "a.txt", 18 );
 
       Matrix a_tmp = a;
 
       result = LAMBDA::lambda1( a, Q, 2, afixed, sqnorm, Qahat, Z ); 
 
-      a.Print( "a_postLambda.txt", 9 );
-      Q.Print( "Q_postLambda.txt", 9 );
-      afixed.Print( "a_fixed.txt", 9 );    
+      //a.Print( "a_postLambda.txt", 9 );
+      //Q.Print( "Q_postLambda.txt", 9 );
+      //afixed.Print( "a_fixed.txt", 9 );    
       //Qzhat.Print( "Qahat.txt", 9 );
-      Z.Print( "Z.txt", 4 );
-      sqnorm.Print( "sqnorm.txt", 9 );
+      //Z.Print( "Z.txt", 4 );
+      //sqnorm.Print( "sqnorm.txt", 9 );
 
       // Extract Q from P, Q with meter units
       m_RTKDD.P.ExtractSubMatrix( Q, 3, 3, m_RTKDD.P.nrows()-1, m_RTKDD.P.ncols()-1 );
@@ -5515,10 +5935,23 @@ namespace GNSS
       Matrix delta_a;
       result = m_RTKDD.P.ExtractSubMatrix( Qba, 0, 3, 2, n+2 );
       Qab = Qba.Transpose();
-      delta_a = afixed.Column(0);
+
+      //Qab.Print( "Qab.txt" );
+      //Qba.Print( "Qba.txt" );
+      //a_tmp.Print( "A_tmp.txt" );
+      
+      delta_a = afixed.Column(0);      
       delta_a -= a_tmp;
+
+      //delta_a.Print( "delta_a_0.txt" );
+
       delta_a *= GPS_WAVELENGTHL1; // convert to meters
+
+      //delta_a.Print( "delta_a_1.txt" );
+
       delta_b = Qba * Q.Inv() * delta_a;
+
+      //delta_b.Print( "delta_b.txt" );
 
       double lat_check;
       double lon_check;
@@ -5546,6 +5979,33 @@ namespace GNSS
         sqrt(Qb_given_a[2][2]),
         rxData->m_pvt.std_clk
         );
+
+      rxData->m_ambiguity_validation_ratio = sqnorm[1] / sqnorm[0];
+
+
+      m_RTKDD.x[0] = lat_check;
+      m_RTKDD.x[1] = lon_check;
+      m_RTKDD.x[2] = hgt_check;
+      for( i = 0; i < n; i++ )
+      {
+        m_RTKDD.x[i+3] = afixed[i][0];
+      }
+
+      // store the computed double difference ambiguity and fixed double difference ambiguity
+      for( i = 0; i < rxData->m_nrValidObs; i++ )
+      {
+        if( rxData->m_ObsArray[i].flags.isAdrUsedInSolution && !rxData->m_ObsArray[i].flags.isBaseSatellite )
+        {
+          if( rxData->m_ObsArray[i].index_ambiguity_state_dd > -1 )
+            rxData->m_ObsArray[i].ambiguity_dd_fixed = m_RTKDD.x[rxData->m_ObsArray[i].index_ambiguity_state_dd];
+        }
+      }
+
+      if( !DetermineDoubleDifferenceADR_Residuals_GPSL1_Fixed( rxData, rxBaseData, index_base ) )
+      {
+        GNSS_ERROR_MSG( "DetermineDoubleDifferenceADR_Residuals_GPSL1_Fixed returned false." );
+        return false;
+      }
     }
 
 #ifdef DEBUG_THE_ESTIMATOR

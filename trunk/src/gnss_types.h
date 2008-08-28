@@ -88,12 +88,9 @@ typedef struct
   unsigned useTropoCorrection:1;         //!< Indicates that the tropospheric correction should be applied.
   unsigned useBroadcastIonoCorrection:1; //!< Indicates that the broadcast ionospheric correction should be applied.
 
-  unsigned isTimeDifferentialPsrAvailable:1;
-  unsigned isTimeDifferentialDopplerAvailable:1;
-
   unsigned isBaseSatellite:1; //!< Indicates if this channel corresponds to a base satellite used in double differencing.
 
-  unsigned reserved:1;
+  unsigned reserved:3;
 } GNSS_structFlagsBitField;
 
 /// \brief    An enumerated for a GNSS code modulation type.
@@ -249,17 +246,17 @@ typedef struct
   float    stdev_doppler;     //!< The estimated Doppler measurement standard deviation [Hz].
 
   // Derived information.
-  double   psr_misclosure;    //!< The measured psr minus the computed psr estimate [m].
-  double   doppler_misclosure;//!< The measured Doppler minus the computed Doppler estimate [m/s].
-  double   range;             //!< The best estimate of the geometric range between the antenna and the satellite [m].
-  double   rangerate;         //!< The best estimate of the geometric range rate between the antenna and the satellite [m/s].
-  double   psr_smoothed;      //!< The carrier smoothed pseudorange if available [m].
-  double   psr_predicted;     //!< The predicted pseudorange based on the satellite position, user position, and current clock offset [m].
-  double   ambiguity;         //!< The estimated float ambiguity [m].
-  double   ambiguity_dd;      //!< The estimated double difference float ambiguity [m].
-  float    doppler_predicted; //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
-  float    azimuthRads;       //!< The associated satellite azimuth for this channel [rad].
-
+  double   psr_misclosure;     //!< The measured psr minus the computed psr estimate [m].
+  double   doppler_misclosure; //!< The measured Doppler minus the computed Doppler estimate [m/s].
+  double   range;              //!< The best estimate of the geometric range between the antenna and the satellite [m].
+  double   rangerate;          //!< The best estimate of the geometric range rate between the antenna and the satellite [m/s].
+  double   psr_smoothed;       //!< The carrier smoothed pseudorange if available [m].
+  double   psr_predicted;      //!< The predicted pseudorange based on the satellite position, user position, and current clock offset [m].
+  double   ambiguity;          //!< The estimated single difference float ambiguity [m].
+  double   ambiguity_dd;       //!< The estimated double difference float ambiguity [m].
+  double   ambiguity_dd_fixed; //!< The estimated double difference fixed ambiguity [m].
+  float    doppler_predicted;  //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
+  
   double   psr_misclosure_lsq;     //!< The measured psr minus the computed psr estimate using least squares [m].
   double   doppler_misclosure_lsq; //!< The measured Doppler minus the computed Doppler estimate using least squares [m/s].
   
@@ -275,7 +272,9 @@ typedef struct
   
   double adr_misclosure;         //!< The measured ADR minus the computed ADR estimate [m]. This is the between receiver differential adr misclosure.
 
-  double adr_misclosure_dd;     //!< The measured ADR minuse the computed ADR estimate + the DD ambiugity estimate
+  double adr_residual_sd;       //!< The measured single difference ADR minus the computed single difference ADR estimate after full sequential update.
+  double adr_residual_dd;       //!< The measured double difference ADR minus the computed double difference ADR estimate after full sequential update (float solution).
+  double adr_residual_dd_fixed; //!< The measured double difference ADR minus the computed double difference ADR estimate after full sequential update and ambiguity fixing.
   double adr_misclosure_temp;   //!< A temporary variable used to compute adr_misclosure_dd above/
 
   double H_p[3]; //!< The design matrix row relating the pseudorange measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
