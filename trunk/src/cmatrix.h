@@ -1850,6 +1850,22 @@ BOOL MTX_UDUt(
   );
 
 
+/** 
+\brief  Compute the error function (erf) for all values in the matrix inplace. \n
+erf(x) = 2/sqrt(pi) * [integral from 0 to x of]( e^(-t^2) )dt.
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_erf_Inplace( MTX* src );
+
+/** 
+\brief  Compute the complementary error function (erfc) for all values in the matrix inplace. \n
+erfc(x) = 1 - erf(x) =  2/sqrt(pi) * [integral from x to inf of]( e^(-t^2) )dt.
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_erfc_Inplace( MTX* src );
+
 
 #ifdef __cplusplus
 }
