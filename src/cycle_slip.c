@@ -172,6 +172,14 @@ BOOL CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase(
   double   current_tow,
   unsigned short previous_week, 
   double   previous_tow,  
+  double   rover_range_base_sat,
+  double   prev_rover_range_base_sat,
+  double   reference_range_base_sat,
+  double   prev_reference_range_base_sat,  
+  double   rover_range,
+  double   prev_rover_range,
+  double   reference_range,
+  double   prev_reference_range,
   double   adr_reference_rx_base_sat,
   double   adr_reference_rx,
   double   adr_rover_rx_base_sat,
@@ -189,6 +197,22 @@ BOOL CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase(
   double current_time = 0.0;
   double prev_time = 0.0;
   double delta_time = 0.0;
+  double sd_adr = 0;
+  double sd_adr_basesat = 0;
+  double dd_adr = 0;
+  double prev_sd_adr = 0;
+  double prev_sd_adr_basesat = 0;
+  double prev_dd_adr = 0;
+
+  double sd = 0;
+  double sd_basesat = 0;
+  double dd = 0;
+  double prev_sd = 0;
+  double prev_sd_basesat = 0;
+  double prev_dd = 0;
+
+  double dd_diff = 0;
+  double dd_diff_prev = 0;
 
   if( wasSlipDetected == NULL || sizeOfSlipInCycles == NULL )
   {
@@ -200,6 +224,26 @@ BOOL CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase(
   prev_time = previous_week*SECONDS_IN_WEEK + previous_tow;
   delta_time = current_time - prev_time;
 
+  if( prev_time == 0 )
+  {
+    wasSlipDetected     = FALSE;
+    *sizeOfSlipInCycles = 0;
+    return TRUE;
+  }
+  if( rover_range_base_sat == 0 ||
+    prev_rover_range_base_sat == 0 ||
+    reference_range_base_sat == 0 ||
+    prev_reference_range_base_sat == 0 ||  
+    rover_range == 0 ||
+    prev_rover_range == 0 ||
+    reference_range == 0 ||
+    prev_reference_range == 0 )
+  {
+    wasSlipDetected     = FALSE;
+    *sizeOfSlipInCycles = 0;
+    return TRUE;
+  }
+  
   if( delta_time <= 0.0 )
   {
     GNSS_ERROR_MSG( "if( delta_time <= 0.0 )" );
@@ -213,8 +257,26 @@ BOOL CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase(
   }
 
   // compute the value of triple difference
-  diff = (((adr_reference_rx - adr_reference_rx_base_sat) - (adr_rover_rx - adr_rover_rx_base_sat))-
-    ((prev_adr_reference_rx - prev_adr_reference_rx_base_sat) - (prev_adr_rover_rx - prev_adr_rover_rx_base_sat)));
+
+  sd_adr = adr_rover_rx - adr_reference_rx;
+  sd_adr_basesat = adr_rover_rx_base_sat - adr_reference_rx_base_sat;
+  dd_adr = sd_adr - sd_adr_basesat;
+
+  prev_sd_adr         = prev_adr_rover_rx - prev_adr_reference_rx;
+  prev_sd_adr_basesat = prev_adr_rover_rx_base_sat - prev_adr_reference_rx_base_sat;
+  prev_dd_adr         = prev_sd_adr - prev_sd_adr_basesat;
+
+  sd = rover_range - reference_range;
+  sd_basesat = rover_range_base_sat - reference_range_base_sat;
+  dd = sd - sd_basesat;
+
+  prev_sd         = prev_rover_range - prev_reference_range;
+  prev_sd_basesat = prev_rover_range_base_sat - prev_reference_range_base_sat;
+  prev_dd         = prev_sd - prev_sd_basesat;
+
+  dd_diff = (dd - dd_adr*GPS_WAVELENGTHL1);
+  dd_diff_prev = (prev_dd - prev_dd_adr*GPS_WAVELENGTHL1); 
+  diff = dd_diff - dd_diff_prev;
 
   if( fabs(diff) > specifiedThresholdInCycles )
   {
@@ -225,6 +287,7 @@ BOOL CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase(
   else
   {
     wasSlipDetected     = FALSE;
+    *sizeOfSlipInCycles = 0;
   }
   return TRUE;
 }

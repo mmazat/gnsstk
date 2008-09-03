@@ -69,9 +69,9 @@
 
 #define MTX_NK (8) //!< the number of byte columns used to represent a column of doubles when using MTX_ID_COMPRESSED_01
 
-#define MTX_NAN (sqrt(-1.0))
+#define MTX_NAN     (sqrt(-1.0))
 #define MTX_POS_INF (-log(0.0))
-#define MTX_NEG_INF (log(0.0))
+#define MTX_NEG_INF ( log(0.0))
 
 
 /// \brief This static global variable indicates whether matrix
@@ -13509,11 +13509,11 @@ BOOL MTX_SortByColumn( MTX *M, const unsigned col )
   unsigned i = 0;
   unsigned j = 0;
   int k = 0;
-  double re;
-  double im;
   MTX indexvec;
+  MTX vec;
 
   MTX_Init( &indexvec );
+  MTX_Init( &vec );
 
   if( MTX_isNull( M ) )
   {
@@ -13539,35 +13539,35 @@ BOOL MTX_SortByColumn( MTX *M, const unsigned col )
     if( j == col )
       continue; // already sorted
 
+    if( !MTX_CopyColumn( M, j, &vec ) )
+    {
+      MTX_ERROR_MSG("MTX_Copy returned FALSE." );
+      return FALSE;
+    }
+
     for( i = 0; i < M->nrows; i++ )
     {
       k = (int)(indexvec.data[0][i]);
       if( k >= 0 )
       {
-        indexvec.data[0][k] = -1.0; // don't allow the reverse indexing
         if( i == k )
           continue;
 
         if( M->isReal )
         {
-          re = M->data[j][i];
-          M->data[j][i] = M->data[j][k];
-          M->data[j][k] = re;
+          M->data[j][i] = vec.data[0][k];          
         }
         else
         {
-          re = M->cplx[j][i].re;
-          im = M->cplx[j][i].im;
-          M->cplx[j][i].re = M->cplx[j][k].re;
-          M->cplx[j][i].im = M->cplx[j][k].im;
-          M->cplx[j][k].re = re;
-          M->cplx[j][k].im = im;
+          M->cplx[j][i].re = vec.cplx[0][k].re;
+          M->cplx[j][i].im = vec.cplx[0][k].im;
         }
       }
     }
   }
 
   MTX_Free( &indexvec );
+  MTX_Free( &vec );
   return TRUE;
 }
 
@@ -20928,6 +20928,7 @@ BOOL MTX_LDLt(
   return TRUE;
 }
 
+
 BOOL MTX_UDUt( 
   MTX* src,           //!< src = U*D*Ut
   MTX *U,             //!< src = U*D*Ut
@@ -21014,6 +21015,7 @@ BOOL MTX_UDUt(
   }
   
   // Perform UDUt decomposition without square roots, inplace as U is initialized as a copy.
+
   for( j = n-1; j >= 1; j-- )
   {
     dtmp = U->data[j][j];
@@ -21043,5 +21045,388 @@ BOOL MTX_UDUt(
       U->data[j][i] = 0.0;
     }
   }
+
+  /* The algorithm below is from:
+  Grewel, M.S (2001), "Kalman Filtering: Theory and Practice using Matlab, Second Edition", 
+  John Wiley and Sons, ISBN: 0-471-39254-5, pp. 222
+
+  It performs slower than the above algorithm so it is not used.
+
+  for( j = n-1; j >=0; j-- )
+  {
+    for( i = j; i >=0; i-- )
+    {
+      dtmp = src->data[j][i];
+      for( k = j+1; k < n; k++ )
+      {
+        dtmp -= U->data[k][i] * d->data[0][k] * U->data[k][j];
+      }
+      if( i==j )
+      {
+        d->data[0][j] = dtmp;
+        U->data[j][j] = 1.0;        
+      }
+      else
+      {
+        U->data[j][i] = dtmp/d->data[0][j];        
+      }
+    }
+  }
+  */
+  
   return TRUE;
 }
+
+
+
+static BOOL MTX_static_gammp(double a, double x, double* ans);
+static BOOL MTX_static_gammq(double a, double x, double* ans);
+static BOOL MTX_static_gser(double *gamser, double a, double x, double *gln);
+static BOOL MTX_static_gcf(double *gammcf, double a, double x, double *gln);
+static double MTX_static_gammln(double xx);
+
+
+BOOL MTX_erf_Inplace( MTX* src )
+{
+  unsigned j = 0;
+  unsigned i = 0;
+  double x = 0;  
+  
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src matrix is NULL" );
+    return FALSE;
+  }
+
+  if( !src->isReal )
+  {
+    MTX_ERROR_MSG( "complex erf is not yet supported." );
+    return FALSE;
+  }
+
+  for( j = 0; j < src->ncols; j++ )
+  {
+
+    for( i = 0; i < src->nrows; i++ )
+    {
+      x = src->data[j][i];
+
+      if( x < 0.0 )
+      {
+        if( !MTX_static_gammp( 0.5, x*x, &x ) )
+        {
+          MTX_ERROR_MSG( "MTX_static_gammp returned FALSE." );
+          return FALSE;
+        }
+        src->data[j][i] = -x;
+      }
+      else
+      {
+        if( !MTX_static_gammp( 0.5, x*x, &x ) )
+        {
+          MTX_ERROR_MSG( "MTX_static_gammp returned FALSE." );
+          return FALSE;
+        }
+        src->data[j][i] = x;
+      }
+    } 
+  }
+
+  return TRUE;
+}
+
+
+BOOL MTX_erfc_Inplace( MTX* src )
+{
+  unsigned j = 0;
+  unsigned i = 0;
+  double x = 0;  
+  
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src matrix is NULL" );
+    return FALSE;
+  }
+
+  if( !src->isReal )
+  {
+    MTX_ERROR_MSG( "complex erfc is not yet supported." );
+    return FALSE;
+  }
+
+  for( j = 0; j < src->ncols; j++ )
+  {
+
+    for( i = 0; i < src->nrows; i++ )
+    {
+      x = src->data[j][i];
+
+      if( x < 0.0 )
+      {
+        if( !MTX_static_gammp( 0.5, x*x, &x ) )
+        {
+          MTX_ERROR_MSG( "MTX_static_gammp returned FALSE." );
+          return FALSE;
+        }
+        src->data[j][i] = 1+x;
+      }
+      else
+      {
+        if( !MTX_static_gammq( 0.5, x*x, &x ) )
+        {
+          MTX_ERROR_MSG( "MTX_static_gammp returned FALSE." );
+          return FALSE;
+        }
+        src->data[j][i] = x;
+      }
+    } 
+  }
+
+  return TRUE;
+}
+
+
+
+// Returns the incomplete gamma function P(a,x).
+//
+// reference
+// Press, W.H., S.A. Teukolsky, W.T. Vetterling,  and B.P. Flannery (1997), 
+// "Numerical Recipes in C", CAMBRIDGE UNIVERSITY PRESS, ISBN 0 521 43108 5,
+// pp. 214.
+//
+// static
+BOOL MTX_static_gammp(double a, double x, double* ans)
+{
+  double gamser=0;
+  double gammcf=0;
+  double gln=0;
+  if( x < 0.0 || a <= 0.0 )
+  {
+    MTX_ERROR_MSG( "Invalid arguments a or x.");
+    return FALSE;
+  }
+  if( x < (a+1.0) ) 
+  { 
+    // Use the series representation.
+    if( !MTX_static_gser( &gamser, a, x, &gln) )
+    {
+      MTX_ERROR_MSG( "MTX_static_gser returned FALSE." );
+      return FALSE;
+    }
+    *ans = gamser;
+    return TRUE;
+  } 
+  else 
+  { 
+    // Use the continued fraction representation
+    if( !MTX_static_gcf( &gammcf, a, x, &gln ) )
+    {
+      MTX_ERROR_MSG( "MTX_static_gcf returned FALSE." );
+      return FALSE;
+    }
+    *ans = 1.0-gammcf; // and take its complement.
+    return TRUE;
+  }  
+}
+
+// Returns the incomplete gamma function Q(a,x) == 1 - P(a,x).
+//
+// reference
+// Press, W.H., S.A. Teukolsky, W.T. Vetterling,  and B.P. Flannery (1997), 
+// "Numerical Recipes in C", CAMBRIDGE UNIVERSITY PRESS, ISBN 0 521 43108 5,
+// pp. 214.
+//
+// static
+BOOL MTX_static_gammq(double a, double x, double* ans)
+{
+  double gamser=0;
+  double gammcf=0;
+  double gln=0;
+  if( x < 0.0 || a <= 0.0 ) 
+  {
+    MTX_ERROR_MSG("if( x < 0.0 || a <= 0.0 ) ");
+    return FALSE;
+  }
+  if( x < (a+1.0) ) 
+  { 
+    //Use the series representation
+    if( !MTX_static_gser(&gamser,a,x,&gln) )
+    {
+      MTX_ERROR_MSG( "MTX_static_gser returned FALSE." );
+      return FALSE;
+    }
+    *ans = 1.0-gamser; // and take its complement.
+    return TRUE;
+  } 
+  else 
+  { 
+    //Use the continued fraction representation.
+    if( !MTX_static_gcf(&gammcf,a,x,&gln) )
+    {
+      MTX_ERROR_MSG( "MTX_static_gcf returned FALSE." );
+      return FALSE;
+    }
+    *ans = gammcf;
+    return TRUE;
+  }
+}
+
+
+// Returns the incomplete gamma function P(a; x) evaluated by its series representation as gamser.
+//
+// reference
+// Press, W.H., S.A. Teukolsky, W.T. Vetterling,  and B.P. Flannery (1997), 
+// "Numerical Recipes in C", CAMBRIDGE UNIVERSITY PRESS, ISBN 0 521 43108 5,
+// pp. 214.
+//
+// static 
+BOOL MTX_static_gser(double *gamser, double a, double x, double *gln)
+{
+  int n;
+  const int itmax = 10000; // Maximum allowed number of iterations.
+  const double eps = DBL_EPSILON; // Relative accuracy.  
+  
+  // in float.h
+  // #define DBL_EPSILON     2.2204460492503131e-016 /* smallest such that 1.0+DBL_EPSILON != 1.0 */  
+  
+  double sum;
+  double del;
+  double ap;
+
+  // gamser and gln must be valid pointers
+  // since this is an internal static function they will not be checked.
+  
+  *gln = MTX_static_gammln(a);
+
+  if( x <= 0.0 )  
+  {
+    if( x < 0.0 )
+    {
+      MTX_ERROR_MSG( "x less than 0.");
+      return FALSE;
+    }
+    *gamser=0.0;
+    return TRUE;
+  }
+  else 
+  {
+    ap = a;
+    del = sum = 1.0/a;
+    for( n = 1; n <= itmax; n++) 
+    {
+      ap += 1.0;
+      del *= x/ap;
+      sum += del;
+      if( fabs(del) < fabs(sum)*eps )
+      {
+        *gamser = sum * exp( -x+a*log(x)-(*gln) );
+        return TRUE;
+      }
+    }
+    MTX_ERROR_MSG( "a is too large for the number of iterations in MTX_static_gser." );    
+    return FALSE;
+  }
+}
+
+
+// Determines the incomplete gamma function Q(a,x) evaluated by 
+// its continued fraction representation as gammcf.
+// Also returns ln( Gamma(a) ) as gln.
+//
+// reference
+// Press, W.H., S.A. Teukolsky, W.T. Vetterling,  and B.P. Flannery (1997), 
+// "Numerical Recipes in C", CAMBRIDGE UNIVERSITY PRESS, ISBN 0 521 43108 5,
+// pp. 214.
+//
+//static 
+BOOL MTX_static_gcf(double *gammcf, double a, double x, double *gln)
+{
+  const int itmax = 10000; // Maximum allowed number of iterations.
+  const double eps = DBL_EPSILON; // Relative accuracy (in float.h).
+  const double fpmin  = DBL_MIN; // Number near the smallest representable double floating-point number (in float.h).
+
+  // in float.h
+  // #define DBL_EPSILON     2.2204460492503131e-016 /* smallest such that 1.0+DBL_EPSILON != 1.0 */  
+  // #define DBL_MIN 2.2250738585072014e-308 /* min positive value */
+  
+  int i;
+  double an,b,c,d,del,h;
+  
+  *gln = MTX_static_gammln(a);
+
+  b = x+1.0-a; // Set up for evaluating continued fraction by modified Lentz's method with b0 = 0.
+  c = 1.0/fpmin;
+  d = 1.0/b;
+  h = d;
+  for( i = 1; i <= itmax; i++ ) 
+  {
+    // Iterate to convergence.
+    an = -i*(i-a);
+    b += 2.0;
+    d = an*d+b;
+    if( fabs(d) < fpmin ) 
+      d = fpmin;
+    c = b+an/c;
+    if( fabs(c) < fpmin )
+      c = fpmin;
+    d = 1.0/d;
+    del = d*c;
+    h *= del;
+    if( fabs(del-1.0) < eps ) 
+      break;
+  }
+  if( i > itmax )
+  {
+    MTX_ERROR_MSG("a too large, too few iterations");
+    return FALSE;
+  }
+  *gammcf = exp(-x+a*log(x)-(*gln))*h; // Put factors in front.
+  return TRUE;
+}
+
+
+// returns the value of ln(Gamma(xx)) for xx > 0  
+//
+// reference
+// Press, W.H., S.A. Teukolsky, W.T. Vetterling,  and B.P. Flannery (1997), 
+// "Numerical Recipes in C", CAMBRIDGE UNIVERSITY PRESS, ISBN 0 521 43108 5,
+// pp. 214.
+//
+//static 
+double MTX_static_gammln(double xx)
+{
+  double x,y,tmp,ser;
+  static double cof[6] = {76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5};
+  int j;
+  y = x = xx;
+  tmp = x+5.5;
+  tmp -= (x+0.5)*log(tmp);
+  ser = 1.000000000190015;
+  for( j = 0; j < 6; j++ )
+  {
+    y += 1.0;
+    ser += cof[j]/y;
+  }
+  x = -tmp+log(2.5066282746310005*ser/x);
+  return x;
+}
+
+
+
+/*
+   for( i = 0; i < src->ncols; i++ )
+    {  
+      z = fabs(src->data[j][i]);
+      
+      t = 1.0 / (1.0 + 0.5*z);
+
+      ans = t * exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+
+            t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+
+            t*(-0.82215223+t*0.17087277)))))))));
+
+      if( x >= 0.0 )
+        src->data[j][i] = ans;
+      else
+        src->data[j][i] = 2.0 - ans;
+    }
+    */

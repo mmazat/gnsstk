@@ -102,12 +102,19 @@ BOOL CYCLESLIP_CheckForCycleSlipUsingDualFrequencyPhase(
 
 return  TRUE if successful, false otherwise.
 */
-
 BOOL CYCLESLIP_CheckForCycleSlipUsingTripleDifferencePhase(
-  unsigned short current_week, 
+    unsigned short current_week, 
   double   current_tow,
   unsigned short previous_week, 
   double   previous_tow,  
+  double   rover_range_base_sat,
+  double   prev_rover_range_base_sat,
+  double   reference_range_base_sat,
+  double   prev_reference_range_base_sat,  
+  double   rover_range,
+  double   prev_rover_range,
+  double   reference_range,
+  double   prev_reference_range,
   double   adr_reference_rx_base_sat,
   double   adr_reference_rx,
   double   adr_rover_rx_base_sat,
