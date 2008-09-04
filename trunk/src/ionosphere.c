@@ -88,14 +88,16 @@ BOOL IONOSPHERE_GetL1KlobucharCorrection(
 
   // Check the input parameters. 
   // Refer to page 116 of the GPS Interface Control Document. Tabble 20-X Ionospheric Parameters.
-  if( fabs(alpha0) > 128 * pow(2.0, -30.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha0" ); return FALSE; }
-  if( fabs(alpha1) > 128 * pow(2.0, -27.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha1" ); return FALSE; }
-  if( fabs(alpha2) > 128 * pow(2.0, -24.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha2" ); return FALSE; }
-  if( fabs(alpha3) > 128 * pow(2.0, -24.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha3" ); return FALSE; }
-  if( fabs(beta0)  > 128 * pow(2.0,  11.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta0" ); return FALSE; }
-  if( fabs(beta1)  > 128 * pow(2.0,  14.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta1" ); return FALSE; }
-  if( fabs(beta2)  > 128 * pow(2.0,  16.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta2" ); return FALSE; }
-  if( fabs(beta3)  > 128 * pow(2.0,  16.0) ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta3" ); return FALSE; }
+  if( fabs(alpha0) > 128 * TWO_TO_THE_POWER_OF_M30 ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha0" ); return FALSE; }
+  if( fabs(alpha1) > 128 * TWO_TO_THE_POWER_OF_M27 ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha1" ); return FALSE; }
+  if( fabs(alpha2) > 128 * TWO_TO_THE_POWER_OF_M24 ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha2" ); return FALSE; }
+  if( fabs(alpha3) > 128 * TWO_TO_THE_POWER_OF_M24 ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: alpha3" ); return FALSE; }
+  if( fabs(beta0)  > 128 * TWO_TO_THE_POWER_OF_11  ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta0" ); return FALSE; }
+  if( fabs(beta1)  > 128 * TWO_TO_THE_POWER_OF_14  ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta1" ); return FALSE; }
+  if( fabs(beta2)  > 128 * TWO_TO_THE_POWER_OF_16  ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta2" ); return FALSE; }
+
+  // beta3 can be larger when using CODE ionosheric corrections
+  //if( fabs(beta3)  > 128 * TWO_TO_THE_POWER_OF_16  ){ GNSS_ERROR_MSG( "invalid ionospheric parameter: beta3" ); return FALSE; }
   if( latitude > PI/2 || latitude < -PI/2 )
   {
     GNSS_ERROR_MSG( "if( latitude > PI/2 || latitude < -PI/2 )" );

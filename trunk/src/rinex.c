@@ -2433,9 +2433,24 @@ BOOL RINEX_GetNextObservationSet(
           obsArray[obsArray_index].freqType = GNSS_GPSL1; 
           obsArray[obsArray_index].doppler = (float)RINEX_obs[RINEX_obs_index].value; // m
 
+          // Trimble R8 receiver data when converted to RINEX have epochs of invalid doppler 
+          // where the value output is 0.0. To compensate for this all value of exactly zero
+          // are deemed invalid doppler.
+
           // Set the validity flags
-          obsArray[obsArray_index].flags.isDopplerValid = TRUE;
-          isL1data_present = TRUE;
+          if( obsArray[obsArray_index].doppler == 0.0 )
+          {
+//#define GDM_TRIMBLE_R8_DOPPLER_HACK
+#ifdef GDM_TRIMBLE_R8_DOPPLER_HACK
+            obsArray[obsArray_index].flags.isNoCycleSlipDetected = FALSE;
+#endif
+            obsArray[obsArray_index].flags.isDopplerValid = FALSE;
+          }
+          else
+          {
+            obsArray[obsArray_index].flags.isDopplerValid = TRUE;
+            isL1data_present = TRUE;
+          }
           break;
         }
       default:
@@ -2645,9 +2660,20 @@ BOOL RINEX_GetNextObservationSet(
           obsArray[obsArray_index].freqType = GNSS_GPSL2; 
           obsArray[obsArray_index].doppler = (float)RINEX_obs[RINEX_obs_index].value; // m
 
+          // Trimble R8 receiver data when converted to RINEX have epochs of invalid doppler 
+          // where the value output is 0.0. To compensate for this all value of exactly zero
+          // are deemed invalid doppler.
+
           // Set the validity flags
-          obsArray[obsArray_index].flags.isDopplerValid = TRUE;
-          isL2data_present = TRUE;
+          if( obsArray[obsArray_index].doppler == 0.0 )
+          {
+            obsArray[obsArray_index].flags.isDopplerValid = FALSE;
+          }
+          else
+          {
+            obsArray[obsArray_index].flags.isDopplerValid = TRUE;
+            isL2data_present = TRUE;
+          }
           break;
         }
       default:
