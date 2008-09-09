@@ -1263,6 +1263,32 @@ namespace Zenautics
     }
   }
 
+  bool Matrix::Inplace_erf()
+  {
+    if( MTX_erf_Inplace( &m_Matrix ) )
+    {
+      return true;
+    }
+    else 
+    {
+      MTX_ERROR_MSG( "MTX_erf_Inplace returned false." );
+      return false;
+    }
+  }
+
+  bool Matrix::Inplace_erfc()
+  {
+    if( MTX_erfc_Inplace( &m_Matrix ) )
+    {
+      return true;
+    }
+    else 
+    {
+      MTX_ERROR_MSG( "MTX_erfc_Inplace returned false." );
+      return false;
+    }
+  }
+
   bool Matrix::Inplace_Fix()
   {
     if( MTX_Fix( &m_Matrix ) )

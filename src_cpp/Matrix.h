@@ -509,7 +509,7 @@ namespace Zenautics
 
     \return true if successful, false otherwise
     */
-    bool Print( const char *path, const unsigned precision = 9, bool append = false );
+    bool Print( const char *path, const unsigned precision=9, bool append = false );
 
     /**
     \brief  Print the matrix to a file with automatically determined column width 
@@ -1272,6 +1272,43 @@ namespace Zenautics
     */
     bool Inplace_Ceil();
     bool Inplace_ceil() { return this->Inplace_Ceil(); }
+
+
+    /**
+    \brief  Compute the error function (erf) for all values in the matrix inplace. \n
+    erf(x) = 2/sqrt(pi) * [integral from 0 to x of]( e^(-t^2) )dt.
+
+    \code
+    Matrix A;
+    A = "[-1 -0.5 0 0.5 1]";
+    bool result;
+    result = A.PrintStdout();     // Print Matrix A. A = "[-1 -0.5 0 0.5 1]";
+    result = A.Inplace_erf();     // Make A = erf(A).
+    cout << endl;
+    result = A.PrintStdout();     // Print Matrix A. A = "[-0.842700792949715 -0.520499877813047  0 0.520499877813047 0.842700792949715]";
+    \endcode    
+           
+    \return true if successful, false otherwise.    
+    */
+    bool Inplace_erf();
+
+    /**
+    \brief  Compute the complementary error function (erfc) for all values in the matrix inplace. \n
+    erfc(x) = 1 - erf(x) =  2/sqrt(pi) * [integral from x to inf of]( e^(-t^2) )dt.    
+
+    \code
+    Matrix A;
+    A = "[-1 -0.5 0 0.5 1]";
+    bool result;
+    result = A.PrintStdout();     // Print Matrix A. A = "[-1 -0.5 0 0.5 1]";
+    result = A.Inplace_erfc();    // Make A = erfc(A).
+    cout << endl;
+    result = A.PrintStdout();     // Print Matrix A. A = "[1.84270079294971  1.52049987781305   1 0.479500122186953 0.157299207050285]";
+    \endcode    
+           
+    \return true if successful, false otherwise.    
+    */
+    bool Inplace_erfc();
 
     /**
     \brief  Rounds the matrix elements of X to the nearest integers towards zero.
