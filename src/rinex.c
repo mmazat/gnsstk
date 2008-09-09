@@ -2440,10 +2440,6 @@ BOOL RINEX_GetNextObservationSet(
           // Set the validity flags
           if( obsArray[obsArray_index].doppler == 0.0 )
           {
-//#define GDM_TRIMBLE_R8_DOPPLER_HACK
-#ifdef GDM_TRIMBLE_R8_DOPPLER_HACK
-            obsArray[obsArray_index].flags.isNoCycleSlipDetected = FALSE;
-#endif
             obsArray[obsArray_index].flags.isDopplerValid = FALSE;
           }
           else
