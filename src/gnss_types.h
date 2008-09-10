@@ -90,7 +90,10 @@ typedef struct
 
   unsigned isBaseSatellite:1; //!< Indicates if this channel corresponds to a base satellite used in double differencing.
 
-  unsigned reserved:3;
+  unsigned isNotPsrDeweighted:1;
+  unsigned isNotDopplerDeweighted:1;
+  unsigned isNotAdrDeweighted:1;
+
 } GNSS_structFlagsBitField;
 
 /// \brief    An enumerated for a GNSS code modulation type.
@@ -252,9 +255,9 @@ typedef struct
   double   rangerate;          //!< The best estimate of the geometric range rate between the antenna and the satellite [m/s].
   double   psr_smoothed;       //!< The carrier smoothed pseudorange if available [m].
   double   psr_predicted;      //!< The predicted pseudorange based on the satellite position, user position, and current clock offset [m].
-  double   ambiguity;          //!< The estimated single difference float ambiguity [m].
-  double   ambiguity_dd;       //!< The estimated double difference float ambiguity [m].
-  double   ambiguity_dd_fixed; //!< The estimated double difference fixed ambiguity [m].
+  double   sd_ambiguity;       //!< The estimated single difference float ambiguity [m].
+  double   dd_ambiguity;       //!< The estimated double difference float ambiguity [m].
+  double   dd_ambiguity_fixed; //!< The estimated double difference fixed ambiguity [m].
   float    doppler_predicted;  //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
   
   double   psr_misclosure_lsq;     //!< The measured psr minus the computed psr estimate using least squares [m].
@@ -276,6 +279,21 @@ typedef struct
   double adr_residual_dd;       //!< The measured double difference ADR minus the computed double difference ADR estimate after full sequential update (float solution).
   double adr_residual_dd_fixed; //!< The measured double difference ADR minus the computed double difference ADR estimate after full sequential update and ambiguity fixing.
   double adr_misclosure_temp;   //!< A temporary variable used to compute adr_misclosure_dd above/
+
+  double sd_doppler_covar;       //!< Single difference doppler covariance.
+  double sd_doppler_innovation;  //!< Single difference doppler innovation.
+  double sd_doppler_innovation_standardized;  //!< A standardized single difference doppler innovation.
+
+  double sd_psr_covar;       //!< Single difference psr covariance.
+  double sd_psr_innovation;  //!< Single difference psr innovation.
+  double sd_psr_innovation_standardized;  //!< A standardized single difference psr innovation.
+
+  double sd_adr_covar;       //!< Single difference adr covariance.
+  double sd_adr_innovation;  //!< Single difference adr innovation.
+  double sd_adr_innovation_standardized;  //!< A standardized single difference adr innovation.
+
+  double uwb_bias;
+  double uwb_scale_factor;
 
   double H_p[3]; //!< The design matrix row relating the pseudorange measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
   double H_a[3]; //!< The design matrix row relating the adr measurements to the position solution. dP/d(lat), dP/d(lon), dP/d(hgt).
@@ -382,12 +400,14 @@ typedef struct
   double std_clk;        //!< The standard deviation uncertainty in the clock offset [m].
   double std_clkdrift;   //!< The standard deviation uncertainty in the clock drift [m/s].
 
-  unsigned char isPositionConstrained;      //!< Is this a constrained position solution [TRUE(1),FALSE(0)].
+  unsigned char didGlobalTestPassForPosition;  //!< Does the position solution pass the Chi^2 goodness of fit test [TRUE(1),FALSE(0)].
+  unsigned char didGlobalTestPassForVelocity;  //!< Does the velocity solution pass the Chi^2 goodness of fit test [TRUE(1),FALSE(0)].
+
+  unsigned char isPositionFixed;            //!< Is this a position solution fully constrained to a fixed point [TRUE(1),FALSE(0)].
   unsigned char isHeightConstrained;        //!< Is this a height constrained solution   [TRUE(1),FALSE(0)].
   unsigned char isClockConstrained;         //!< Is this a clock constrained solution    [TRUE(1),FALSE(0)].
   unsigned char isSolutionBasedOnEphemeris; //!< Is the solution based on valid ephemeris information [TRUE(1),FALSE(0)].
-  unsigned char reserved[5];                //!< Space for reserved flags.
-
+  
   unsigned char nrPsrObsAvailable;      //!< This indicates the number of valid pseudorange observations valid before adjustment.
   unsigned char nrPsrObsUsed;           //!< This indicates the number of valid pseudorange observations valid after adjustment.
   unsigned char nrPsrObsRejected;       //!< This indicates the number of valid pseudorange observations rejected during adjustment.
@@ -399,6 +419,9 @@ typedef struct
   unsigned char nrDopplerObsAvailable;  //!< This indicates the number of valid Doppler observations valid before adjustment.
   unsigned char nrDopplerObsUsed;       //!< This indicates the number of valid Doppler observations valid after adjustment.
   unsigned char nrDopplerObsRejected;   //!< This indicates the number of valid Doppler observations rejected during adjustment.
+
+  unsigned char reserved[1];                //!< Space for reserved flags.
+  
 } GNSS_structPVT;
 
 #ifdef __cplusplus
