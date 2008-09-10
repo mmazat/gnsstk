@@ -13127,33 +13127,25 @@ BOOL MTX_Diagonal( const MTX *M, MTX *D )
     return FALSE;
   }
 
-  if( !M->isReal && D->isReal )
+  if( !MTX_Resize( D, M->nrows, 1, M->isReal ) )    
   {
-    if( !MTX_Resize( D, M->nrows, 1, M->isReal ) )
-    {
-      MTX_ERROR_MSG( "MTX_Resize returned FALSE." );
-      return FALSE;
-    }
-  }
-  else if( D->nrows != M->nrows || D->ncols != 1 )
-  {
-    if( !MTX_Resize( D, M->nrows, 1, M->isReal ) )
-    {
-      MTX_ERROR_MSG( "MTX_Resize returned FALSE." );
-      return FALSE;
-    }
+    MTX_ERROR_MSG( "MTX_Resize returned FALSE." );
+    return FALSE;
   }
 
   for( i = 0; i < M->nrows; i++ )
   {
-    if( M->isReal )
+    if( i < M->ncols )
     {
-      D->data[0][i] = M->data[i][i];
-    }
-    else
-    {
-      D->cplx[0][i].re = M->cplx[i][i].re;
-      D->cplx[0][i].im = M->cplx[i][i].im;
+      if( M->isReal )
+      {
+        D->data[0][i] = M->data[i][i];
+      }
+      else
+      {
+        D->cplx[0][i].re = M->cplx[i][i].re;
+        D->cplx[0][i].im = M->cplx[i][i].im;
+      }
     }
   }
   return TRUE;
