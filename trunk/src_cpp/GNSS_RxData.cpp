@@ -1289,13 +1289,42 @@ namespace GNSS
         m_ObsArray[i].satellite.y = m_UWB.y_a;
         m_ObsArray[i].satellite.z = m_UWB.z_a;
         m_ObsArray[i].satellite.isValid = true;    
-        m_ObsArray[i].stdev_psr = 1.15f; // GDM - for MSSI, this is the output precision
+        m_ObsArray[i].stdev_psr = 0.15f; // GDM - for MSSI, this is the output precision
         m_ObsArray[i].tow = m_UWB.data[j][0];
         m_ObsArray[i].week = (unsigned short)m_UWB.data[j][1];
         m_ObsArray[i].flags.isAdrValid = 0;
         m_ObsArray[i].flags.isDopplerValid = 0;
-        maxchannel++;
-        m_ObsArray[i].channel = maxchannel;
+        m_ObsArray[i].channel = maxchannel + 1;
+        m_ObsArray[i].flags.isNotPsrRejected = 1;
+        m_ObsArray[i].flags.isNotPsrDeweighted = 1;
+        
+
+        switch( m_UWB.id_a )
+        {
+        case 7:
+          m_ObsArray[i].uwb_bias = 0.287788541811451;
+          m_ObsArray[i].uwb_scale_factor = 0.994677890635874; 
+          break;
+        case 8: 
+          m_ObsArray[i].uwb_bias = -0.0766142720649753;
+          m_ObsArray[i].uwb_scale_factor = 1.01472988574386; 
+          break;
+        case 9: 
+          m_ObsArray[i].uwb_bias = -0.569703723269013;
+          m_ObsArray[i].uwb_scale_factor = 1.02189515100734; 
+          break;
+        default: break;
+        }
+        /*
+        switch( m_UWB.id_a )
+        {
+        case 7: m_ObsArray[i].uwb_scale_factor = 0.107583393/38.973; break;
+        case 8: m_ObsArray[i].uwb_scale_factor = 0.27224495/17.238; break;
+        case 9: m_ObsArray[i].uwb_scale_factor = -0.124191775/18.887; break;
+        default: break;
+        }
+        */
+
 
         boolResponder1 = false;
         m_UWB.occurances++;
@@ -1320,14 +1349,33 @@ namespace GNSS
         m_ObsArray[i].satellite.y = m_UWB.y_b;
         m_ObsArray[i].satellite.z = m_UWB.z_b;
         m_ObsArray[i].satellite.isValid = true;    
-        m_ObsArray[i].stdev_psr = 1.15f; // GDM - for MSSI, this is the output precision
+        m_ObsArray[i].stdev_psr = 0.15f; // GDM - for MSSI, this is the output precision
         m_ObsArray[i].tow = m_UWB.data[j][0];
         m_ObsArray[i].week = (unsigned short)m_UWB.data[j][1];
         m_ObsArray[i].flags.isAdrValid = 0;
         m_ObsArray[i].flags.isDopplerValid = 0;
-        maxchannel++;
-        m_ObsArray[i].channel = maxchannel;
+        m_ObsArray[i].channel = maxchannel + 2;
+        m_ObsArray[i].flags.isNotPsrRejected = 1;
+        m_ObsArray[i].flags.isNotPsrDeweighted = 1;
+        
 
+        switch( m_UWB.id_b )
+        {
+        case 7:
+          m_ObsArray[i].uwb_bias = 0.287788541811451;
+          m_ObsArray[i].uwb_scale_factor = 0.994677890635874; 
+          break;
+        case 8: 
+          m_ObsArray[i].uwb_bias = -0.0766142720649753;
+          m_ObsArray[i].uwb_scale_factor = 1.01472988574386; 
+          break;
+        case 9: 
+          m_ObsArray[i].uwb_bias = -0.569703723269013;
+          m_ObsArray[i].uwb_scale_factor = 1.02189515100734; 
+          break;
+        default: break;
+        }
+        
         boolResponder2 = false;
         m_UWB.occurances++;
       }
@@ -1351,13 +1399,31 @@ namespace GNSS
         m_ObsArray[i].satellite.y = m_UWB.y_c;
         m_ObsArray[i].satellite.z = m_UWB.z_c;
         m_ObsArray[i].satellite.isValid = true;    
-        m_ObsArray[i].stdev_psr = 1.15f; // GDM - for MSSI, this is the output precision
+        m_ObsArray[i].stdev_psr = 0.15f; // GDM - for MSSI, this is the output precision
         m_ObsArray[i].tow = m_UWB.data[j][0];
         m_ObsArray[i].week = (unsigned short)m_UWB.data[j][1];
         m_ObsArray[i].flags.isAdrValid = 0;
-        m_ObsArray[i].flags.isDopplerValid = 0;
-        maxchannel++;
-        m_ObsArray[i].channel = maxchannel;
+        m_ObsArray[i].flags.isDopplerValid = 0;        
+        m_ObsArray[i].channel = maxchannel + 3;
+        m_ObsArray[i].flags.isNotPsrRejected = 1;
+        m_ObsArray[i].flags.isNotPsrDeweighted = 1;
+        
+        switch( m_UWB.id_c )
+        {
+        case 7:
+          m_ObsArray[i].uwb_bias = 0.287788541811451;
+          m_ObsArray[i].uwb_scale_factor = 0.994677890635874; 
+          break;
+        case 8: 
+          m_ObsArray[i].uwb_bias = -0.0766142720649753;
+          m_ObsArray[i].uwb_scale_factor = 1.01472988574386; 
+          break;
+        case 9: 
+          m_ObsArray[i].uwb_bias = -0.569703723269013;
+          m_ObsArray[i].uwb_scale_factor = 1.02189515100734; 
+          break;
+        default: break;
+        }
 
         boolResponder3 = false;
         m_UWB.occurances++;
@@ -1710,6 +1776,32 @@ namespace GNSS
         m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
       }
     }
+
+
+
+#ifdef HACK_FOW_UWB_ONLY_IE_ONE_PSR
+    bool foundPSR = false;
+    double maxLock = 0.0;
+    unsigned ii = 0;
+    for( i = 0; i < m_nrValidObs; i++ )
+    {
+      if( m_ObsArray[i].flags.isPsrValid )
+      {
+        if( m_ObsArray[i].locktime > maxLock )
+        {
+          maxLock = m_ObsArray[i].locktime;
+          ii = i;
+        }
+        m_ObsArray[i].flags.isPsrValid = false;
+        foundPSR = true;
+      }
+    }
+    if( foundPSR )
+    {
+      m_ObsArray[ii].flags.isPsrValid = true;
+    }
+#endif
+
 
 #ifdef GDM_UWB_RANGE_HACK
     if( m_pvt.time.gps_tow > 179705 )
