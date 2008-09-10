@@ -575,7 +575,6 @@ namespace GNSS
     /// The number of usable items in m_ObsArray.
     unsigned char m_nrValidObs;
 
-
     /// The previous observation set.
     GNSS_structMeasurement m_prev_ObsArray[GNSS_RXDATA_NR_CHANNELS];
 
@@ -593,6 +592,12 @@ namespace GNSS
 
     /// GDM_TODO - comment here
     double m_ambiguity_validation_ratio;
+
+    /// The lower bound probability of correct fixed ambiguities.
+    double m_probability_of_correct_ambiguities;
+
+    // GDM_TODO rename and recomment later.
+    double m_norm;
 
     /// The receiver's previous position, velocity, and time information.
     GNSS_structPVT  m_prev_pvt;
@@ -646,6 +651,34 @@ namespace GNSS
     double m_clockJump;
 
     
+    /// This boolean indicates if the rover station is explicitly static. 
+    /// This is used to enable cycle slip detection using the triple differnce method.
+    bool m_isStatic;
+
+
+    /// This is the value of the height used for a height constraint.
+    double m_heightConstraint;
+
+    // This is the accuracy of the height constraint used.
+    double m_heightConstraintStdev;
+
+
+    /// The default GPS L1 pseudorange measurement standard deviation [m].
+    double m_default_stdev_GPSL1_psr;
+
+    /// The default GPS L1 doppler measurement standard deviation [Hz].
+    double m_default_stdev_GPSL1_doppler;
+
+    /// The default GPS L1 adr measurement standard deviation [cycles].
+    double m_default_stdev_GPSL1_adr;
+
+    bool SetDefaultMeasurementStdev_GPSL1(
+      const double default_stdev_GPSL1_psr,     //!< default psr measurement standard deviation [m]
+      const double default_stdev_GPSL1_doppler, //!< default doppler measurement standard deviation [m]
+      const double default_stdev_GPSL1_adr      //!< default adr measurement standard deviation [m]
+      );
+    
+    ////
     // GDM_HACK
 
     /// A datum point for which to compute the Northing, Easting, and Vertical corresponding to the receiver's position and velocity information.
@@ -659,6 +692,10 @@ namespace GNSS
       const double longitudeRads,
       const double height 
       );
+
+    // 
+    ///
+
 
 #ifdef GDM_UWB_RANGE_HACK
 
@@ -675,14 +712,34 @@ namespace GNSS
     {
       bool isHackOn;       //!< A boolean to indicate if the UWB range hack is enabled for this receiver data.
       char  filepath[512]; //!< The path to the UWB range data.
-      double x;  //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
-      double y;  //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
-      double z;  //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      
+      int id_a;    //!< The UWB reference station id.
+      double x_a;  //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double y_a;  //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double z_a;  //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+
+      int id_b;    //!< The UWB reference station id.
+      double x_b;  //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double y_b;  //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double z_b;  //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+
+      int id_c;    //!< The UWB reference station id.
+      double x_c;  //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double y_c;  //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      double z_c;  //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+
+      int nresponders;  //!< The number of UWB responders to one requester
+      int occurances;   //!< Number of valid UWB ranges from different responders in that time epoch
+      double current_epoch;
+
+      Matrix responderID; //!< The UWB responder ID's
 
       /// The UWB range data is loaded into this matrix. After loading the matrix has
       /// column 0 = gps time of week (s), 
       /// column 1 = gps week (weeks), 
-      /// column 2 = range (m) - converted from range in feet
+      /// column 2 = range (m)
+      /// column 3 = requester ID
+      /// column 4 = responder ID
       Matrix data;
 
       /// A boolean to indicate if there is a valid UWB range for the current processing epoch.
@@ -692,7 +749,7 @@ namespace GNSS
       int index_in_obs_array;
     
       /// A simple constructor.
-      struct_UWB() : isHackOn(false), x(0.0), y(0.0), z(0.0), isValidForThisEpoch(false), index_in_obs_array(-1)
+      struct_UWB() : isHackOn(false), nresponders(0), occurances(0), current_epoch(0.0), isValidForThisEpoch(false), index_in_obs_array(-1)
       {
         filepath[0] = '\0';
       };
@@ -704,9 +761,18 @@ namespace GNSS
     /// Enable the use of UWB range measurements. Load all the UWB data.
     bool EnableAndLoadUWBData( 
       const char* filepath,  //!< The path to the UWB range data.
-      const double x, //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
-      const double y, //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
-      const double z, //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+      const int a_id,
+      const double xUWB_a,
+      const double yUWB_a,
+      const double zUWB_a,
+      const int b_id,
+      const double xUWB_b,
+      const double yUWB_b,
+      const double zUWB_b,
+      const int c_id,
+      const double xUWB_c,
+      const double yUWB_c,
+      const double zUWB_c,
       const bool isStatic //!< If the data is static, measurement outliers based on a somewaht ad-hoc 2 sigma rejection are removed.
       );
 

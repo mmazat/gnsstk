@@ -78,6 +78,10 @@ namespace GNSS
 
       std::string DataTypeStr;       //!< The data type string.
       GNSS_enumRxDataType DataType;  //!< The data type as an enumeration.
+
+      double stdev_GPSL1_psr;        //!< default GPSL1 pseudorange measurement standard deviation [m]
+      double stdev_GPSL1_doppler;    //!< default GPSL1 Doppler measurement standard deviation [Hz]
+      double stdev_GPSL1_adr;        //!< default GPSL1 accumulated Doppler range measurement standard deviation [cycles]
       
       double latitudeRads;     //!< Station Latitude [rad].
       double latitudeDegrees;  //!< Station Latitude [deg].
@@ -88,7 +92,7 @@ namespace GNSS
       double x; //!< Station ECEF WGS84 X coordinate [m].
       double y; //!< Station ECEF WGS84 Y coordinate [m].
       double z; //!< Station ECEF WGS84 Z coordinate [m].
-
+      
       bool useTropo; //!< A boolean to indicate if the tropospheric correction is enabled.
       bool useIono;  //!< A boolean to indicate if the broadcast ionospheric correction is enabled.
 
@@ -104,6 +108,9 @@ namespace GNSS
       // default constructor
       stStationInformation()
       : isValid(false),
+        stdev_GPSL1_psr(0.8),
+        stdev_GPSL1_doppler(0.09),
+        stdev_GPSL1_adr(0.03),
         latitudeRads(0.0),
         latitudeDegrees(0.0),
         longitudeRads(0.0),
@@ -121,6 +128,8 @@ namespace GNSS
           satsToExclude[i] = 0;
       }
     };
+
+    
 
     struct stGPSTime
     {
@@ -230,13 +239,28 @@ namespace GNSS
     /// The locktime mask [s].
     double m_locktimeMask;
 
-    /// A boolean to indicate if the rover position is to be constrained.
-    bool m_isPositionConstrained;
+    /// A boolean to indicate if the rover position is to be fixed.
+    bool m_isPositionFixed;
 
     /// A boolean to indicate if the rover height is to be constrained.
     bool m_isHeightConstrained;
 
 #ifdef GDM_UWB_RANGE_HACK    
+
+    struct stUWB
+    {
+      int id;   //!< Station ID (-1 is invalid)
+      double x; //!< Station ECEF WGS84 X coordinate [m].
+      double y; //!< Station ECEF WGS84 Y coordinate [m].
+      double z; //!< Station ECEF WGS84 Z coordinate [m].
+
+      stUWB(): id(-1), x(0), y(0), z(0){}
+    };
+
+    stUWB m_UWB_a;
+    stUWB m_UWB_b;
+    stUWB m_UWB_c;
+
     /// The path to an UWB range data file.
     /// containing:
     /// column 0  = gps time of week (s)

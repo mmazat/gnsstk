@@ -57,7 +57,7 @@ namespace GNSS
     m_elevationMask(0.0),
     m_cnoMask(0.0),
     m_locktimeMask(0.0),
-    m_isPositionConstrained(false),
+    m_isPositionFixed(false),
     m_isHeightConstrained(false)
   {     
     memset( &m_klobuchar, 0, sizeof(m_klobuchar) );
@@ -71,7 +71,12 @@ namespace GNSS
     unsigned n;
     bool result;
     bool useECEF = false;
+    bool useLLH = false;
     BOOL resultBOOL = FALSE;
+    double angleInDegs;
+    double lat;
+    double lon;
+    double hgt;
 
     if( !ReadOptionFile( OptionFilePath ) )
     {
@@ -93,10 +98,11 @@ namespace GNSS
       return false; 
     }
     if( m_ProcessingMethod != "LSQ" 
-		&& m_ProcessingMethod != "EKF" 
-    && m_ProcessingMethod != "RTK4" 
-    && m_ProcessingMethod != "RTK8" 
-		&& m_ProcessingMethod != "RTKDD" )
+		 && m_ProcessingMethod != "EKF" 
+     && m_ProcessingMethod != "RTK4" 
+     && m_ProcessingMethod != "RTK8" 
+     && m_ProcessingMethod != "TRIPLEDIFF" 
+		 && m_ProcessingMethod != "RTKDD" )
     {
       GNSS_ERROR_MSG( "Invalid option: ProcessingMethod" );
       return false;
@@ -253,6 +259,21 @@ namespace GNSS
           return false;
         }
 
+        if( GetValue( "Reference_stdev_GPSL1_psr", m_Reference.stdev_GPSL1_psr ) )
+        {
+          if( m_Reference.stdev_GPSL1_psr <= 0 )
+            m_Reference.stdev_GPSL1_psr = 0.8;
+        }
+        if( GetValue( "Reference_stdev_GPSL1_doppler", m_Reference.stdev_GPSL1_doppler ) )
+        {
+          if( m_Reference.stdev_GPSL1_doppler <= 0 )
+            m_Reference.stdev_GPSL1_doppler = 0.09;
+        }
+        if( GetValue( "Reference_stdev_GPSL1_adr", m_Reference.stdev_GPSL1_adr ) )
+        {
+          if( m_Reference.stdev_GPSL1_adr <= 0 )
+            m_Reference.stdev_GPSL1_adr = 0.03;
+        }
 
         if( !GetValue( "Reference_UseECEF", useECEF ) )
         {
@@ -467,6 +488,22 @@ namespace GNSS
       return false;
     }
 
+    if( GetValue( "Rover_stdev_GPSL1_psr", m_Rover.stdev_GPSL1_psr ) )
+    {
+      if( m_Rover.stdev_GPSL1_psr <= 0 )
+        m_Rover.stdev_GPSL1_psr = 0.8;
+    }
+    if( GetValue( "Rover_stdev_GPSL1_doppler", m_Rover.stdev_GPSL1_doppler ) )
+    {
+      if( m_Rover.stdev_GPSL1_doppler <= 0 )
+        m_Rover.stdev_GPSL1_doppler = 0.09;
+    }
+    if( GetValue( "Rover_stdev_GPSL1_adr", m_Rover.stdev_GPSL1_adr ) )
+    {
+      if( m_Rover.stdev_GPSL1_adr <= 0 )
+        m_Rover.stdev_GPSL1_adr = 0.03;
+    }
+
     if( !GetValue( "Rover_UseECEF", useECEF ) )
     {
       GNSS_ERROR_MSG( "Invalid option: Rover_UseECEF" );
@@ -598,7 +635,15 @@ namespace GNSS
     m_Rover.nrSatsToExclude = n;
 
 
-    GetValue( "Rover_EnablePositionConstraint", m_isPositionConstrained );
+    if( GetValue( "Rover_EnableFixedPositionConstraint", m_isPositionFixed ) )
+    {
+      if( m_isPositionFixed )
+      {
+        m_Rover.uncertaintyLatitudeOneSigma  = 1e-06;
+        m_Rover.uncertaintyLongitudeOneSigma = 1e-06;
+        m_Rover.uncertaintyHeightOneSigma = 1e-06;
+      }
+    }
 
     GetValue( "Rover_EnableHeightConstraint", m_isHeightConstrained );
 
@@ -645,6 +690,304 @@ namespace GNSS
 
 #ifdef GDM_UWB_RANGE_HACK    
     GetValue( "Rover_UWBFilePath", m_UWBFilePath );      
+
+    if( !GetValue( "ReferenceUWB1_ID", m_UWB_a.id ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Reference_UWB1_ID" );
+      return false;
+    }      
+    if( m_UWB_a.id >= 0 )
+    {
+      if( !GetValue( "ReferenceUWB1_UseECEF", useECEF ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_UseECEF" );
+        return false;
+      }
+      if( useECEF )
+      {
+        // Station 1
+        if( !GetValue( "ReferenceUWB1_ECEF_X", m_UWB_a.x ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_ECEF_X" );
+          return false;
+        }
+        if( !GetValue( "ReferenceUWB1_ECEF_Y", m_UWB_a.y ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_ECEF_Y" );
+          return false;
+        }
+        if( !GetValue( "ReferenceUWB1_ECEF_Z", m_UWB_a.z ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_ECEF_Z" );
+          return false;
+        }
+      }
+      else
+      {
+        if( !GetValue( "ReferenceUWB1_UseLLH", useLLH ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_UseLLH" );
+          return false;
+        }
+        if( !useLLH )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_UseLLH" );
+          return false;
+        }
+        
+        GetValueArray( "ReferenceUWB1_Latitude", d, 4, n );
+        if( n == 1 )
+        {
+          angleInDegs = d[0];
+        }
+        else if( n == 3 )
+        {
+          GetDMSValue( "ReferenceUWB1_Latitude", angleInDegs );
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_Latitude" );
+          return false;
+        }
+        lat = angleInDegs*DEG2RAD;
+
+        GetValueArray( "ReferenceUWB1_Longitude", d, 4, n );
+        if( n == 1 )
+        {
+          angleInDegs = d[0];
+        }
+        else if( n == 3 )
+        {
+          GetDMSValue( "ReferenceUWB1_Longitude", angleInDegs );
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_Longitude" );
+          return false;
+        }
+        lon = angleInDegs*DEG2RAD;
+
+        if( !GetValue( "ReferenceUWB1_Height", hgt ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB1_Height" );
+          return false;
+        }
+
+        resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
+          GEODESY_REFERENCE_ELLIPSE_WGS84,
+          lat,
+          lon,
+          hgt,
+          &m_UWB_a.x,
+          &m_UWB_a.y,
+          &m_UWB_a.z
+        );
+        if( resultBOOL == FALSE )
+        {
+          GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned false. Check UWB1 Latitude, Longitude, Height." );
+          return false;
+        }
+      }
+    }
+
+    if( !GetValue( "ReferenceUWB2_ID", m_UWB_b.id ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: Reference_UWB2_ID" );
+      return false;
+    }      
+    if( m_UWB_b.id >= 0 )
+    {
+      if( !GetValue( "ReferenceUWB2_UseECEF", useECEF ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_UseECEF" );
+        return false;
+      }
+      if( useECEF )
+      {
+        // Station 2
+        if( !GetValue( "ReferenceUWB2_ECEF_X", m_UWB_b.x ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_ECEF_X" );
+          return false;
+        }
+        if( !GetValue( "ReferenceUWB2_ECEF_Y", m_UWB_b.y ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_ECEF_Y" );
+          return false;
+        }
+        if( !GetValue( "ReferenceUWB2_ECEF_Z", m_UWB_b.z ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_ECEF_Z" );
+          return false;
+        }
+      }
+      else
+      {
+        if( !GetValue( "ReferenceUWB2_UseLLH", useLLH ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_UseLLH" );
+          return false;
+        }
+        if( !useLLH )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_UseLLH" );
+          return false;
+        }
+        
+        GetValueArray( "ReferenceUWB2_Latitude", d, 4, n );
+        if( n == 1 )
+        {
+          angleInDegs = d[0];
+        }
+        else if( n == 3 )
+        {
+          GetDMSValue( "ReferenceUWB2_Latitude", angleInDegs );
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_Latitude" );
+          return false;
+        }
+        lat = angleInDegs*DEG2RAD;
+
+        GetValueArray( "ReferenceUWB2_Longitude", d, 4, n );
+        if( n == 1 )
+        {
+          angleInDegs = d[0];
+        }
+        else if( n == 3 )
+        {
+          GetDMSValue( "ReferenceUWB2_Longitude", angleInDegs );
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_Longitude" );
+          return false;
+        }
+        lon = angleInDegs*DEG2RAD;
+
+        if( !GetValue( "ReferenceUWB2_Height", hgt ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB2_Height" );
+          return false;
+        }
+
+        resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
+          GEODESY_REFERENCE_ELLIPSE_WGS84,
+          lat,
+          lon,
+          hgt,
+          &m_UWB_b.x,
+          &m_UWB_b.y,
+          &m_UWB_b.z
+        );
+        if( resultBOOL == FALSE )
+        {
+          GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned false. Check UWB2 Latitude, Longitude, Height." );
+          return false;
+        }
+      }
+    }
+
+    if( !GetValue( "ReferenceUWB3_ID", m_UWB_c.id ) )
+    {
+      GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_ID" );
+      return false;
+    }      
+    if( m_UWB_c.id >= 0 )
+    {
+      if( !GetValue( "ReferenceUWB3_UseECEF", useECEF ) )
+      {
+        GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_UseECEF" );
+        return false;
+      }
+      if( useECEF )
+      {
+        // Station 2
+        if( !GetValue( "ReferenceUWB3_ECEF_X", m_UWB_c.x ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_ECEF_X" );
+          return false;
+        }
+        if( !GetValue( "ReferenceUWB3_ECEF_Y", m_UWB_c.y ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_ECEF_Y" );
+          return false;
+        }
+        if( !GetValue( "ReferenceUWB3_ECEF_Z", m_UWB_c.z ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_ECEF_Z" );
+          return false;
+        }
+      }
+      else
+      {
+        if( !GetValue( "ReferenceUWB3_UseLLH", useLLH ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_UseLLH" );
+          return false;
+        }
+        if( !useLLH )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_UseLLH" );
+          return false;
+        }
+        
+        GetValueArray( "ReferenceUWB3_Latitude", d, 4, n );
+        if( n == 1 )
+        {
+          angleInDegs = d[0];
+        }
+        else if( n == 3 )
+        {
+          GetDMSValue( "ReferenceUWB3_Latitude", angleInDegs );
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_Latitude" );
+          return false;
+        }
+        lat = angleInDegs*DEG2RAD;
+
+        GetValueArray( "ReferenceUWB3_Longitude", d, 4, n );
+        if( n == 1 )
+        {
+          angleInDegs = d[0];
+        }
+        else if( n == 3 )
+        {
+          GetDMSValue( "ReferenceUWB3_Longitude", angleInDegs );
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_Longitude" );
+          return false;
+        }
+        lon = angleInDegs*DEG2RAD;
+
+        if( !GetValue( "ReferenceUWB3_Height", hgt ) )
+        {
+          GNSS_ERROR_MSG( "Invalid option: ReferenceUWB3_Height" );
+          return false;
+        }
+
+        resultBOOL = GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates(
+          GEODESY_REFERENCE_ELLIPSE_WGS84,
+          lat,
+          lon,
+          hgt,
+          &m_UWB_c.x,
+          &m_UWB_c.y,
+          &m_UWB_c.z
+        );
+        if( resultBOOL == FALSE )
+        {
+          GNSS_ERROR_MSG( "GEODESY_ConvertGeodeticCurvilinearToEarthFixedCartesianCoordinates returned false. Check UWB3 Latitude, Longitude, Height." );
+          return false;
+        }
+      }
+    }
+
 #endif
 
     return true;
