@@ -396,12 +396,23 @@ namespace GNSS
     m_DisableIonoCorrection(false),
     m_msJumpDetected_Positive(false),
     m_msJumpDetected_Negative(false),
+    m_clockJumpDetected(false),
+    m_clockJump(0.0),
+    m_isStatic(false),
+    m_heightConstraint(false),
+    m_heightConstraintStdev(0.0),
     m_fid(NULL),
     m_messageLength(0),
     m_rxDataType(GNSS_RXDATA_UNKNOWN),
     m_CheckRinexObservationHeader(false),
     m_RINEX_use_eph(false),
-    m_RINEX_eph_index(0)
+    m_RINEX_eph_index(0),
+    m_ambiguity_validation_ratio(0),
+    m_probability_of_correct_ambiguities(0),
+    m_norm(0.0),
+    m_default_stdev_GPSL1_psr(0.8),
+    m_default_stdev_GPSL1_doppler(0.09),
+    m_default_stdev_GPSL1_adr(0.03)    
   { 
     m_message[0] = '\0';
     ZeroAllMeasurements();
@@ -429,23 +440,60 @@ namespace GNSS
     }
   }
 
+
+  bool GNSS_RxData::SetDefaultMeasurementStdev_GPSL1(
+    const double default_stdev_GPSL1_psr,     //!< default psr measurement standard deviation [m]
+    const double default_stdev_GPSL1_doppler, //!< default doppler measurement standard deviation [m]
+    const double default_stdev_GPSL1_adr      //!< default adr measurement standard deviation [m]
+    )
+  {
+    if( default_stdev_GPSL1_psr <= 0 )
+    {
+      GNSS_ERROR_MSG( "if( default_stdev_GPSL1_psr <= 0 )" );
+      return false;
+    }      
+    if( default_stdev_GPSL1_doppler <= 0 )
+    {
+      GNSS_ERROR_MSG( "if( default_stdev_GPSL1_doppler <= 0 )" );
+      return false;
+    }      
+    if( default_stdev_GPSL1_adr <= 0 )
+    {
+      GNSS_ERROR_MSG( "if( default_stdev_GPSL1_adr <= 0 )" );
+      return false;
+    }      
+    m_default_stdev_GPSL1_doppler = default_stdev_GPSL1_doppler;
+    m_default_stdev_GPSL1_psr = default_stdev_GPSL1_psr;
+    m_default_stdev_GPSL1_adr = default_stdev_GPSL1_adr ;
+    return true;
+  }
+    
+
+#define MSS
+
 #ifdef GDM_UWB_RANGE_HACK
   bool GNSS_RxData::EnableAndLoadUWBData( 
     const char* filepath,  //!< The path to the UWB range data.
-    const double x, //!< The UWB 'satellite' position ECEF x (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
-    const double y, //!< The UWB 'satellite' position ECEF y (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
-    const double z, //!< The UWB 'satellite' position ECEF z (WGS84). The position of the reference station in the dual identical GPS-UWB mount case.
+    const int a_id,
+    const double xUWB_a,
+    const double yUWB_a,
+    const double zUWB_a,
+    const int b_id,
+    const double xUWB_b,
+    const double yUWB_b,
+    const double zUWB_b,
+    const int c_id,
+    const double xUWB_c,
+    const double yUWB_c,
+    const double zUWB_c,
     const bool isStatic //!< If the data is static, measurement outliers based on a somewaht ad-hoc 2 sigma rejection are removed.
     )
   {    
     unsigned i = 0;
     unsigned j = 0;
+    char msg[64];
 
     strcpy( m_UWB.filepath, filepath );
-
-    m_UWB.x = x;
-    m_UWB.y = y;
-    m_UWB.z = z;
 
 #ifdef GDM_UWB_ALREADY_OUTLIER_REMOVED
     if( !m_UWB.data.ReadFromFile(filepath) )
@@ -467,6 +515,120 @@ namespace GNSS
       return false;
     }
 
+  //  tmp.Print( "tmpFilteredUWBRangeData.txt", 9 );
+
+    ///////////DSC
+ /*   // Remove unnecessary data
+    for( i = 2; i < 5; i++ )
+      tmp.RemoveColumn( 2 ); 
+
+    for( i = 4; i < 10; i++ )
+      tmp.RemoveColumn( 2 ); 
+
+    for( i = 5; i < tmp.GetNrCols(); i++ )
+      tmp.RemoveColumn( 2 ); 
+
+    //tmp.RemoveColumnsAfterIndex( 3 );
+
+    if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols()-1 )  )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( tmp.nrows(), tmp.ncols()-1 )  )" );
+      return false;
+    }*/
+    
+#ifdef MSS
+    if (!tmp.Redim(tmp.nrows(), (tmp.ncols() + 1)))
+    {
+      GNSS_ERROR_MSG( "if (!tmp.Redim(tmp.nrows(), (tmp.ncols() + 1))" );
+      return false;
+    }
+#endif
+
+    if( !m_UWB.data.Redim( tmp.nrows(), 5 ) )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( j, 5 ) )" );
+      return false;
+    }
+
+  /*  double tmp2 = 0.0;
+    double tmp3 = 0.0;
+    double tmp4 = 0.0;
+    double tmp5 = 0.0;*/
+
+    // Convert to meters
+    for( i = 0; i < tmp.nrows(); i++ )
+    {    
+
+      // double sum = 0.0;
+      double minimum = 0.0;
+
+#ifdef TimeDomain
+
+     /* tmp2 = tmp[i][26];
+      tmp3 = tmp[i][13];
+      tmp4 = tmp[i][5];
+      tmp5 = tmp[i][6];*/
+
+
+      if( (tmp[i][26] > 0.0 && fabs(tmp[i][13]) < 1e-06) && (tmp[i][5] != 0 && tmp[i][6] != 0) )
+      {
+        m_UWB.data[j][0] = tmp[i][0]; //GPS TOW
+        m_UWB.data[j][1] = tmp[i][1]; //GPS Week
+        m_UWB.data[j][2] = tmp[i][26]; //Range in meters
+        m_UWB.data[j][3] = tmp[i][5]; //Requester ID
+        m_UWB.data[j][4] = tmp[i][6]; //Responder ID
+        j++;
+      }
+#else if MSS
+
+     /* tmp2 = tmp[i][];
+      tmp3 = tmp[i][];
+      tmp4 = tmp[i][];
+      tmp5 = tmp[i][];*/
+
+      if (tmp[i][4] > 0)
+      {
+        if (tmp[i][5] > 0)
+        {
+          minimum = tmp[i][5];
+        }
+
+        for (int a = 1; a < tmp[i][4]; a++)
+        {
+          if( (tmp[i][5+a] < minimum) && (tmp[i][5+a] > 0) )
+          {
+            minimum = tmp[i][5+a];
+          }
+           
+          // sum += tmp[i][5+a];
+        }
+
+        tmp[i][21] = minimum;
+
+        // tmp[i][21] = sum/tmp[i][4];
+      } 
+
+      if ( (tmp[i][4] != 0) && (tmp[i][2] != 0 && tmp[i][3] != 0) )
+      {
+        m_UWB.data[j][0] = tmp[i][0]; //GPS TOW
+        m_UWB.data[j][1] = tmp[i][1]; //GPS Week
+        m_UWB.data[j][2] = tmp[i][21]; //Range in meters
+        m_UWB.data[j][3] = tmp[i][3]; //Requester ID
+        m_UWB.data[j][4] = tmp[i][2]; //Responder ID
+        j++;
+      }
+
+#endif
+    }
+
+       
+    if( !m_UWB.data.Redim( j, 5 ) )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( j, 5 ) )" );
+      return false;
+    }
+
+/*
     // Remove unnecessary data
     for( i = 2; i < 13; i++ )
       tmp.RemoveColumn( 2 );    
@@ -494,9 +656,448 @@ namespace GNSS
       GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( j, 3 ) )" );
       return false;
     }
+*/
+
+    // count number of responders and sort based on responder ID
+    int count = 0;
+    int a = 0;
+    int b = 0;
+    int c = 0;
+    Matrix responder1;
+    Matrix responder2;
+    Matrix responder3;
+    Matrix tmpresponder1;
+    Matrix tmpresponder2;
+    Matrix tmpresponder3;
+
+    if( !m_UWB.responderID.Resize( 10, 1 ) )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.responderID.Redim( 4,1 ) )" );
+      return false;
+    }
+
+    m_UWB.id_a = a_id;
+    if( a_id > 0 )
+    {
+      if( !responder1.Redim( m_UWB.data.nrows(), 5 ) )
+      {
+        GNSS_ERROR_MSG( "if( !responder1.Redim( j, 5 ) )" );
+        return false;
+      }
+    }
+
+    m_UWB.id_b = b_id;
+    if( b_id > 0 )
+    {
+      if( !responder2.Redim( m_UWB.data.nrows(), 5 ) )
+      {
+        GNSS_ERROR_MSG( "if( !responder2.Redim( j, 5 ) )" );
+        return false;
+      }
+    }
+
+    m_UWB.id_c = c_id;
+    if( c_id > 0 )
+    {
+      if( !responder3.Redim( m_UWB.data.nrows(), 5 ) )
+      {
+        GNSS_ERROR_MSG( "if( !responder3.Redim( j, 5 ) )" );
+        return false;
+      }
+    }
+
+    m_UWB.responderID[0] = m_UWB.data[0][4];
+
+    for( i = 1; i < m_UWB.data.nrows() && count < 10; i++ )
+    {
+      if ( (m_UWB.data[i][4] != m_UWB.responderID[0][0]) && (m_UWB.data[i][4] != m_UWB.responderID[1][0] && m_UWB.data[i][4] != m_UWB.responderID[2][0]) )
+      {
+        count++;        
+        m_UWB.responderID[count] = m_UWB.data[i][4];        
+      }
+    }
+
+    m_UWB.nresponders = count+1;
+
+    // sort responder ID from smallest Serial Number to biggest Serial Number
+    if( !m_UWB.responderID.Redim( m_UWB.nresponders, 1 ) )
+    {
+      GNSS_ERROR_MSG( "if( !m_UWB.responderID.Redim( m_UWB.nresponders(), 1 ) )" );
+      return false;
+    }
+    if ( !m_UWB.responderID.Inplace_SortAscending() )
+    {
+      GNSS_ERROR_MSG( "if ( !m_UWB.responderID.Inplace_SortAscending() )" );
+      return false;
+    }
+
+    double test = 0.0;
+    a = 0;
+    b = 0;
+    c = 0;
+    if( m_UWB.nresponders != 0 )
+    {
+      for( i = 1; i < m_UWB.data.nrows(); i++ )
+      {
+        if( m_UWB.data[i][4] == a_id )
+        {
+          responder1[a][0] = m_UWB.data[i][0];  //GPS TOW
+          responder1[a][1] = m_UWB.data[i][1];  //GPS Week
+          responder1[a][2] = m_UWB.data[i][2];  //Range in meters
+          responder1[a][3] = m_UWB.data[i][3];  //Requester ID
+          responder1[a][4] = m_UWB.data[i][4];  //Responder ID
+          a++;
+        }
+        else if( m_UWB.data[i][4] == b_id )
+        {
+          responder2[b][0] = m_UWB.data[i][0];  //GPS TOW
+          responder2[b][1] = m_UWB.data[i][1];  //GPS Week
+          responder2[b][2] = m_UWB.data[i][2];  //Range in meters
+          responder2[b][3] = m_UWB.data[i][3];  //Requester ID
+          responder2[b][4] = m_UWB.data[i][4];  //Responder ID
+          b++;
+        }
+        else if( m_UWB.data[i][4] == c_id )
+        {
+          responder3[c][0] = m_UWB.data[i][0];  //GPS TOW
+          responder3[c][1] = m_UWB.data[i][1];  //GPS Week
+          responder3[c][2] = m_UWB.data[i][2];  //Range in meters
+          responder3[c][3] = m_UWB.data[i][3];  //Requester ID
+          responder3[c][4] = m_UWB.data[i][4];  //Responder ID
+          c++;
+        }
+        else
+        {
+          GNSS_ERROR_MSG( "Invalid responder id" );
+          return false;
+        }
+      }
+    }
+    else
+    {
+      GNSS_ERROR_MSG( "unexpected" );
+      return false;
+    }
+        
+    if( responder1.Redim( a, 5 ) )
+    {
+      sprintf( msg, "UWB_MinimumRanges_%d.csv", (int)(m_UWB.responderID[0]) );
+      responder1.PrintDelimited( msg, 9, ',' );
+    }
+    else
+    {
+      GNSS_ERROR_MSG( "if( !responder1.Redim( j, 5 ) )" );
+      return false;
+    }
+    if( responder1.isEmpty() )
+    {
+      m_UWB.id_a = -1;
+    }
 
 
+    if( responder2.Redim( b, 5 ) )
+    {
+      sprintf( msg, "UWB_MinimumRanges_%d.csv", (int)(m_UWB.responderID[1]) );
+      responder2.PrintDelimited( msg, 9, ',' );
+    }
+    else
+    {
+      GNSS_ERROR_MSG( "if( !responder2.Redim( j, 5 ) )" );
+      return false;
+    }
+    if( responder2.isEmpty() )
+    {
+      m_UWB.id_b = -1;
+    }
 
+    if( responder3.Redim( c, 5 ) )
+    {
+      sprintf( msg, "UWB_MinimumRanges_%d.csv", (int)(m_UWB.responderID[2]) );
+      responder3.PrintDelimited( msg, 9, ',' );
+    }
+    else
+    {
+      GNSS_ERROR_MSG( "if( !responder3.Redim( j, 5 ) )" );
+      return false;
+    }
+    if( responder3.isEmpty() )
+    {
+      m_UWB.id_c = -1;
+    }
+
+    m_UWB.x_a = xUWB_a;
+    m_UWB.y_a = yUWB_a;
+    m_UWB.z_a = zUWB_a;
+
+    m_UWB.x_b = xUWB_b;
+    m_UWB.y_b = yUWB_b;
+    m_UWB.z_b = zUWB_b;
+
+    m_UWB.x_c = xUWB_c;
+    m_UWB.y_c = yUWB_c;
+    m_UWB.z_c = zUWB_c;
+
+#ifdef MSS    
+    m_UWB.isHackOn = true;
+
+    return true;
+#endif
+
+    /*
+    if( isStatic )
+    {
+      double tmpd[3];
+      double range_mean[3];
+      double range_std[3];
+      
+      // sort data based on responder ID
+
+      if( !responder1.GetStats_ColumnMean( 2, range_mean[0], tmpd[0] ) )
+      {
+        GNSS_ERROR_MSG( "if( !responder1.GetStats_ColumnMean( 2, range_mean[0], tmpd[0] ) )" );
+        return false;
+      }
+      if( !responder1.GetStats_ColumnStdev( 2, range_std[0] ) )
+      {
+        GNSS_ERROR_MSG( "if( !responder1.GetStats_ColumnStdev( 2, range_std[0] ) )" );
+        return false;
+      }
+
+      if (count == 1 || count == 2)
+      {
+        if( !responder2.GetStats_ColumnMean( 2, range_mean[1], tmpd[1] ) )
+        {
+          GNSS_ERROR_MSG( "if( !responder2.GetStats_ColumnMean( 2, range_mean[1], tmpd[1] ) )" );
+          return false;
+        }
+        if( !responder2.GetStats_ColumnStdev( 2, range_std[1] ) )
+        {
+          GNSS_ERROR_MSG( "if( !responder2.GetStats_ColumnStdev( 2, range_std[1] ) )" );
+          return false;
+        }
+      }
+
+      if (count == 2)
+      {
+        if( !responder3.GetStats_ColumnMean( 2, range_mean[2], tmpd[2] ) )
+        {
+          GNSS_ERROR_MSG( "if( !responder3.GetStats_ColumnMean( 2, range_mean[2], tmpd[2] ) )" );
+          return false;
+        }
+        if( !responder3.GetStats_ColumnStdev( 2, range_std[2] ) )
+        {
+          GNSS_ERROR_MSG( "if( !responder3.GetStats_ColumnStdev( 2, range_std[2] ) )" );
+          return false;
+        }
+      }
+
+      // first reject those measurements that are 3 sigma from the mean
+      // then recompute the mean and standard deviation
+      // then reject at 2 sigma
+
+      j = 0;
+      for( i = 0; i < responder1.nrows(); i++ )
+      {
+        if( responder1[i][2] > range_mean[0]+3.0*range_std[0] )
+          continue;
+        if( responder1[i][2] < range_mean[0]-3.0*range_std[0] )
+          continue;
+
+        tmpresponder1[j][0] = responder1[i][0];
+        tmpresponder1[j][1] = responder1[i][1];
+        tmpresponder1[j][2] = responder1[i][2];   
+        tmpresponder1[j][3] = responder1[i][3];
+        tmpresponder1[j][4] = responder1[i][4];
+        j++;    
+      }
+
+      if( !tmpresponder1.Redim( j, 5 ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.Redim( j, 5 ) )" );
+        return false;
+      }
+
+      if( !tmpresponder1.GetStats_ColumnMean( 2, range_mean[0], tmpd[0] ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.GetStats_ColumnMean( 2, range_mean[0], tmpd[0] ) )" );
+        return false;
+      }
+      if( !tmp.GetStats_ColumnStdev( 2, range_std[0] ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.GetStats_ColumnStdev( 2, range_std[0] ) )" );
+        return false;
+      }
+
+      j = 0;
+      for( i = 0; i < tmpresponder1.nrows(); i++ )
+      {
+        if( tmpresponder1[i][2] > range_mean[0]+2.0*range_std[0] )
+          continue;
+        if( tmpresponder1[i][2] < range_mean[0]-2.0*range_std[0] )
+          continue;
+      }
+
+      if (count == 1 || count == 2) // 2 or 3 responder
+      {
+        j = 0;
+        for( i = 0; i < responder2.nrows(); i++ )
+        {
+          if( responder2[i][2] > range_mean[1]+3.0*range_std[1] )
+            continue;
+          if( responder2[i][2] < range_mean[1]-3.0*range_std[1] )
+            continue;
+
+          tmpresponder2[j][0] = responder2[i][0];
+          tmpresponder2[j][1] = responder2[i][1];
+          tmpresponder2[j][2] = responder2[i][2];   
+          tmpresponder2[j][3] = responder2[i][3];
+          tmpresponder2[j][4] = responder2[i][4];
+          j++;    
+        }
+
+        if( !tmpresponder2.Redim( j, 5 ) )
+        {
+          GNSS_ERROR_MSG( "if( !tmpresponder2.Redim( j, 5 ) )" );
+          return false;
+        }
+
+        if( !tmpresponder2.GetStats_ColumnMean( 2, range_mean[1], tmpd[1] ) )
+        {
+          GNSS_ERROR_MSG( "if( !tmpresponder2.GetStats_ColumnMean( 2, range_mean[1], tmpd[1] ) )" );
+          return false;
+        }
+        if( !tmpresponder2.GetStats_ColumnStdev( 2, range_std[1] ) )
+        {
+          GNSS_ERROR_MSG( "if( !tmpresponder2.GetStats_ColumnStdev( 2, range_std[1] ) )" );
+          return false;
+        }
+
+        j = 0;
+        for( i = 0; i < tmpresponder2.nrows(); i++ )
+        {
+          if( tmpresponder2[i][2] > range_mean[1]+2.0*range_std[1] )
+            continue;
+          if( tmpresponder2[i][2] < range_mean[1]-2.0*range_std[1] )
+            continue;
+        }
+      }
+
+      if (count == 2) // 3 responders
+      {
+        j = 0;
+        for( i = 0; i < responder3.nrows(); i++ )
+        {
+          if( responder3[i][2] > range_mean[2]+3.0*range_std[2] )
+            continue;
+          if( responder3[i][2] < range_mean[2]-3.0*range_std[2] )
+            continue;
+
+          tmpresponder3[j][0] = responder3[i][0];
+          tmpresponder3[j][1] = responder3[i][1];
+          tmpresponder3[j][2] = responder3[i][2];   
+          tmpresponder3[j][3] = responder3[i][3];
+          tmpresponder3[j][4] = responder3[i][4];
+          j++;    
+        }
+              
+        if( !tmpresponder3.Redim( j, 5 ) )
+        {
+          GNSS_ERROR_MSG( "if( !tmpresponder3.Redim( j, 5 ) )" );
+          return false;
+        }
+
+        if( !tmpresponder3.GetStats_ColumnMean( 2, range_mean[2], tmpd[2] ) )
+        {
+          GNSS_ERROR_MSG( "if( !tmpresponder3.GetStats_ColumnMean( 2, range_mean[2], tmpd[2] ) )" );
+          return false;
+        }
+        if( !tmpresponder3.GetStats_ColumnStdev( 2, range_std[2] ) )
+        {
+          GNSS_ERROR_MSG( "if( !tmpresponder3.GetStats_ColumnStdev( 2, range_std[2] ) )" );
+          return false;
+        }
+
+        j = 0;
+        for( i = 0; i < tmpresponder3.nrows(); i++ )
+        {
+          if( tmpresponder3[i][2] > range_mean[2]+2.0*range_std[2] )
+            continue;
+          if( tmpresponder3[i][2] < range_mean[2]-2.0*range_std[2] )
+            continue;
+        }
+      }
+      
+
+      // need to sort by GPS TOW and put back into m_UWB.data
+
+      if( !tmp.Resize( tmpresponder1.nrows() + tmpresponder2.nrows() + tmpresponder3.nrows(), 5 ) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.Resize( j, 5 ) )" );
+        return false;
+      }
+
+      for ( i = 0 ; i < tmpresponder1.nrows(); i++)
+      {
+        tmp[j][0] = tmpresponder1[i][0];
+        tmp[j][1] = tmpresponder1[i][1];
+        tmp[j][2] = tmpresponder1[i][2];
+        tmp[j][3] = tmpresponder1[i][3];
+        tmp[j][4] = tmpresponder1[i][4];
+        j++;    
+      }
+
+      for ( i = 0 ; i < tmpresponder2.nrows(); i++)
+      {
+        tmp[j][0] = tmpresponder2[i][0];
+        tmp[j][1] = tmpresponder2[i][1];
+        tmp[j][2] = tmpresponder2[i][2];
+        tmp[j][3] = tmpresponder2[i][3];
+        tmp[j][4] = tmpresponder2[i][4];
+        j++;  
+      }
+
+      for ( i = 0 ; i < tmpresponder3.nrows(); i++)
+      {
+        tmp[j][0] = tmpresponder3[i][0];
+        tmp[j][1] = tmpresponder3[i][1];
+        tmp[j][2] = tmpresponder3[i][2];
+        tmp[j][3] = tmpresponder3[i][3];
+        tmp[j][4] = tmpresponder3[i][4];
+        j++;  
+      }
+
+      if( !tmp.Inplace_SortByColumn(0) )
+      {
+        GNSS_ERROR_MSG( "if( !tmp.Inplace_SortByColumn(0) )" );
+        return false;
+      }
+
+      if( !m_UWB.data.Redim( tmp.nrows(), 5 ) )
+      {
+        GNSS_ERROR_MSG( "if( !m_UWB.data.Redim( j, 5 ) )" );
+        return false;
+      }
+
+      j = 0;
+      for ( i = 0; i < tmp.nrows(); i++)
+      {
+        m_UWB.data[j][0] = tmp[i][0];
+        m_UWB.data[j][1] = tmp[i][1];
+        m_UWB.data[j][2] = tmp[i][2];
+        m_UWB.data[j][3] = tmp[i][3];
+        m_UWB.data[j][4] = tmp[i][4];
+        j++;
+      }
+
+      j = 0;
+    }
+
+    m_UWB.data.Print( "FilteredUWBRangeData_TDC.txt", 9 );
+    */
+
+#endif
+
+    /*
     if( isStatic )
     {
       double tmpd;
@@ -591,7 +1192,7 @@ namespace GNSS
     m_UWB.data.Print( "FilteredUWBRangeData.txt", 9 );
 
 #endif
-
+*/
     m_UWB.isHackOn = true;
 
     return true;
@@ -600,24 +1201,45 @@ namespace GNSS
   bool GNSS_RxData::LoadUWBRangeForThisEpoch()
   {
     unsigned i = 0;
+    unsigned j = 0;
     double uwb_time = 0.0;
-    double epoch = 0.0;
     double tdiff = 0.0;
     double uwb_range = 0.0;
-    if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 3 )
+    double time = 0.0;
+    bool boolResponder1 = true;
+    bool boolResponder2 = true;
+    bool boolResponder3 = true;
+
+    if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 5 )
     {
-      GNSS_ERROR_MSG( "if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 3 )" );
+      GNSS_ERROR_MSG( "if( m_UWB.data.nrows() < 1 || m_UWB.data.ncols() != 5 )" );
       return false;
     }
 
     /// Just match the closest epoch before the gps measurment, not after.
-    epoch = m_pvt.time.gps_tow + m_pvt.time.gps_week*SECONDS_IN_WEEK;
+    m_UWB.current_epoch = m_pvt.time.gps_tow + m_pvt.time.gps_week*SECONDS_IN_WEEK;
+
     for( i = 0; i < m_UWB.data.nrows(); i++ )
     {
       uwb_time = m_UWB.data[i][0] + m_UWB.data[i][1]*SECONDS_IN_WEEK;
-      if( uwb_time > epoch )
+      if( uwb_time > m_UWB.current_epoch )
+      {
+        // in the case where there are 0 satellites and only UWB ranges, LoadNext for RINEX will fail and m_pvt.time.gps_tow
+        // time does not get updated. So, m_pvt.time.gps_tow will be set to UWB time until satellites get observed again
+        if (m_nrValidObs == 0)
+        {
+          time = floor(m_pvt.time.gps_tow) + 1;
+          m_pvt.time.gps_tow = time;
+          m_pvt.time.gps_week = (unsigned int) (m_UWB.data[i][1]);
+
+          m_pvt_lsq.time.gps_tow = time;
+          m_pvt_lsq.time.gps_week = (unsigned int) (m_UWB.data[i][1]);
+        }
         break;
+      }
     }
+    
+
     if( i == m_UWB.data.nrows() )
     {
       m_UWB.isValidForThisEpoch = false;
@@ -625,37 +1247,127 @@ namespace GNSS
       return true; // no measurement;
     }
 
-    tdiff = fabs(uwb_time-epoch);
-    if( tdiff > 10.0 )
+    tdiff = fabs(uwb_time-m_UWB.current_epoch);
+    if( tdiff > 1.0 )
     {
       m_UWB.isValidForThisEpoch = false;
       m_UWB.index_in_obs_array = -1;
       return true; // no measurement
     }
     m_UWB.isValidForThisEpoch = true;
+    m_UWB.occurances = 0;
 
-    
-    uwb_range = m_UWB.data[i][2];
+    unsigned k = 0;
+    int maxchannel = -1;
+    for( k = 0; k < m_nrValidObs; k++ )
+    {
+      if( m_ObsArray[k].channel > maxchannel )
+        maxchannel = m_ObsArray[k].channel;
+    }      
 
-    m_nrValidObs++;
-    i = m_nrValidObs-1;
-    m_UWB.index_in_obs_array = i;
-    memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
-    m_ObsArray[i].flags.isActive = true;
-    m_ObsArray[i].flags.isPsrValid = true;
-    m_ObsArray[i].flags.isPsrUsedInSolution = true;
-    m_ObsArray[i].psr = uwb_range;
-    m_ObsArray[i].codeType = GNSS_UWBCodeType;
-    m_ObsArray[i].freqType = GNSS_UWBFrequency;
-    m_ObsArray[i].system = GNSS_UWBSystem;
-    m_ObsArray[i].id = 1601; // arbitrary
-    m_ObsArray[i].satellite.x = m_UWB.x;
-    m_ObsArray[i].satellite.y = m_UWB.y;
-    m_ObsArray[i].satellite.z = m_UWB.z;
-    m_ObsArray[i].satellite.isValid = true;    
-    m_ObsArray[i].stdev_psr = 0.008f; // GDM - determined from actual measurements, ~3 m baseline after filtering the data for outliers.
-    m_ObsArray[i].tow = m_pvt.time.gps_tow;
-    m_ObsArray[i].week = m_pvt.time.gps_week;
+    j = i;
+
+    do
+    {
+      if( (m_UWB.data[j][4] == m_UWB.id_a) && boolResponder1 )
+      {
+        uwb_range = m_UWB.data[j][2];
+
+        m_nrValidObs++;
+        i = m_nrValidObs-1;
+        m_UWB.index_in_obs_array = i;
+        memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+        m_ObsArray[i].flags.isActive = true;
+        m_ObsArray[i].flags.isPsrValid = true;
+        m_ObsArray[i].flags.isPsrUsedInSolution = true;
+        m_ObsArray[i].psr = uwb_range;
+        m_ObsArray[i].codeType = GNSS_UWBCodeType;
+        m_ObsArray[i].freqType = GNSS_UWBFrequency;
+        m_ObsArray[i].system = GNSS_UWBSystem;
+        m_ObsArray[i].id = 1600 + m_UWB.id_a; // arbitrary
+        m_ObsArray[i].satellite.x = m_UWB.x_a;
+        m_ObsArray[i].satellite.y = m_UWB.y_a;
+        m_ObsArray[i].satellite.z = m_UWB.z_a;
+        m_ObsArray[i].satellite.isValid = true;    
+        m_ObsArray[i].stdev_psr = 1.15f; // GDM - for MSSI, this is the output precision
+        m_ObsArray[i].tow = m_UWB.data[j][0];
+        m_ObsArray[i].week = (unsigned short)m_UWB.data[j][1];
+        m_ObsArray[i].flags.isAdrValid = 0;
+        m_ObsArray[i].flags.isDopplerValid = 0;
+        maxchannel++;
+        m_ObsArray[i].channel = maxchannel;
+
+        boolResponder1 = false;
+        m_UWB.occurances++;
+      }
+      else if( (m_UWB.data[j][4] == m_UWB.id_b) && boolResponder2 )
+      {
+        uwb_range = m_UWB.data[j][2];
+
+        m_nrValidObs++;
+        i = m_nrValidObs-1;
+        m_UWB.index_in_obs_array = i;
+        memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+        m_ObsArray[i].flags.isActive = true;
+        m_ObsArray[i].flags.isPsrValid = true;
+        m_ObsArray[i].flags.isPsrUsedInSolution = true;
+        m_ObsArray[i].psr = uwb_range;
+        m_ObsArray[i].codeType = GNSS_UWBCodeType;
+        m_ObsArray[i].freqType = GNSS_UWBFrequency;
+        m_ObsArray[i].system = GNSS_UWBSystem;
+        m_ObsArray[i].id = 1600 + m_UWB.id_b; // arbitrary
+        m_ObsArray[i].satellite.x = m_UWB.x_b;
+        m_ObsArray[i].satellite.y = m_UWB.y_b;
+        m_ObsArray[i].satellite.z = m_UWB.z_b;
+        m_ObsArray[i].satellite.isValid = true;    
+        m_ObsArray[i].stdev_psr = 1.15f; // GDM - for MSSI, this is the output precision
+        m_ObsArray[i].tow = m_UWB.data[j][0];
+        m_ObsArray[i].week = (unsigned short)m_UWB.data[j][1];
+        m_ObsArray[i].flags.isAdrValid = 0;
+        m_ObsArray[i].flags.isDopplerValid = 0;
+        maxchannel++;
+        m_ObsArray[i].channel = maxchannel;
+
+        boolResponder2 = false;
+        m_UWB.occurances++;
+      }
+      else if( (m_UWB.data[j][4] == m_UWB.id_c) && boolResponder3 )
+      {
+        uwb_range = m_UWB.data[j][2];
+
+        m_nrValidObs++;
+        i = m_nrValidObs-1;
+        m_UWB.index_in_obs_array = i;
+        memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+        m_ObsArray[i].flags.isActive = true;
+        m_ObsArray[i].flags.isPsrValid = true;
+        m_ObsArray[i].flags.isPsrUsedInSolution = true;
+        m_ObsArray[i].psr = uwb_range;
+        m_ObsArray[i].codeType = GNSS_UWBCodeType;
+        m_ObsArray[i].freqType = GNSS_UWBFrequency;
+        m_ObsArray[i].system = GNSS_UWBSystem;
+        m_ObsArray[i].id = 1600 + m_UWB.id_c; // arbitrary
+        m_ObsArray[i].satellite.x = m_UWB.x_c;
+        m_ObsArray[i].satellite.y = m_UWB.y_c;
+        m_ObsArray[i].satellite.z = m_UWB.z_c;
+        m_ObsArray[i].satellite.isValid = true;    
+        m_ObsArray[i].stdev_psr = 1.15f; // GDM - for MSSI, this is the output precision
+        m_ObsArray[i].tow = m_UWB.data[j][0];
+        m_ObsArray[i].week = (unsigned short)m_UWB.data[j][1];
+        m_ObsArray[i].flags.isAdrValid = 0;
+        m_ObsArray[i].flags.isDopplerValid = 0;
+        maxchannel++;
+        m_ObsArray[i].channel = maxchannel;
+
+        boolResponder3 = false;
+        m_UWB.occurances++;
+      }
+
+      j++;
+      if( j >= m_UWB.data.nrows() )
+        break;
+
+    } while ( fabs(m_UWB.data[j][0] - m_pvt.time.gps_tow) < 1.0 );
 
     return true;
   }
@@ -673,6 +1385,9 @@ namespace GNSS
     {
       memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
       memset( &(m_prev_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) );
+
+      m_ObsArray[i].index_differential = -1;
+      m_prev_ObsArray[i].index_differential = -1;
     }
     return true;
   }
@@ -683,6 +1398,8 @@ namespace GNSS
     memset( &m_pvt, 0, sizeof(GNSS_structPVT) );
     memset( &m_prev_pvt, 0, sizeof(GNSS_structPVT) );
     memset( &m_datum_pvt, 0, sizeof(GNSS_structPVT) );
+    memset( &m_pvt_lsq, 0, sizeof(GNSS_structPVT) );
+    memset( &m_pvt_fixed, 0, sizeof(GNSS_structPVT) );
     return true;
   }
 
@@ -786,6 +1503,11 @@ namespace GNSS
     double psr_difference = 0;
     bool result = false;
     char msg[256];
+    double estimated_psr = 0;
+    double mean_doppler = 0;
+    double current_time = 0;
+    double prev_time = 0;
+    double dT = 0;
 
     // Reset the millisecond jump detectors.
     m_msJumpDetected_Positive = false;
@@ -822,6 +1544,10 @@ namespace GNSS
     // First determine the index of the corresponding measurement in the previous epoch
     for( i = 0; i < m_nrValidObs; i++ )
     {
+      if( m_ObsArray[i].tow == 0.0 &&
+        m_ObsArray[i].week == 0 )
+        continue;
+
       m_ObsArray[i].index_time_differential = -1;
       if( m_ObsArray[i].flags.isActive && 
         m_ObsArray[i].flags.isPsrValid )
@@ -834,26 +1560,57 @@ namespace GNSS
             if( m_ObsArray[i].id == m_prev_ObsArray[j].id )
             {
               m_ObsArray[i].index_time_differential = j;
-              psr_difference = m_ObsArray[i].psr - m_prev_ObsArray[j].psr;
 
-              // detect allowing 10 km psr changes between epochs
-              if( psr_difference > 0 )
+              current_time = m_ObsArray[i].tow + m_ObsArray[i].week*SECONDS_IN_WEEK;
+              prev_time = m_prev_ObsArray[j].tow + m_prev_ObsArray[j].week*SECONDS_IN_WEEK;
+              dT = current_time - prev_time;
+
+              mean_doppler = 0;
+              if( m_ObsArray[i].flags.isDopplerValid && m_prev_ObsArray[j].flags.isDopplerValid )
               {
-                if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
-                {
-                  sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, psr_difference, psr_difference/ONE_MS_IN_M );
-                  GNSS_ERROR_MSG( msg );
-                  m_msJumpDetected_Positive = true;
-                }
+                mean_doppler = m_ObsArray[i].doppler + m_prev_ObsArray[j].doppler;
+                mean_doppler /= 2.0;
+              }
+              else if( m_ObsArray[i].flags.isDopplerValid )
+              {
+                mean_doppler = m_ObsArray[i].doppler;
+              }
+              if( m_ObsArray[i].freqType == GNSS_GPSL1 )
+              {
+                estimated_psr = m_prev_ObsArray[j].psr - mean_doppler*GPS_WAVELENGTHL1*dT;
+              }
+              else if( m_ObsArray[i].freqType == GNSS_GPSL2 )
+              {
+                estimated_psr = m_prev_ObsArray[j].psr - mean_doppler*GPS_WAVELENGTHL2*dT;
               }
               else
               {
-                psr_difference *= -1.0;
-                if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
+                estimated_psr = m_prev_ObsArray[j].psr;
+              }
+
+              psr_difference = m_ObsArray[i].psr - estimated_psr;
+
+              if( fabs( psr_difference ) > ONE_MS_IN_M/2.0 )
+              {
+                // detect allowing 10 km psr changes between epochs
+                if( psr_difference > 0 )
                 {
-                  sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, psr_difference, psr_difference/ONE_MS_IN_M );
-                  GNSS_ERROR_MSG( msg );                  
-                  m_msJumpDetected_Negative = true;
+                  if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
+                  {
+                    sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, psr_difference, psr_difference/ONE_MS_IN_M );
+                    GNSS_ERROR_MSG( msg );
+                    m_msJumpDetected_Positive = true;
+                  }
+                }
+                else
+                {
+                  psr_difference *= -1.0;
+                  if( (psr_difference > (ONE_MS_IN_M - 10000.0)) && (psr_difference < (ONE_MS_IN_M + 10000.0)) )
+                  {
+                    sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, psr_difference, psr_difference/ONE_MS_IN_M );
+                    GNSS_ERROR_MSG( msg );                  
+                    m_msJumpDetected_Negative = true;
+                  }
                 }
               }
               break;
@@ -871,6 +1628,10 @@ namespace GNSS
       // Check for large clock corrections that are not modulo 1 ms.
       for( i = 0; i < m_nrValidObs; i++ )
       {
+        if( m_ObsArray[i].tow == 0.0 &&
+          m_ObsArray[i].week == 0 )
+          continue;
+
         m_ObsArray[i].index_time_differential = -1;
         if( m_ObsArray[i].flags.isActive && 
           m_ObsArray[i].flags.isPsrValid )
@@ -883,7 +1644,35 @@ namespace GNSS
               if( m_ObsArray[i].id == m_prev_ObsArray[j].id )
               {
                 m_ObsArray[i].index_time_differential = j;
-                psr_difference = m_ObsArray[i].psr - m_prev_ObsArray[j].psr;
+
+                current_time = m_ObsArray[i].tow + m_ObsArray[i].week*SECONDS_IN_WEEK;
+                prev_time = m_prev_ObsArray[j].tow + m_prev_ObsArray[j].week*SECONDS_IN_WEEK;
+                dT = current_time - prev_time;
+
+                mean_doppler = 0;
+                if( m_ObsArray[i].flags.isDopplerValid && m_prev_ObsArray[j].flags.isDopplerValid )
+                {
+                  mean_doppler = m_ObsArray[i].doppler + m_prev_ObsArray[j].doppler;
+                  mean_doppler /= 2.0;
+                }
+                else if( m_ObsArray[i].flags.isDopplerValid )
+                {
+                  mean_doppler = m_ObsArray[i].doppler;
+                }
+                if( m_ObsArray[i].freqType == GNSS_GPSL1 )
+                {
+                  estimated_psr = m_prev_ObsArray[j].psr - mean_doppler*GPS_WAVELENGTHL1*dT;
+                }
+                else if( m_ObsArray[i].freqType == GNSS_GPSL2 )
+                {
+                  estimated_psr = m_prev_ObsArray[j].psr - mean_doppler*GPS_WAVELENGTHL2*dT;
+                }
+                else
+                {
+                  estimated_psr = m_prev_ObsArray[j].psr;
+                }
+
+                psr_difference = m_ObsArray[i].psr - estimated_psr;
 
                 // Look for any arbitrary clock jumps larger than 1/2 millisecond
                 if( fabs(psr_difference) > ONE_MS_IN_M/2.0 )
@@ -903,12 +1692,29 @@ namespace GNSS
         mean_val /= double(mean_n);
         m_clockJump = mean_val;
         sprintf( msg, "%.1Lf  %d  Clock Jump of %.1Lf m, %.6Lf ms detected.", m_pvt.time.gps_tow, m_pvt.time.gps_week, m_clockJump, m_clockJump/ONE_MS_IN_M );
-        GNSS_ERROR_MSG( msg );                  
+        GNSS_ERROR_MSG( msg );          
 
+        // indicate a cycle slip on all channels
+        for( i = 0; i < m_nrValidObs; i++ )
+        {
+          m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
+        }
+      }
+    }
+
+    if( m_msJumpDetected_Positive || m_msJumpDetected_Negative )
+    {
+      // indicate a cycle slip on all channels
+      for( i = 0; i < m_nrValidObs; i++ )
+      {
+        m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
       }
     }
 
 #ifdef GDM_UWB_RANGE_HACK
+    if( m_pvt.time.gps_tow > 179705 )
+      int gaa = 100;
+
     if( result && m_UWB.isHackOn )
     {
       result = LoadUWBRangeForThisEpoch();
@@ -1023,6 +1829,10 @@ namespace GNSS
     unsigned short rx_gps_week = 0;
     double rx_gps_tow = 0.0;     
 
+    double current_time = 0;
+    double prev_time = 0;
+    double delta_time = 0;
+
     BOOL wasEndOfFileReached=0;  // Has the end of the file been reached (output).
     BOOL wasObservationFound=0;  // Was a valid observation found (output).
     unsigned filePosition=0;   // The file position for the start of the 
@@ -1042,7 +1852,7 @@ namespace GNSS
     for( i = 0; i < m_nrValidObs; i++ )
     {
       m_prev_ObsArray[i] = m_ObsArray[i];
-      memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) ); // Initialize to zero.
+      memset( &(m_ObsArray[i]), 0, sizeof(GNSS_structMeasurement) ); // Initialize to zero.      
     }
 
     // Get the next observation set.
@@ -1085,9 +1895,19 @@ namespace GNSS
       for(i = 0; i < nrObs; i++ )
       {
         // Use a constrained solution and variance-covariance analysis to determine these values.
-        m_ObsArray[i].stdev_psr     = 0.50f;   // [m]
-        m_ObsArray[i].stdev_adr     = 0.02f;   // [cycles]
-        m_ObsArray[i].stdev_doppler = 0.011f;  // [Hz]
+        if( m_ObsArray[i].freqType == GNSS_GPSL1 )
+        {
+          m_ObsArray[i].stdev_psr     = static_cast<float>(m_default_stdev_GPSL1_psr);     // [m]
+          m_ObsArray[i].stdev_adr     = static_cast<float>(m_default_stdev_GPSL1_adr);     // [cycles]
+          m_ObsArray[i].stdev_doppler = static_cast<float>(m_default_stdev_GPSL1_doppler); // [Hz]
+        }
+        else
+        {
+          // L2, L5 to deal with later.
+          m_ObsArray[i].stdev_psr     = 0.8f;  // [m]
+          m_ObsArray[i].stdev_adr     = 0.03f; // [cycles]
+          m_ObsArray[i].stdev_doppler = 0.09f; // [Hz]
+        }
 
         // Check if ephemeris information is available
         if( !m_EphAlmArray.IsEphemerisAvailable( m_ObsArray[i].id, isAvailable ) )
@@ -1141,6 +1961,7 @@ namespace GNSS
     // like ambiguities.
     for( i = 0; i < m_nrValidObs; i++ )
     {
+      delta_time = 0;
       for( j = 0; j < m_prev_nrValidObs; j++ )
       {
         if( m_ObsArray[i].codeType == m_prev_ObsArray[j].codeType &&
@@ -1148,11 +1969,28 @@ namespace GNSS
           m_ObsArray[i].system == m_prev_ObsArray[j].system &&
           m_ObsArray[i].id == m_prev_ObsArray[j].id ) // Note should also check that channels are the same if real time!
         {
-          m_ObsArray[i].ambiguity = m_prev_ObsArray[j].ambiguity;
+          m_ObsArray[i].sd_ambiguity = m_prev_ObsArray[j].sd_ambiguity;
+
+          current_time = m_ObsArray[i].tow + m_ObsArray[i].week*SECONDS_IN_WEEK;
+          prev_time    = m_prev_ObsArray[j].tow + m_prev_ObsArray[j].week*SECONDS_IN_WEEK;
+          delta_time   = current_time - prev_time;
+          
+          if( m_ObsArray[i].flags.isAdrValid && m_ObsArray[i].flags.isPhaseLocked )
+          {
+            m_ObsArray[i].locktime = m_prev_ObsArray[j].locktime + static_cast<float>(delta_time);
+          }
+          else
+          {
+            m_ObsArray[i].locktime = 0;
+          }
           //if( m_prev_ObsArray[j].ambiguity != 0 )
             //printf( "%10.1Lf    %2d %12.1Lf\n", m_pvt.time.gps_tow, m_ObsArray[i].id, m_ObsArray[i].ambiguity );
           break;
         }
+      }
+      if( delta_time == 0 )
+      {
+        m_ObsArray[i].locktime = 0;
       }
     }
 
@@ -1319,6 +2157,19 @@ namespace GNSS
 
           for( i = 0; i < nrValidObs && i < GNSS_RXDATA_NR_CHANNELS; i++ )
           {
+            m_ObsArray[i].tow = m_pvt.time.gps_tow - obsArray[i].psr/LIGHTSPEED;
+            m_ObsArray[i].week = m_pvt.time.gps_week;
+            if( m_ObsArray[i].tow < 0.0 )
+            {
+              m_ObsArray[i].tow += SECONDS_IN_WEEK;
+              m_ObsArray[i].week -= 1;
+            }
+            else if( m_ObsArray[i].tow >= SECONDS_IN_WEEK )
+            {
+              m_ObsArray[i].tow -= SECONDS_IN_WEEK;
+              m_ObsArray[i].week += 1;
+            }
+
             m_ObsArray[i].channel   = obsArray[i].trackingStatus.channelNumber;
             m_ObsArray[i].id        = obsArray[i].prn;
 
@@ -1338,13 +2189,13 @@ namespace GNSS
             m_ObsArray[i].cno       = obsArray[i].cno;       // [dB-Hz]
             m_ObsArray[i].locktime  = obsArray[i].locktime;  // [s]
     
-            if( obsArray[i].psrstd < 0.1 )
-              m_ObsArray[i].stdev_psr     = 0.10f;
+            if( obsArray[i].psrstd < 0.5 )
+              m_ObsArray[i].stdev_psr     = 0.5f;
             else
               m_ObsArray[i].stdev_psr     = obsArray[i].psrstd; 
 
-            if( obsArray[i].adrstd < 0.0025 )
-              m_ObsArray[i].stdev_adr     = 0.0025f; // these are in cycles!.              
+            if( obsArray[i].adrstd < 0.01 )
+              m_ObsArray[i].stdev_adr     = 0.01f; // these are in cycles!.              
             else
               m_ObsArray[i].stdev_adr     = obsArray[i].adrstd; // these are in cycles!.
 
@@ -1444,7 +2295,7 @@ namespace GNSS
           m_ObsArray[i].system == m_prev_ObsArray[j].system &&
           m_ObsArray[i].id == m_prev_ObsArray[j].id ) // Note should also check that channels are the same if real time!
         {
-          m_ObsArray[i].ambiguity = m_prev_ObsArray[j].ambiguity;
+          m_ObsArray[i].sd_ambiguity = m_prev_ObsArray[j].sd_ambiguity;
           break;
         }
       }
@@ -1510,10 +2361,10 @@ namespace GNSS
 
     if( std_lat == 0.0 && std_lon == 0.0 && std_hgt == 0.0 )
     {
-      m_pvt.std_lat = 1e-03;
-      m_pvt.std_lon = 1e-03;
-      m_pvt.std_hgt = 1e-03;      
-      m_pvt.isPositionConstrained = 1;
+      m_pvt.std_lat = 1e-06;
+      m_pvt.std_lon = 1e-06;
+      m_pvt.std_hgt = 1e-06;      
+      m_pvt.isPositionFixed = 1;
     }
 
     m_pvt.isHeightConstrained = 0;
@@ -1786,7 +2637,7 @@ namespace GNSS
     {
       return true;
     }
-            
+
     for( i = 0; i < m_nrValidObs; i++ )
     {
       for( j = 0; j < m_prev_nrValidObs; j++ )
@@ -1794,20 +2645,25 @@ namespace GNSS
         if( m_ObsArray[i].system == m_prev_ObsArray[j].system &&
           m_ObsArray[i].id == m_prev_ObsArray[j].id &&
           m_ObsArray[i].freqType == GNSS_GPSL1 &&
-          m_ObsArray[i].freqType == m_prev_ObsArray[j].freqType )
+          m_ObsArray[i].freqType == m_prev_ObsArray[j].freqType &&
+          m_ObsArray[i].flags.isNoCycleSlipDetected ) // no cycle slip already detected
         {
-          // channel matching is not perforned.
+          // channel matching is not performed.
           // This should be done if this a real time receiver data.
           // However, since the data source is generally not known for
           // post processing software, it is not performed here.
           if( m_ObsArray[i].flags.isPhaseLocked && m_prev_ObsArray[j].flags.isPhaseLocked &&
             m_ObsArray[i].flags.isDopplerValid && m_prev_ObsArray[j].flags.isDopplerValid &&
             m_ObsArray[i].flags.isAdrValid && m_prev_ObsArray[j].flags.isAdrValid &&
-            m_ObsArray[i].flags.isParityValid && m_prev_ObsArray[j].flags.isParityValid )
+            m_ObsArray[i].flags.isParityValid && m_prev_ObsArray[j].flags.isParityValid )            
           {
             mean_doppler = (m_ObsArray[i].doppler + m_prev_ObsArray[j].doppler)/2.0;
 
             predicted_phase = m_prev_ObsArray[j].adr - mean_doppler * dt; // GDM_BEWARE Doppler sign convention
+            if( m_clockJumpDetected )
+            {
+              predicted_phase += m_clockJump/GPS_WAVELENGTHL1;
+            }
 
             phase_diff = predicted_phase - m_ObsArray[i].adr;
 
@@ -1820,9 +2676,16 @@ namespace GNSS
               cmc = m_ObsArray[i].psr - m_ObsArray[i].adr*GPS_WAVELENGTHL1;
               cmc_diff = cmc - cmc_prev;
 
-              sprintf( msg, "%.1Lf %d GPS L1 cycle slip detected\n PRN %d Phase rate method difference= %.1Lf cycles, Time difference code-carrier = %.1Lf m",  m_pvt.time.gps_tow, m_pvt.time.gps_week, m_ObsArray[i].id, phase_diff, cmc_diff );
-              GNSS_ERROR_MSG( msg );
-              m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
+              if( cmc_diff < 5.0 )
+              {
+                m_ObsArray[i].flags.isNoCycleSlipDetected = 1; // No cycle slip detected.
+              }
+              else
+              {
+                sprintf( msg, "%.1Lf %d GPS L1 cycle slip detected\n PRN %d Phase rate method difference= %.1Lf cycles, Time difference code-carrier = %.1Lf m",  m_pvt.time.gps_tow, m_pvt.time.gps_week, m_ObsArray[i].id, phase_diff, cmc_diff );
+                GNSS_ERROR_MSG( msg );
+                m_ObsArray[i].flags.isNoCycleSlipDetected = 0; // Indicate a cycle slip has occured.
+              }
             }
             else
             {
@@ -1843,7 +2706,7 @@ namespace GNSS
               cmc = m_ObsArray[i].psr - m_ObsArray[i].adr*GPS_WAVELENGTHL1;
               cmc_diff = cmc - cmc_prev;
 
-              if( fabs(cmc_diff) > 1.5 )
+              if( fabs(cmc_diff) > 5.0 )
               {
                 sprintf( msg, "%.1Lf %d GPS L1 cycle slip detected\n PRN %d Time difference code-carrier = %.1Lf m",  m_pvt.time.gps_tow, m_pvt.time.gps_week, m_ObsArray[i].id, cmc_diff );
                 GNSS_ERROR_MSG( msg );
@@ -1935,7 +2798,7 @@ namespace GNSS
       X[j][i] = m_ObsArray[i].rangerate; j++;         //!< The best estimate of the geometric range rate between the antenna and the satellite [m/s].
       X[j][i] = m_ObsArray[i].psr_smoothed; j++;      //!< The carrier smoothed pseudorange if available [m].
       X[j][i] = m_ObsArray[i].psr_predicted; j++;     //!< The predicted pseudorange based on the satellite position, user position, and current clock offset [m].
-      X[j][i] = m_ObsArray[i].ambiguity; j++;         //!< The estimated integer component of the adr. This may be the single or double differenced ambiguity [].
+      X[j][i] = m_ObsArray[i].sd_ambiguity; j++;      //!< The estimated integer component of the adr. This may be the single or double differenced ambiguity [].
       X[j][i] = m_ObsArray[i].doppler_predicted; j++; //!< The predicted Doppler based on user position, velocity, satellite position, velocity and clock rate [Hz].
       
       X[j][i] = m_ObsArray[i].index_differential; j++;      //!< The channel index of a matching differential observation. -1 means there is no matching channel.
