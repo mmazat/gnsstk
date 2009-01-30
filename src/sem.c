@@ -156,7 +156,7 @@ BOOL SEM_ReadAlmanacDataFromFile(
     return FALSE;
   }
 
-  n = fscanf( in, "%s", &description ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+  n = fscanf( in, "%127s", &description ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
   n = fscanf( in, "%u", &week ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
   n = fscanf( in, "%u", &toa );  if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
 
@@ -255,7 +255,7 @@ BOOL SEM_WriteSingleAlmanacElementToBuffer(
   int dcount = 0;
   if( bufferSize < 1024 )
   {
-    sprintf_s( buffer, bufferSize, "" );
+//    sprintf_s( buffer, bufferSize, "" );
     GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }
@@ -267,7 +267,7 @@ BOOL SEM_WriteSingleAlmanacElementToBuffer(
 #else
   if( bufferSize < 1024 )
   {
-    sprintf( buffer, "" );
+//    sprintf( buffer, "" );
     GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }
