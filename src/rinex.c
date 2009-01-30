@@ -451,7 +451,7 @@ BOOL RINEX_erase(
     j = (int)(strptr - str);   // start of the string to be erased
     i = j + (int)len_erase_me; // end of the string to be erased
 
-    for( i; i < (int)len; i++ )
+    for( ; i < (int)len; i++ )
     {
       str[j] = str[i];
       if( str[j] == '\0' )
@@ -651,7 +651,7 @@ BOOL RINEX_DealWithSpecialRecords(
         GNSS_ERROR_MSG( "RINEX_erase returned FALSE." );
         return FALSE;
       }
-      result = RINEX_trim_left_right(line_buffer, RINEX_LINEBUF_SIZE, &length );
+      result = RINEX_trim_left_right(line_buffer, RINEX_LINEBUF_SIZE, (unsigned *)&length );
       if( result == FALSE )
       {
         GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
@@ -1487,7 +1487,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   if( nr_lines == 1 )
   {
     // Only default values specified.
-    if( sscanf( lines_buffer, "%d %d", &(header->default_wavefactor_L1), &(header->default_wavefactor_L2) ) != 2 )
+    if( sscanf( lines_buffer, "%d %d", (int *)&(header->default_wavefactor_L1), (int *)&(header->default_wavefactor_L2) ) != 2 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -1496,7 +1496,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   else
   {
     // First read the default values specified.
-    if( sscanf( lines_buffer, "%d %d", &(header->default_wavefactor_L1), &(header->default_wavefactor_L2) ) != 2 )
+    if( sscanf( lines_buffer, "%d %d", (int *)&(header->default_wavefactor_L1), (int *)&(header->default_wavefactor_L2) ) != 2 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -1734,7 +1734,7 @@ BOOL RINEX_GetNextObservationSet(
           return FALSE;
         }
       }
-      result = RINEX_trim_left_right( line_buffer, RINEX_LINEBUF_SIZE, &length );
+      result = RINEX_trim_left_right( line_buffer, RINEX_LINEBUF_SIZE, (unsigned *)&length );
       if( result == FALSE )
       {
         GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
@@ -2056,7 +2056,7 @@ BOOL RINEX_GetNextObservationSet(
         return FALSE;
       }
 
-      if( RINEX_trim_left_right( line_buffer, RINEX_LINEBUF_SIZE, &length ) == FALSE )
+      if( RINEX_trim_left_right( line_buffer, RINEX_LINEBUF_SIZE, (unsigned *)&length ) == FALSE )
       {
         GNSS_ERROR_MSG( "RINEX_trim_left_right returned FALSE." );
         return FALSE;
@@ -3052,7 +3052,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
     epoch.hour = (unsigned char)itmp;
     i++;
-    if( sscanf( str[i], "%d", &epoch.minute ) != 1 )
+    if( sscanf( str[i], "%d", &itmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
