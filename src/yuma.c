@@ -247,10 +247,10 @@ BOOL YUMA_WriteSingleAlmanacElementToBuffer(
   int dcount = 0;
   if( bufferSize < 1024 )
   {
-    sprintf_s( buffer, bufferSize, "" );
+//    sprintf_s( buffer, bufferSize, "" );
     GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
-  }                                                         
+  }
   dcount = sprintf_s( buffer+scount, bufferSize-scount, "******** Week %03d almanac for PRN-%02d ********\n", alm.week, alm.prn ); if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
   dcount = sprintf_s( buffer+scount, bufferSize-scount, "ID:                        % 03d\n",  alm.prn );       if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
   dcount = sprintf_s( buffer+scount, bufferSize-scount, "Health:                    % 04d\n",  alm.health );    if( dcount < 0 ){GNSS_ERROR_MSG("sprintf failed.");return FALSE;}else{ scount += dcount; }
@@ -268,7 +268,7 @@ BOOL YUMA_WriteSingleAlmanacElementToBuffer(
 #else
   if( bufferSize < 1024 )
   {
-    sprintf( buffer, "" );
+//     sprintf( buffer, "" );
     GNSS_ERROR_MSG( "if( bufferSize < 1024 )" );
     return FALSE;
   }
