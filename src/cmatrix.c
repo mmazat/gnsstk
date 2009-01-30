@@ -801,7 +801,6 @@ BOOL MTX_Complex( MTX *M, const MTX *Re, const MTX *Im )
 BOOL MTX_SetComplexColumn( MTX *M, const unsigned col, const MTX *Re, const MTX *Im )
 {
   unsigned i = 0;
-  unsigned j = 0;
 
   // check that M is complex
   if( M->isReal )
@@ -1804,7 +1803,6 @@ BOOL MTX_Concatonate( MTX *dst, const MTX *src )
 // A becomes A|0|0|0|.. etc
 BOOL MTX_AddZeroValuedColumns( MTX *dst, const unsigned nr_new_cols )
 {
-  unsigned i = 0;
   unsigned j = 0;
   unsigned ncols;
   unsigned m = 0;
@@ -1912,13 +1910,10 @@ BOOL MTX_AddZeroValuedColumns( MTX *dst, const unsigned nr_new_cols )
 
 BOOL MTX_Redim( MTX *dst, const unsigned nrows, const unsigned ncols )
 {
-  unsigned i = 0;
   unsigned j = 0;
   unsigned nc;
   unsigned nr;
   MTX copy;
-  double **dptr = NULL;
-  stComplex **cptr = NULL;
   const BOOL isReal = dst->isReal;
 
   MTX_Init( &copy );
@@ -2048,7 +2043,6 @@ BOOL MTX_Resize( MTX *dst, const unsigned nrows, const unsigned ncols, const BOO
 
 BOOL MTX_Copy( const MTX *src, MTX *dst )
 {
-  unsigned i = 0;
   unsigned j = 0;
 
   if( MTX_isNull( src ) )
@@ -2102,7 +2096,6 @@ BOOL MTX_Copy( const MTX *src, MTX *dst )
 
 BOOL MTX_CopyIntoColumnWiseVector( const MTX *src, MTX *dst )
 {
-  unsigned i = 0;
   unsigned j = 0;
 
   if( MTX_isNull( src ) )
@@ -2189,7 +2182,6 @@ BOOL MTX_SetFromStaticMatrix( MTX *dst, const double mat[], const unsigned nrows
 
 BOOL MTX_CopyColumn( const MTX *src, const unsigned col, MTX *dst )
 {
-  unsigned i = 0;
 
   if( MTX_isNull( src ) )
   {
@@ -2480,7 +2472,6 @@ BOOL MTX_ExtractSubMatrix(
 
 BOOL MTX_Zero( MTX *dst )
 {
-  unsigned i = 0;
   unsigned j = 0;
 
   if( MTX_isNull( dst ) )
@@ -2505,7 +2496,6 @@ BOOL MTX_Zero( MTX *dst )
 
 BOOL MTX_ZeroColumn( MTX *dst, const unsigned col )
 {
-  unsigned i = 0;
 
   if( MTX_isNull( dst ) )
   {
@@ -2618,7 +2608,6 @@ BOOL MTX_FillComplex( MTX *dst, const double re, const double im )
 BOOL MTX_FillColumn( MTX *dst, const unsigned col, const double value )
 {
   unsigned i = 0;
-  unsigned j = 0;
 
   if( MTX_isNull( dst ) )
   {
@@ -2654,7 +2643,6 @@ BOOL MTX_FillColumn( MTX *dst, const unsigned col, const double value )
 BOOL MTX_FillColumnComplex( MTX *dst, const unsigned col, const double re, const double im )
 {
   unsigned i = 0;
-  unsigned j = 0;
 
   if( MTX_isNull( dst ) )
   {
@@ -3461,7 +3449,7 @@ BOOL MTX_DetermineNumberOfColumnsInDataString( const char *datastr, unsigned *nc
   }
 
   // determine the number of columns in the matrix
-  for( i; i < line_length; i++ )
+  for( ; i < line_length; i++ )
   {
     c = datastr[i];
     if( isdigit(c) || c == '.' || c == '-' || c == '+' )
@@ -3554,7 +3542,7 @@ BOOL MTX_DetermineNumberOfColumnsInDataStringCplx( const char *datastr, const ch
   isElementOnlyReal = FALSE;
   isComplexMix = FALSE;
 
-  for( i; i < line_length; i++ )
+  for( ; i < line_length; i++ )
   {
     c = datastr[i];
 
@@ -3564,7 +3552,7 @@ BOOL MTX_DetermineNumberOfColumnsInDataStringCplx( const char *datastr, const ch
       i++;
       // actually found a value
       // now search for an imag component
-      for( i; i < line_length; i++ )
+      for( ; i < line_length; i++ )
       {
         c = datastr[i];
         if( c == 'i' || c == 'j' )
@@ -3747,7 +3735,7 @@ BOOL MTX_static_get_row_array_from_string_cplx( char *datastr, const char delimi
   isElementOnlyReal = FALSE;
   isComplexMix = FALSE;
 
-  for( i; i < line_length; i++ )
+  for( ; i < line_length; i++ )
   {
     c = datastr[i];
 
@@ -3758,7 +3746,7 @@ BOOL MTX_static_get_row_array_from_string_cplx( char *datastr, const char delimi
       i++;
       // actually found a value
       // now search for an imag component
-      for( i; i <= line_length; i++ ) // notice the <= (this algorithm is made easier by allowing this)
+      for( ; i <= line_length; i++ ) // notice the <= (this algorithm is made easier by allowing this)
       {
         c = datastr[i];
         if( c == 'i' || c == 'j' )
@@ -3944,7 +3932,7 @@ BOOL MTX_static_get_row_array_from_string( char *datastr, _MTX_STRUCT_ReadFromFi
 
   // read in one row of data
   n = 0;
-  for( i; i < line_length; i++ )
+  for( ; i < line_length; i++ )
   {
     c = datastr[i];
     if( isdigit(c) || c == '.' || c == '-' || c == '+' )
@@ -5880,7 +5868,7 @@ BOOL MTX_Print_ToBuffer( const MTX *M, char *buffer, const unsigned maxlength, c
 
           for( k = 0; k < width; k++ )
           {
-            dcount = sprintf( buffer+scount, " ", ValueBuffer );
+            dcount = sprintf( buffer+scount, "%s", ValueBuffer );
             if( dcount < 0 )
             {
               MTX_ERROR_MSG( "sprintf returned failure." );
@@ -6040,7 +6028,7 @@ BOOL MTX_PrintAutoWidth( const MTX *M, const char *path, const unsigned precisio
     if( sprintf_s( ValueBuffer, 512, "Unable to open path.", path ) > 0 )
       MTX_ERROR_MSG( ValueBuffer );
 #else
-    if( sprintf( ValueBuffer, "Unable to open path.", path ) > 0 )
+    if( sprintf( ValueBuffer, "Unable to open path. %s", path ) > 0 )
       MTX_ERROR_MSG( ValueBuffer );
 #endif
     return FALSE;
@@ -6656,7 +6644,7 @@ BOOL MTX_PrintAutoWidth_ToBuffer( const MTX *M, char *buffer, const unsigned max
 
           for( k = 0; k < maxColumnWidth[j*2+1]; k++ )
           {
-            dcount = sprintf( buffer+scount, " ", ValueBuffer );
+            dcount = sprintf( buffer+scount, "%s", ValueBuffer );
             if( dcount < 0 )
             {
               MTX_ERROR_MSG( "sprintf returned failure." );
@@ -6855,7 +6843,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
         return FALSE;
       }
 #else
-      if( sprintf( format, "%%.%dg", precision, delimiter ) < 0 )
+      if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
       {
         MTX_ERROR_MSG( "sprintf returned failure." );
         return FALSE;
@@ -6962,7 +6950,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
       {
         // output only the real component
 #ifndef _CRT_SECURE_NO_DEPRECATE
-        if( sprintf_s( format, 16, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%.%dg%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -6973,7 +6961,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
           return FALSE;
         }
 #else
-        if( sprintf( format, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -6990,7 +6978,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
       {
         // output both
 #ifndef _CRT_SECURE_NO_DEPRECATE
-        if( sprintf_s( format, 16, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%.%dg%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -7001,7 +6989,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
           return FALSE;
         }
 #else
-        if( sprintf( format, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7015,7 +7003,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
         fprintf( out, ValueBuffer );
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
-        if( sprintf_s( format, 16, "%%+.%dgi", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%+.%dgi%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -7026,7 +7014,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
           return FALSE;
         }
 #else
-        if( sprintf( format, "%%+.%dgi", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%+.%dgi%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7349,7 +7337,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       }
       if( endOfBuffer )
         break;
-      if( sprintf( format, "%%.%dg", precision, delimiter ) < 0 )
+      if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
       {
         MTX_ERROR_MSG( "sprintf returned failure." );
         return FALSE;
@@ -7468,7 +7456,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       if( M->cplx[j][i].im == 0 )
       {
         // output only the real component
-        if( sprintf( format, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7491,7 +7479,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       else
       {
         // output both
-        if( sprintf( format, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7511,7 +7499,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
         }
         scount += dcount;
 
-        if( sprintf( format, "%%+.%dgi", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%+.%dgi%c", precision, delimiter ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -8226,7 +8214,6 @@ BOOL MTX_acos( MTX *M )
 {
   unsigned i = 0;
   unsigned j = 0;
-  unsigned k = 0;
   double maxabs = 0;
 
   if( MTX_isNull( M ) )
@@ -8312,8 +8299,6 @@ BOOL MTX_acos( MTX *M )
 
 BOOL MTX_angle( MTX *M )
 {
-  unsigned i = 0;
-  unsigned j = 0;
   MTX copyM;
 
   if( MTX_isNull( M ) )
@@ -8345,7 +8330,6 @@ BOOL MTX_asin( MTX *M )
 {
   unsigned i = 0;
   unsigned j = 0;
-  unsigned k = 0;
 
   if( MTX_isNull( M ) )
   {
@@ -8663,7 +8647,6 @@ BOOL MTX_Ln( MTX *M )
 {
   unsigned i = 0;
   unsigned j = 0;
-  unsigned k = 0;
   double re;
   double im;  
   MTX lnmag;
@@ -8734,7 +8717,6 @@ BOOL MTX_Pow( const MTX *src, MTX *dst, const double power_re, const double powe
 {
   unsigned i = 0;
   unsigned j = 0;
-  BOOL success = TRUE;
 
   if( MTX_isNull( src ) )
   {
@@ -11668,8 +11650,6 @@ BOOL MTX_ColumnRange( const MTX *M, const unsigned col, double *re, double *im )
   double im_maxval = 0;
   double re_minval = 0;
   double im_minval = 0;
-  int minIndx = 0;
-  int maxIndx = 0;
 
   if( MTX_isNull( M ) )
   {
@@ -13238,9 +13218,7 @@ BOOL MTX_FlipRow( MTX *M, const unsigned row )
 
 BOOL MTX_SortAscending( MTX *M )
 {
-  unsigned i = 0;
   unsigned j = 0;
-  int k = 0;
 
   if( MTX_isNull( M ) )
   {
@@ -13321,8 +13299,6 @@ BOOL MTX_SortDescending( MTX *M )
 
 BOOL MTX_SortColumnAscending( MTX *M, const unsigned col )
 {
-  unsigned i = 0;
-  int k = 0;
 
   if( MTX_isNull( M ) )
   {
@@ -13698,8 +13674,6 @@ BOOL MTX_SaveCompressed( const MTX *M, const char *path )
   unsigned char currByte = 0;
   unsigned n = 0; // number of times the byte repeats (256 is upper bound!!)
   unsigned p = 0; // counter
-  unsigned ncompressed = 0;
-  unsigned nbytes = 0;
 
   unsigned char* bytes[MTX_NK];
   unsigned char* compressed[MTX_NK];
@@ -14787,7 +14761,7 @@ BOOL MTX_ReadCompressed( MTX *M, const char *path )
             p++;
 
             nRepeatBytes = n+nRepeatBytes;
-            for( n; n < nRepeatBytes; n++ )
+            for( ; n < nRepeatBytes; n++ )
             {
               if( n >= M->nrows )
               {
@@ -15553,7 +15527,6 @@ BOOL MTX_Interpolate(
                      const double maxInterpolationInterval, //!< The largest interpolation interval allowed
                      const double rolloverTime )//!< The rollover time, e.g. 60 s for minute based timing, 0.0 means rollovers not allowed
 {
-  unsigned i = 0;
   unsigned j = 0;
 
   unsigned index = 0,
@@ -16644,8 +16617,6 @@ BOOL MTX_Invert( const MTX *src, MTX *dst )
 BOOL MTX_InvertInPlaceRobust( MTX *M )
 {
   unsigned i = 0;
-  unsigned j = 0;
-  unsigned k = 0;
   const unsigned n = M->nrows;
   BOOL isFullRank = FALSE;
   unsigned *index = NULL;
@@ -16812,10 +16783,7 @@ BOOL MTX_static_Factorize( BOOL *isFullRank, const unsigned n, unsigned* index, 
 
   double r = 0.0;
   double rmax = 0.0;
-  double smax_re = 0.0;
-  double smax_im = 0.0;
   double xmult = 0.0;
-  double tempd = 0.0;
 
   stComplex cplx_xmult = {0.0,0.0};
   stComplex cplx = {0.0,0.0};
@@ -19017,8 +18985,6 @@ BOOL MTX_sinh( MTX *src )
 
 BOOL MTX_asinh( MTX *src )
 {
-  unsigned i = 0;
-  unsigned j = 0;
   // asinh = ln (x+sqrt(1+x^2))
   MTX sqrtOnePlusX2;
   MTX_Init( &sqrtOnePlusX2 );
@@ -19204,8 +19170,6 @@ BOOL MTX_cosh( MTX *src )
 
 BOOL MTX_acosh( MTX *src )
 {
-  unsigned i = 0;
-  unsigned j = 0;
   // acosh = ln( z + sqrt(z+1)*sqrt(z-1) )
   MTX sXp1;
   MTX sXm1;
@@ -19450,8 +19414,6 @@ BOOL MTX_tanh( MTX *src )
 
 BOOL MTX_atanh( MTX *src )
 {
-  unsigned i = 0;
-  unsigned j = 0;
   // atanh = 0.5*( ln((1+z)/(1-z)) )
   MTX oneMx; // 1-x
 
@@ -20014,8 +19976,6 @@ BOOL MTX_rand(
 
 BOOL MTX_PlotQuick( MTX* M, const char* bmpfilename, const unsigned x_col, const unsigned y_col )
 {
-  unsigned i = 0;
-  unsigned j = 0;
   CPLOT_structSeries s; // The deep level series struct.
   CPLOT_structPlotOptions opt; // The plotting options.
   CPLOT P; // The plot 'object'.
