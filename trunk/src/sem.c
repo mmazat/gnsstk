@@ -95,7 +95,7 @@ BOOL SEM_ReadAlmanacDataFromFile(
     return FALSE;
   }
 
-  n = fscanf_s( in, "%s", &description ); 
+  n = fscanf_s( in, "%s", description ); 
   if(n != 1)
   {
     GNSS_ERROR_MSG( "fscanf failed." );
@@ -156,7 +156,7 @@ BOOL SEM_ReadAlmanacDataFromFile(
     return FALSE;
   }
 
-  n = fscanf( in, "%127s", &description ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
+  n = fscanf( in, "%127s", description ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
   n = fscanf( in, "%u", &week ); if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
   n = fscanf( in, "%u", &toa );  if(n != 1){GNSS_ERROR_MSG("fscanf failed.");return FALSE;}
 
