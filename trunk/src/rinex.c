@@ -673,7 +673,7 @@ BOOL RINEX_DealWithSpecialRecords(
     }
     else if( strstr(line_buffer, "ANTENNA: DELTA H/E/N") != NULL )
     {
-      if( sscanf( line_buffer, "%Lf %Lf %Lf", 
+      if( sscanf( line_buffer, "%lf %lf %lf", 
         &(RINEX_header->antenna_delta_h), 
         &(RINEX_header->antenna_ecc_e), 
         &(RINEX_header->antenna_ecc_n) ) != 3 )
@@ -684,7 +684,7 @@ BOOL RINEX_DealWithSpecialRecords(
     }
     else if( strstr(line_buffer, "APPROX POSITION XYZ") != NULL )
     {
-      if( sscanf( line_buffer, "%Lf %Lf %Lf", 
+      if( sscanf( line_buffer, "%lf %lf %lf", 
         &(RINEX_header->x), 
         &(RINEX_header->y), 
         &(RINEX_header->z) ) != 3 )
@@ -801,7 +801,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[0].loss_of_lock_indicator, 
         &RINEX_obs[0].signal_strength
         );        
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
       break;
     }
   case 2:
@@ -814,8 +814,8 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[1].loss_of_lock_indicator, 
         &RINEX_obs[1].signal_strength 
         );
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[1].value) );
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[1].value) );
       break;
     }
   case 3:
@@ -831,9 +831,9 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[2].loss_of_lock_indicator, 
         &RINEX_obs[2].signal_strength
       );
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[1].value) );
-      sscanf( str_c, "%Lf", &(RINEX_obs[2].value) );      
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[1].value) );
+      sscanf( str_c, "%lf", &(RINEX_obs[2].value) );      
       break;
     }
   case 4:
@@ -852,10 +852,10 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[3].loss_of_lock_indicator, 
         &RINEX_obs[3].signal_strength
       );
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[1].value) );
-      sscanf( str_c, "%Lf", &(RINEX_obs[2].value) );
-      sscanf( str_d ,"%Lf", &(RINEX_obs[3].value) );
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[1].value) );
+      sscanf( str_c, "%lf", &(RINEX_obs[2].value) );
+      sscanf( str_d ,"%lf", &(RINEX_obs[3].value) );
       break;
     }
     case 5:
@@ -877,11 +877,11 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[4].loss_of_lock_indicator, 
         &RINEX_obs[4].signal_strength
       );
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[1].value) );
-      sscanf( str_c, "%Lf", &(RINEX_obs[2].value) );
-      sscanf( str_d ,"%Lf", &(RINEX_obs[3].value) );
-      sscanf( str_e ,"%Lf", &(RINEX_obs[4].value) );      
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[1].value) );
+      sscanf( str_c, "%lf", &(RINEX_obs[2].value) );
+      sscanf( str_d ,"%lf", &(RINEX_obs[3].value) );
+      sscanf( str_e ,"%lf", &(RINEX_obs[4].value) );      
       break;
     }
     case 6:
@@ -908,11 +908,11 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[4].loss_of_lock_indicator, 
         &RINEX_obs[4].signal_strength
       );
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[1].value) );
-      sscanf( str_c, "%Lf", &(RINEX_obs[2].value) );
-      sscanf( str_d ,"%Lf", &(RINEX_obs[3].value) );
-      sscanf( str_e ,"%Lf", &(RINEX_obs[4].value) );      
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[1].value) );
+      sscanf( str_c, "%lf", &(RINEX_obs[2].value) );
+      sscanf( str_d ,"%lf", &(RINEX_obs[3].value) );
+      sscanf( str_e ,"%lf", &(RINEX_obs[4].value) );      
 
       memset( str_a, 0, 15 );
       memset( str_b, 0, 15 );
@@ -944,7 +944,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
             &RINEX_obs[5].loss_of_lock_indicator, 
             &RINEX_obs[5].signal_strength
             );        
-          sscanf( str_a, "%Lf", &(RINEX_obs[5].value) );
+          sscanf( str_a, "%lf", &(RINEX_obs[5].value) );
           break;
         }
       case 2:
@@ -957,8 +957,8 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
             &RINEX_obs[6].loss_of_lock_indicator, 
             &RINEX_obs[6].signal_strength 
             );
-          sscanf( str_a, "%Lf", &(RINEX_obs[5].value) );
-          sscanf( str_b, "%Lf", &(RINEX_obs[6].value) );          
+          sscanf( str_a, "%lf", &(RINEX_obs[5].value) );
+          sscanf( str_b, "%lf", &(RINEX_obs[6].value) );          
           break;
         }
       case 3:
@@ -974,9 +974,9 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
             &RINEX_obs[7].loss_of_lock_indicator, 
             &RINEX_obs[7].signal_strength
             );
-          sscanf( str_a, "%Lf", &(RINEX_obs[5].value) );
-          sscanf( str_b, "%Lf", &(RINEX_obs[6].value) );
-          sscanf( str_c, "%Lf", &(RINEX_obs[7].value) );          
+          sscanf( str_a, "%lf", &(RINEX_obs[5].value) );
+          sscanf( str_b, "%lf", &(RINEX_obs[6].value) );
+          sscanf( str_c, "%lf", &(RINEX_obs[7].value) );          
           break;
         }
       case 4:
@@ -995,10 +995,10 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
             &RINEX_obs[8].loss_of_lock_indicator, 
             &RINEX_obs[8].signal_strength
             );
-          sscanf( str_a, "%Lf", &(RINEX_obs[5].value) );
-          sscanf( str_b, "%Lf", &(RINEX_obs[6].value) );
-          sscanf( str_c, "%Lf", &(RINEX_obs[7].value) );
-          sscanf( str_d ,"%Lf", &(RINEX_obs[8].value) );          
+          sscanf( str_a, "%lf", &(RINEX_obs[5].value) );
+          sscanf( str_b, "%lf", &(RINEX_obs[6].value) );
+          sscanf( str_c, "%lf", &(RINEX_obs[7].value) );
+          sscanf( str_d ,"%lf", &(RINEX_obs[8].value) );          
           break;
         }
       case 5:
@@ -1020,11 +1020,11 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
             &RINEX_obs[9].loss_of_lock_indicator, 
             &RINEX_obs[9].signal_strength
             );
-          sscanf( str_a, "%Lf", &(RINEX_obs[5].value) );
-          sscanf( str_b, "%Lf", &(RINEX_obs[6].value) );
-          sscanf( str_c, "%Lf", &(RINEX_obs[7].value) );
-          sscanf( str_d ,"%Lf", &(RINEX_obs[8].value) );
-          sscanf( str_e ,"%Lf", &(RINEX_obs[9].value) );      
+          sscanf( str_a, "%lf", &(RINEX_obs[5].value) );
+          sscanf( str_b, "%lf", &(RINEX_obs[6].value) );
+          sscanf( str_c, "%lf", &(RINEX_obs[7].value) );
+          sscanf( str_d ,"%lf", &(RINEX_obs[8].value) );
+          sscanf( str_e ,"%lf", &(RINEX_obs[9].value) );      
           break;
         }
       default:
@@ -1055,11 +1055,11 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[4].loss_of_lock_indicator, 
         &RINEX_obs[4].signal_strength
         );
-      sscanf( str_a, "%Lf", &(RINEX_obs[0].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[1].value) );
-      sscanf( str_c, "%Lf", &(RINEX_obs[2].value) );
-      sscanf( str_d ,"%Lf", &(RINEX_obs[3].value) );
-      sscanf( str_e ,"%Lf", &(RINEX_obs[4].value) );      
+      sscanf( str_a, "%lf", &(RINEX_obs[0].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[1].value) );
+      sscanf( str_c, "%lf", &(RINEX_obs[2].value) );
+      sscanf( str_d ,"%lf", &(RINEX_obs[3].value) );
+      sscanf( str_e ,"%lf", &(RINEX_obs[4].value) );      
 
       memset( str_a, 0, 15 );
       memset( str_b, 0, 15 );
@@ -1099,11 +1099,11 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[9].loss_of_lock_indicator, 
         &RINEX_obs[9].signal_strength
         );
-      sscanf( str_a, "%Lf", &(RINEX_obs[5].value) );
-      sscanf( str_b, "%Lf", &(RINEX_obs[6].value) );
-      sscanf( str_c, "%Lf", &(RINEX_obs[7].value) );
-      sscanf( str_d ,"%Lf", &(RINEX_obs[8].value) );
-      sscanf( str_e ,"%Lf", &(RINEX_obs[9].value) );
+      sscanf( str_a, "%lf", &(RINEX_obs[5].value) );
+      sscanf( str_b, "%lf", &(RINEX_obs[6].value) );
+      sscanf( str_c, "%lf", &(RINEX_obs[7].value) );
+      sscanf( str_d ,"%lf", &(RINEX_obs[8].value) );
+      sscanf( str_e ,"%lf", &(RINEX_obs[9].value) );
     
       memset( str_a, 0, 15 );
 
@@ -1127,7 +1127,7 @@ BOOL RINEX_GetNextObserationSetForOneSatellite(
         &RINEX_obs[10].loss_of_lock_indicator, 
         &RINEX_obs[10].signal_strength
         );  
-      sscanf( str_a, "%Lf", &(RINEX_obs[10].value) );
+      sscanf( str_a, "%lf", &(RINEX_obs[10].value) );
       break;
     }
   default:
@@ -1284,7 +1284,7 @@ BOOL RINEX_GetHeader(
   scount += sprintf( buffer+scount, "%s", line_buffer );
 
   // Extract the RINEX version and type.
-  if( sscanf( line_buffer, "%Lf %c", version, &type_char ) != 2 )
+  if( sscanf( line_buffer, "%lf %c", version, &type_char ) != 2 )
   {
     GNSS_ERROR_MSG( "sscanf failed" );
     return FALSE;
@@ -1376,7 +1376,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
     return FALSE;
   }
-  if( sscanf( lines_buffer, "%Lf %c", &(header->version), &rinex_type_char ) != 2 )
+  if( sscanf( lines_buffer, "%lf %c", &(header->version), &rinex_type_char ) != 2 )
   {
     GNSS_ERROR_MSG( "sscanf failed" );
     return FALSE;
@@ -1439,7 +1439,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   }
   if( nr_lines == 1 )
   {    
-    if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->x), &(header->y), &(header->z) ) != 3 )
+    if( sscanf( lines_buffer, "%lf %lf %lf", &(header->x), &(header->y), &(header->z) ) != 3 )
     {
       GNSS_ERROR_MSG( "sscanf failed" );
       return FALSE;
@@ -1464,7 +1464,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
     GNSS_ERROR_MSG( "if( nr_lines != 1 )" );
     return FALSE;
   }
-  if( sscanf( lines_buffer, "%Lf %Lf %Lf", &(header->antenna_delta_h), &(header->antenna_ecc_e), &(header->antenna_ecc_n) ) != 3 )
+  if( sscanf( lines_buffer, "%lf %lf %lf", &(header->antenna_delta_h), &(header->antenna_ecc_e), &(header->antenna_ecc_n) ) != 3 )
   {
     GNSS_ERROR_MSG( "sscanf failed." );
     return FALSE;
@@ -1529,7 +1529,7 @@ BOOL RINEX_DecodeHeader_ObservationFile(
   }
   if( nr_lines == 1 )
   {    
-    if( sscanf( lines_buffer, "%Lf", &(header->interval) ) != 1 )
+    if( sscanf( lines_buffer, "%lf", &(header->interval) ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -2831,7 +2831,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE;
     }
 
-    if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
+    if( sscanf( line_buffer, "%lf %lf %lf %lf", 
       &(iono_model->alpha0), 
       &(iono_model->alpha1),
       &(iono_model->alpha2),
@@ -2866,7 +2866,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE;
     }
 
-    if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
+    if( sscanf( line_buffer, "%lf %lf %lf %lf", 
       &(iono_model->beta0), 
       &(iono_model->beta1),
       &(iono_model->beta2),
@@ -2898,7 +2898,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
         return FALSE;
       }
 
-      if( sscanf( line_buffer, "%Lf %Lf %d %d",
+      if( sscanf( line_buffer, "%lf %lf %d %d",
         &header_A0,
         &header_A1,
         &header_tow,
@@ -3065,19 +3065,19 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.af0 ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.af0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.af1 ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.af1 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.af2 ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.af2 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
       return FALSE;
@@ -3151,26 +3151,26 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     eph.iode = (unsigned char)dtmp;
     i++;
-    if( sscanf( str[i], "%Lf", &eph.crs ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.crs ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.delta_n ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.delta_n ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.m0 ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.m0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -3214,25 +3214,25 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &eph.cuc ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.cuc ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;    
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.ecc ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.ecc ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.cus ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.cus ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.sqrta ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.sqrta ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
       return FALSE;
@@ -3277,26 +3277,26 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;    
     }
     eph.toe = (unsigned)dtmp;
     i++;
-    if( sscanf( str[i], "%Lf", &eph.cic ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.cic ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.omega0 ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.omega0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.cis ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.cis ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -3341,25 +3341,25 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &eph.i0 ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.i0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;    
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.crc ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.crc ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.w ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.w ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &eph.omegadot ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.omegadot ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -3404,27 +3404,27 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &eph.idot ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.idot ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     eph.code_on_L2 = (unsigned char)dtmp;
     i++;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     eph.week = (unsigned short)dtmp;
     i++;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -3469,7 +3469,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -3483,20 +3483,20 @@ BOOL RINEX_DecodeGPSNavigationFile(
       return FALSE;
     }
 
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     eph.health = (unsigned char)dtmp;
     i++;
-    if( sscanf( str[i], "%Lf", &eph.tgd ) != 1 )
+    if( sscanf( str[i], "%lf", &eph.tgd ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
     }
     i++;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
       return FALSE;
@@ -3539,7 +3539,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i = 0;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf returned FALSE." );
       return FALSE;    
@@ -3558,7 +3558,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     }
 
     i++;
-    if( sscanf( str[i], "%Lf", &dtmp ) != 1 )
+    if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf returned FALSE." );
       return FALSE;    
@@ -3856,7 +3856,7 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       return FALSE;
     }
 
-    if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
+    if( sscanf( line_buffer, "%lf %lf %lf %lf", 
       &(iono_model->alpha0), 
       &(iono_model->alpha1),
       &(iono_model->alpha2),
@@ -3891,7 +3891,7 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
       return FALSE;
     }
 
-    if( sscanf( line_buffer, "%Lf %Lf %Lf %Lf", 
+    if( sscanf( line_buffer, "%lf %lf %lf %lf", 
       &(iono_model->beta0), 
       &(iono_model->beta1),
       &(iono_model->beta2),
@@ -3923,7 +3923,7 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
         return FALSE;
       }
 
-      if( sscanf( line_buffer, "%Lf %Lf %d %d",
+      if( sscanf( line_buffer, "%lf %lf %d %d",
         &header_A0,
         &header_A1,
         &header_tow,
