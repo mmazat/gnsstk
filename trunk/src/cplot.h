@@ -43,8 +43,6 @@ extern "C"
 {
 #endif
 
-typedef int BOOL;
-
 #ifndef FALSE
 #define FALSE (0)
 #endif
