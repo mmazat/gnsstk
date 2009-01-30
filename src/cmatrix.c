@@ -10,6 +10,7 @@
 #include <float.h>
 #include <errno.h>
 
+#include "basictypes.h"
 #include "cmatrix.h"
 
 #ifndef _MATRIX_NO_PLOTTING
