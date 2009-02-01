@@ -55,6 +55,7 @@ necessary. \n
 #include <stdlib.h>
 #include <string.h>
 
+#include "basictypes.h"
 #include "Matrix.h"
 #include "cmatrix.h"
 
