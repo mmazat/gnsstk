@@ -50,7 +50,9 @@ SUCH DAMAGE.
 #define OPTIONFILE_MAX_LINE_BUFFER (8192)
 
 //#define _CRT_SECURE_NO_DEPRECATE
-
+#ifndef WIN32
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
 
 OptionFile::~OptionFile()
 {
