@@ -1,6 +1,48 @@
-/*!
-\file cmatrix.c
-\brief 'c' functions for vector and matrix operations
+/**
+\file     cmatrix.c
+\brief    'c' functions for vector and matrix operations.
+\author   Glenn D. MacGougan (GDM)
+\date     2009-01-08
+\version  0.07 Beta
+
+\b Version \b Information \n
+This is the open source version (BSD license). The Professional Version
+is avaiable via http://www.zenautics.com. The Professional Version
+is highly optimized using SIMD and includes optimization for multi-core 
+processors.
+
+\b License \b Information \n
+Copyright (c) 2009, Glenn D. MacGougan \n
+
+Redistribution and use in source and binary forms, with or without
+modification, of the specified files is permitted provided the following 
+conditions are met: \n
+
+- Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer. \n
+- Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution. \n
+- The name(s) of the contributor(s) may not be used to endorse or promote 
+  products derived from this software without specific prior written 
+  permission. \n
+
+THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY EXPRESS 
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
+SUCH DAMAGE.
+
+\b NOTES: \n
+This code was developed using rigourous unit testing for every function 
+and operation. Despite any rigorous development process, bugs are
+inevitable. Please report bugs and suggested fixes to glenn @ zenautics.com.\n
 */
 #include <stdio.h>  // for FILE*
 #include <stdlib.h> // for calloc, malloc, free
@@ -10,7 +52,6 @@
 #include <float.h>
 #include <errno.h>
 
-#include "basictypes.h"
 #include "cmatrix.h"
 
 #ifndef _MATRIX_NO_PLOTTING
@@ -801,7 +842,7 @@ BOOL MTX_Complex( MTX *M, const MTX *Re, const MTX *Im )
 BOOL MTX_SetComplexColumn( MTX *M, const unsigned col, const MTX *Re, const MTX *Im )
 {
   unsigned i = 0;
-
+  
   // check that M is complex
   if( M->isReal )
   {
@@ -2182,7 +2223,6 @@ BOOL MTX_SetFromStaticMatrix( MTX *dst, const double mat[], const unsigned nrows
 
 BOOL MTX_CopyColumn( const MTX *src, const unsigned col, MTX *dst )
 {
-
   if( MTX_isNull( src ) )
   {
     MTX_ERROR_MSG( "NULL Matrix" );
@@ -2496,7 +2536,6 @@ BOOL MTX_Zero( MTX *dst )
 
 BOOL MTX_ZeroColumn( MTX *dst, const unsigned col )
 {
-
   if( MTX_isNull( dst ) )
   {
     MTX_ERROR_MSG( "NULL Matrix" );
@@ -2607,7 +2646,7 @@ BOOL MTX_FillComplex( MTX *dst, const double re, const double im )
 
 BOOL MTX_FillColumn( MTX *dst, const unsigned col, const double value )
 {
-  unsigned i = 0;
+  unsigned i = 0;  
 
   if( MTX_isNull( dst ) )
   {
@@ -2642,7 +2681,7 @@ BOOL MTX_FillColumn( MTX *dst, const unsigned col, const double value )
 
 BOOL MTX_FillColumnComplex( MTX *dst, const unsigned col, const double re, const double im )
 {
-  unsigned i = 0;
+  unsigned i = 0;  
 
   if( MTX_isNull( dst ) )
   {
@@ -2782,6 +2821,54 @@ BOOL MTX_Identity( MTX *dst )
   return TRUE;
 }
 
+BOOL MTX_ForceSymmetric( MTX *M )
+{
+  unsigned i = 0;
+  unsigned j = 0;
+  double tmp = 0.0;
+  stComplex cplxval;
+
+  if( MTX_isNull( M ) )
+  {
+    MTX_ERROR_MSG( "NULL Matrix" );
+    return FALSE;
+  }
+  if( !MTX_isSquare( M ) )
+  {
+    MTX_ERROR_MSG( "The matrix is not square.");
+    return FALSE;
+  }
+
+  for( j = 0; j < M->ncols; j++ )
+  {
+    for( i = 0; i < M->nrows; i++ )
+    {
+      if( i == j )
+        break; // only need to go halfway
+
+      if( M->isReal )
+      {
+        tmp = M->data[j][i] + M->data[i][j];
+        tmp /= 2.0;
+        M->data[j][i] = tmp;
+        M->data[i][j] = tmp;
+      }
+      else
+      {
+        cplxval.re = M->cplx[j][i].re + M->cplx[i][j].re;
+        cplxval.im = M->cplx[j][i].im + M->cplx[i][j].im;
+        cplxval.re /= 2.0;
+        cplxval.im /= 2.0;
+
+        M->cplx[j][i].re = cplxval.re;
+        M->cplx[j][i].im = cplxval.im;
+        M->cplx[i][j].re = cplxval.re;
+        M->cplx[i][j].im = cplxval.im;
+      }
+    }
+  }
+  return TRUE;
+}
 
 // Transpose the matrix src into the matrix dst.
 BOOL MTX_Transpose( const MTX *src, MTX *dst )
@@ -3449,7 +3536,7 @@ BOOL MTX_DetermineNumberOfColumnsInDataString( const char *datastr, unsigned *nc
   }
 
   // determine the number of columns in the matrix
-  for( ; i < line_length; i++ )
+  for( /*i*/; i < line_length; i++ )
   {
     c = datastr[i];
     if( isdigit(c) || c == '.' || c == '-' || c == '+' )
@@ -3542,7 +3629,7 @@ BOOL MTX_DetermineNumberOfColumnsInDataStringCplx( const char *datastr, const ch
   isElementOnlyReal = FALSE;
   isComplexMix = FALSE;
 
-  for( ; i < line_length; i++ )
+  for( /*i*/; i < line_length; i++ )
   {
     c = datastr[i];
 
@@ -3552,7 +3639,7 @@ BOOL MTX_DetermineNumberOfColumnsInDataStringCplx( const char *datastr, const ch
       i++;
       // actually found a value
       // now search for an imag component
-      for( ; i < line_length; i++ )
+      for( /*i*/; i < line_length; i++ )
       {
         c = datastr[i];
         if( c == 'i' || c == 'j' )
@@ -3735,7 +3822,7 @@ BOOL MTX_static_get_row_array_from_string_cplx( char *datastr, const char delimi
   isElementOnlyReal = FALSE;
   isComplexMix = FALSE;
 
-  for( ; i < line_length; i++ )
+  for( /*i*/; i < line_length; i++ )
   {
     c = datastr[i];
 
@@ -3746,7 +3833,7 @@ BOOL MTX_static_get_row_array_from_string_cplx( char *datastr, const char delimi
       i++;
       // actually found a value
       // now search for an imag component
-      for( ; i <= line_length; i++ ) // notice the <= (this algorithm is made easier by allowing this)
+      for( /*i*/; i <= line_length; i++ ) // notice the <= (this algorithm is made easier by allowing this)
       {
         c = datastr[i];
         if( c == 'i' || c == 'j' )
@@ -3932,7 +4019,7 @@ BOOL MTX_static_get_row_array_from_string( char *datastr, _MTX_STRUCT_ReadFromFi
 
   // read in one row of data
   n = 0;
-  for( ; i < line_length; i++ )
+  for( /*i*/; i < line_length; i++ )
   {
     c = datastr[i];
     if( isdigit(c) || c == '.' || c == '-' || c == '+' )
@@ -5420,6 +5507,9 @@ BOOL MTX_ValueToString(
 {
   char format[16];
   char valbuf[512];
+#ifdef _CRT_SECURE_NO_DEPRECATE
+  char tmpbuf[1024];
+#endif
   char* strptr;
 
   if( width == 0 )
@@ -5616,11 +5706,17 @@ BOOL MTX_ValueToString(
     }
   }
 
-  if( sprintf( ValueBuffer, format, valbuf ) < 0 )
+  if( sprintf( tmpbuf, format, valbuf ) < 0 )
   {
     MTX_ERROR_MSG( "sprintf returned failure." );
     return FALSE;
   }
+  if( strlen(tmpbuf) >= ValueBufferSize )
+  {
+    MTX_ERROR_MSG( "ValueBufferSize not sufficient." );
+    return FALSE;
+  }
+  strcpy( ValueBuffer, tmpbuf );  
 
 #endif
 
@@ -5630,7 +5726,7 @@ BOOL MTX_ValueToString(
   {
     if( strptr[2] == '\0' || strptr[2] == ' ' )
       strptr[0] = ' '; // get rid of the negative value.
-  }
+  }  
 
   return TRUE;
 }
@@ -5849,7 +5945,7 @@ BOOL MTX_Print_ToBuffer( const MTX *M, char *buffer, const unsigned maxlength, c
 
           for( k = 0; k < width; k++ )
           {
-            dcount = sprintf_s( buffer+scount, maxlength-scount, " ", ValueBuffer );
+            dcount = sprintf_s( buffer+scount, maxlength-scount, " " );
             if( dcount < 0 )
             {
               MTX_ERROR_MSG( "sprintf_s returned failure." );
@@ -5868,7 +5964,7 @@ BOOL MTX_Print_ToBuffer( const MTX *M, char *buffer, const unsigned maxlength, c
 
           for( k = 0; k < width; k++ )
           {
-            dcount = sprintf( buffer+scount, "%s", ValueBuffer );
+            dcount = sprintf( buffer+scount, " " );
             if( dcount < 0 )
             {
               MTX_ERROR_MSG( "sprintf returned failure." );
@@ -6025,10 +6121,10 @@ BOOL MTX_PrintAutoWidth( const MTX *M, const char *path, const unsigned precisio
   if( !out )
   {
 #ifndef _CRT_SECURE_NO_DEPRECATE
-    if( sprintf_s( ValueBuffer, 512, "Unable to open path.", path ) > 0 )
+    if( sprintf_s( ValueBuffer, 512, "Unable to open %s.", path ) > 0 )
       MTX_ERROR_MSG( ValueBuffer );
 #else
-    if( sprintf( ValueBuffer, "Unable to open path. %s", path ) > 0 )
+    if( sprintf( ValueBuffer, "Unable to open %s.", path ) > 0 )
       MTX_ERROR_MSG( ValueBuffer );
 #endif
     return FALSE;
@@ -6625,7 +6721,7 @@ BOOL MTX_PrintAutoWidth_ToBuffer( const MTX *M, char *buffer, const unsigned max
 
           for( k = 0; k < maxColumnWidth[j*2+1]; k++ )
           {
-            dcount = sprintf_s( buffer+scount, maxlength-scount, " ", ValueBuffer );
+            dcount = sprintf_s( buffer+scount, maxlength-scount, " " );
             if( dcount < 0 )
             {
               MTX_ERROR_MSG( "sprintf_s returned failure." );
@@ -6644,7 +6740,7 @@ BOOL MTX_PrintAutoWidth_ToBuffer( const MTX *M, char *buffer, const unsigned max
 
           for( k = 0; k < maxColumnWidth[j*2+1]; k++ )
           {
-            dcount = sprintf( buffer+scount, "%s", ValueBuffer );
+            dcount = sprintf( buffer+scount, " " );
             if( dcount < 0 )
             {
               MTX_ERROR_MSG( "sprintf returned failure." );
@@ -6832,7 +6928,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
         fprintf( out, ValueBuffer );
       }
 #ifndef _CRT_SECURE_NO_DEPRECATE
-      if( sprintf_s( format, 16, "%%.%dg", precision, delimiter ) < 0 )
+      if( sprintf_s( format, 16, "%%.%dg", precision ) < 0 )
       {
         MTX_ERROR_MSG( "sprintf_s returned failure." );
         return FALSE;
@@ -6843,7 +6939,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
         return FALSE;
       }
 #else
-      if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
+      if( sprintf( format, "%%.%dg", precision ) < 0 )
       {
         MTX_ERROR_MSG( "sprintf returned failure." );
         return FALSE;
@@ -6950,7 +7046,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
       {
         // output only the real component
 #ifndef _CRT_SECURE_NO_DEPRECATE
-        if( sprintf_s( format, 16, "%%.%dg%c", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -6961,7 +7057,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
           return FALSE;
         }
 #else
-        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -6978,7 +7074,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
       {
         // output both
 #ifndef _CRT_SECURE_NO_DEPRECATE
-        if( sprintf_s( format, 16, "%%.%dg%c", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -6989,7 +7085,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
           return FALSE;
         }
 #else
-        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7003,7 +7099,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
         fprintf( out, ValueBuffer );
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
-        if( sprintf_s( format, 16, "%%+.%dgi%c", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%+.%dgi", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -7014,7 +7110,7 @@ BOOL MTX_PrintDelimited( const MTX *M, const char *path, const unsigned precisio
           return FALSE;
         }
 #else
-        if( sprintf( format, "%%+.%dgi%c", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%+.%dgi", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7110,7 +7206,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       }
       if( endOfBuffer )
         break;
-      if( sprintf_s( format, 16, "%%.%dg", precision, delimiter ) < 0 )
+      if( sprintf_s( format, 16, "%%.%dg", precision ) < 0 )
       {
         MTX_ERROR_MSG( "sprintf_s returned failure." );
         return FALSE;
@@ -7229,7 +7325,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       if( M->cplx[j][i].im == 0 )
       {
         // output only the real component
-        if( sprintf_s( format, 16, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -7252,7 +7348,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       else
       {
         // output both
-        if( sprintf_s( format, 16, "%%.%dg", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -7272,7 +7368,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
         }
         scount += dcount;
 
-        if( sprintf_s( format, 16, "%%+.%dgi", precision, delimiter ) < 0 )
+        if( sprintf_s( format, 16, "%%+.%dgi", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf_s returned failure." );
           return FALSE;
@@ -7337,7 +7433,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       }
       if( endOfBuffer )
         break;
-      if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
+      if( sprintf( format, "%%.%dg", precision ) < 0 )
       {
         MTX_ERROR_MSG( "sprintf returned failure." );
         return FALSE;
@@ -7456,7 +7552,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       if( M->cplx[j][i].im == 0 )
       {
         // output only the real component
-        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7479,7 +7575,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
       else
       {
         // output both
-        if( sprintf( format, "%%.%dg%c", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%.%dg", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -7499,7 +7595,7 @@ BOOL MTX_PrintDelimited_ToBuffer( const MTX *M, char *buffer, const unsigned max
         }
         scount += dcount;
 
-        if( sprintf( format, "%%+.%dgi%c", precision, delimiter ) < 0 )
+        if( sprintf( format, "%%+.%dgi", precision ) < 0 )
         {
           MTX_ERROR_MSG( "sprintf returned failure." );
           return FALSE;
@@ -8213,7 +8309,7 @@ BOOL MTX_Abs( MTX *M )
 BOOL MTX_acos( MTX *M )
 {
   unsigned i = 0;
-  unsigned j = 0;
+  unsigned j = 0;  
   double maxabs = 0;
 
   if( MTX_isNull( M ) )
@@ -8646,7 +8742,7 @@ BOOL MTX_Eye( MTX *M, const unsigned nrows, const unsigned ncols )
 BOOL MTX_Ln( MTX *M )
 {
   unsigned i = 0;
-  unsigned j = 0;
+  unsigned j = 0;  
   double re;
   double im;  
   MTX lnmag;
@@ -8716,7 +8812,7 @@ BOOL MTX_Ln( MTX *M )
 BOOL MTX_Pow( const MTX *src, MTX *dst, const double power_re, const double power_im )
 {
   unsigned i = 0;
-  unsigned j = 0;
+  unsigned j = 0;  
 
   if( MTX_isNull( src ) )
   {
@@ -11649,7 +11745,7 @@ BOOL MTX_ColumnRange( const MTX *M, const unsigned col, double *re, double *im )
   double re_maxval = 0;
   double im_maxval = 0;
   double re_minval = 0;
-  double im_minval = 0;
+  double im_minval = 0;  
 
   if( MTX_isNull( M ) )
   {
@@ -13299,7 +13395,6 @@ BOOL MTX_SortDescending( MTX *M )
 
 BOOL MTX_SortColumnAscending( MTX *M, const unsigned col )
 {
-
   if( MTX_isNull( M ) )
   {
     MTX_ERROR_MSG( "NULL Matrix" );
@@ -13454,7 +13549,7 @@ BOOL MTX_SortColumnIndexed( MTX *M, const unsigned col, MTX *index )
       if( k >= 0 )
       {
         colM.data[0][k] = -1.0; // don't allow the reverse indexing
-        if( i == k )
+        if( i == (unsigned)k )
           continue;
 
         re = M->cplx[col][i].re;
@@ -13519,7 +13614,7 @@ BOOL MTX_SortByColumn( MTX *M, const unsigned col )
       k = (int)(indexvec.data[0][i]);
       if( k >= 0 )
       {
-        if( i == k )
+        if( i == (unsigned)k )
           continue;
 
         if( M->isReal )
@@ -13673,7 +13768,7 @@ BOOL MTX_SaveCompressed( const MTX *M, const char *path )
   unsigned char prevByte = 0;
   unsigned char currByte = 0;
   unsigned n = 0; // number of times the byte repeats (256 is upper bound!!)
-  unsigned p = 0; // counter
+  unsigned p = 0; // counter  
 
   unsigned char* bytes[MTX_NK];
   unsigned char* compressed[MTX_NK];
@@ -13827,7 +13922,7 @@ BOOL MTX_SaveCompressed( const MTX *M, const char *path )
   // write the matrix comment if any
   if( commentLength )
   {
-    count = fwrite( &fileHeader.comment, sizeof(char), commentLength, fid );
+    count = fwrite( fileHeader.comment, sizeof(char), commentLength, fid );
     if( count != commentLength )
     {
       MTX_ERROR_MSG( "fwrite returned an error condition." );
@@ -14021,7 +14116,7 @@ BOOL MTX_SaveCompressed( const MTX *M, const char *path )
           {
             compressed[k][p] = prevByte;
             p++;
-            compressed[k][p] = n-1;
+            compressed[k][p] = (unsigned char)(n-1);
             p++;
             n = 0;
 
@@ -14039,7 +14134,7 @@ BOOL MTX_SaveCompressed( const MTX *M, const char *path )
           {
             compressed[k][p] = prevByte;
             p++;
-            compressed[k][p] = n-1;
+            compressed[k][p] = (unsigned char)(n-1);
             p++;
             n = 0;
           }
@@ -14052,7 +14147,7 @@ BOOL MTX_SaveCompressed( const MTX *M, const char *path )
       {
         compressed[k][p] = prevByte;
         p++;
-        compressed[k][p] = n-1;
+        compressed[k][p] = (unsigned char)(n-1);
         p++;
         n = 0;
       }
@@ -14396,7 +14491,7 @@ BOOL MTX_ReadCompressed( MTX *M, const char *path )
 
   MTX MtxRe; // For complex input, the real component column vector.
   MTX MtxIm; // For complex input, the imag component column vector.
-  MTX *MtxCol; // A pointer to either MtxRe or MtxIm.
+  MTX *MtxCol = NULL; // A pointer to either MtxRe or MtxIm.
 
   // initializing
   MTX_Init( &MtxRe );
@@ -14528,13 +14623,20 @@ BOOL MTX_ReadCompressed( MTX *M, const char *path )
   }
 
   // get the matrix comment if any
-  commentLength = fileHeader.headersize - MTX_ID_SIZE - 5*sizeof(unsigned);
+  commentLength = fileHeader.headersize - MTX_ID_SIZE - 6*sizeof(unsigned);
   if( commentLength != 0 && commentLength < MTX_MAX_COMMENT_LENGTH )
   {
     fileHeader.comment = (char*)malloc( sizeof(char)*(commentLength+1) );
     if( fileHeader.comment == NULL )
     {
       MTX_ERROR_MSG( "malloc returned NULL." );
+      fclose(fid);
+      return FALSE;
+    }
+    count = fread( fileHeader.comment, sizeof(unsigned char), commentLength, fid );
+    if( count != commentLength )
+    {
+      MTX_ERROR_MSG( "fread returned an error condition." );
       fclose(fid);
       return FALSE;
     }
@@ -14565,7 +14667,7 @@ BOOL MTX_ReadCompressed( MTX *M, const char *path )
   }
 
   // resize the matrix if needed
-  if( M->nrows != fileHeader.nrows || M->ncols != fileHeader.ncols || (M->isReal != fileHeader.isReal) )
+  if( M->nrows != fileHeader.nrows || M->ncols != fileHeader.ncols || (M->isReal != (int)fileHeader.isReal) )
   {
     if( !MTX_Resize( M, fileHeader.nrows, fileHeader.ncols, fileHeader.isReal ) )
     {
@@ -14761,7 +14863,7 @@ BOOL MTX_ReadCompressed( MTX *M, const char *path )
             p++;
 
             nRepeatBytes = n+nRepeatBytes;
-            for( ; n < nRepeatBytes; n++ )
+            for( n; n < nRepeatBytes; n++ )
             {
               if( n >= M->nrows )
               {
@@ -15143,7 +15245,7 @@ BOOL MTX_LoadAndSaveQuick( const char* infilepath )
   unsigned p;
   unsigned length;
   char outfilepath[1024];
-  char *strptr;
+  char *strptr = NULL;
 
   MTX M;
   MTX_Init( &M );
@@ -16784,7 +16886,7 @@ BOOL MTX_static_Factorize( BOOL *isFullRank, const unsigned n, unsigned* index, 
   double r = 0.0;
   double rmax = 0.0;
   double xmult = 0.0;
-
+  
   stComplex cplx_xmult = {0.0,0.0};
   stComplex cplx = {0.0,0.0};
 
@@ -18681,8 +18783,6 @@ BOOL MTX_static_fft(
   // Use the inplace KISS FFT function.
   return MTX_static_fft_inplace( dst, isFwd );
 
-
-  return TRUE;
 }
 
 
@@ -19169,7 +19269,7 @@ BOOL MTX_cosh( MTX *src )
 }
 
 BOOL MTX_acosh( MTX *src )
-{
+{  
   // acosh = ln( z + sqrt(z+1)*sqrt(z-1) )
   MTX sXp1;
   MTX sXm1;
@@ -19413,7 +19513,7 @@ BOOL MTX_tanh( MTX *src )
 
 
 BOOL MTX_atanh( MTX *src )
-{
+{  
   // atanh = 0.5*( ln((1+z)/(1-z)) )
   MTX oneMx; // 1-x
 
@@ -21089,11 +21189,134 @@ BOOL MTX_erf_Inplace( MTX* src )
 }
 
 
+
+BOOL MTX_erfinv_Inplace( MTX* src )
+{
+  unsigned j = 0;
+  MTX vec;  
+  unsigned i = 0;
+  double u = 0;
+  double z = 0;
+  double y = 0;
+  // Coefficients
+  const double a[4] = {0.886226899, -1.645349621,  0.914624893, -0.140543331};
+  const double b[4] = {-2.118377725,  1.442710462, -0.329097515,  0.012229801};
+  const double c[4] = {-1.970840454, -1.624906493,  3.429567803,  1.641345311};
+  const double d[2] = {3.543889200,  1.637067800};      
+  const double y0 = 0.7;
+  const double two_over_rootpi = 2.0/sqrt(PI);
+  MTX vecX;
+  MTX vecErfX;  
+  MTX_Init(&vecX);    
+  MTX_Init(&vecErfX);   
+  MTX_Init(&vec);  
+  
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src matrix is NULL" );
+    return FALSE;
+  }
+
+  if( !src->isReal )
+  {
+    MTX_ERROR_MSG( "complex erfinv is not supported." );
+    return FALSE;
+  }
+
+  for( j = 0; j < src->ncols; j++ )
+  {
+    if( !MTX_CopyColumn( src, j, &vec ) )
+    {
+      MTX_Free(&vec);
+      MTX_ERROR_MSG( "MTX_CopyColumn returned FALSE." );
+      return FALSE;
+    }  
+
+    if( !MTX_Resize( &vecX, vec.nrows, 1, TRUE ) )
+    {
+      MTX_Free(&vec);
+      MTX_Free(&vecX);
+      MTX_Free(&vecErfX);      
+      MTX_ERROR_MSG( "MTX_Resize returned FALSE." );
+      return FALSE;
+    }  
+    for( i = 0; i < vec.nrows; i++ )
+    {
+      y = vec.data[0][i];
+      if( fabs( y ) < y0 )
+      {
+        z = y*y;
+        vecX.data[0][i] = y * ( ( (a[3]*z+a[2])*z + a[1] )*z + a[0] );
+        vecX.data[0][i] /= ( ( (b[3]*z+b[2])*z + b[1] )*z + b[0] )*z + 1.0;          
+      }
+      else if( y0 < y && y < 1.0 )
+      {
+        z = sqrt( -log( (1.0 - y)/2.0 ) );
+        vecX.data[0][i] = (( c[3]*z + c[2] )*z + c[1])*z + c[0];
+        vecX.data[0][i] /= (d[1]*z + d[0])*z + 1.0;
+      }
+      else if( -y0 > y && y > -1.0 )
+      {
+        z = sqrt( -log( (1.0 + y)/2.0 ) );
+        vecX.data[0][i] = -(((c[3]*z + c[2])*z + c[1])*z + c[0]);
+        vecX.data[0][i] /= ((d[1]*z+d[0])*z+1.0);
+      }
+    }
+
+    if( !MTX_Copy( &vecX, &vecErfX ) )
+    {
+      MTX_Free(&vec);
+      MTX_Free(&vecX);
+      MTX_Free(&vecErfX);      
+      MTX_ERROR_MSG( "MTX_Copy returned FALSE." );
+      return FALSE;
+    }  
+
+    if( !MTX_erf_Inplace( &vecErfX ) )
+    {
+      MTX_Free(&vec);
+      MTX_Free(&vecX);
+      MTX_Free(&vecErfX);
+      MTX_ERROR_MSG( "MTX_erf_Inplace returned FALSE." );
+      return FALSE;
+    } 
+
+    for( i = 0; i < vec.nrows; i++ )
+    {
+      u = (vecErfX.data[0][i] - vec.data[0][i]) / (two_over_rootpi * exp( -(vecX.data[0][i]*vecX.data[0][i]) ));
+   
+      // Halley's step
+      vecX.data[0][i] -= u / (1.0 + vecX.data[0][i]*u);
+
+      y = vec.data[0][i];
+      z = vecX.data[0][i];
+      
+      if( y == -1 )
+        z = MTX_NEG_INF;
+      else if( y == 1 )
+        z = MTX_POS_INF;
+      else if( fabs(y) > 1 )
+        z = MTX_NAN;
+      else if( y == MTX_NAN )
+        z = MTX_NAN;
+
+      src->data[j][i] = z;
+    }
+  }
+
+  MTX_Free(&vec);
+  MTX_Free(&vecX);
+  MTX_Free(&vecErfX);
+
+  return TRUE;
+}
+
+
 BOOL MTX_erfc_Inplace( MTX* src )
 {
   unsigned j = 0;
   unsigned i = 0;
-  double x = 0;  
+  double x = 0;    
   
   if( MTX_isNull( src ) )
   {
@@ -21137,6 +21360,35 @@ BOOL MTX_erfc_Inplace( MTX* src )
 
   return TRUE;
 }
+
+
+BOOL MTX_erfcinv_Inplace( MTX* src )
+{
+  MTX copySrc;
+  MTX_Init( &copySrc );
+
+  if( !MTX_OneMinus( src, &copySrc ) )
+  {
+    MTX_Free( &copySrc );
+    MTX_ERROR_MSG( "MTX_OneMinus returned FALSE." );
+    return FALSE;
+  }
+  if( !MTX_Copy( &copySrc, src ) )
+  {
+    MTX_Free( &copySrc );
+    MTX_ERROR_MSG( "MTX_Copy returned FALSE." );
+    return FALSE;
+  }
+  if( !MTX_erfinv_Inplace( src ) )
+  {
+    MTX_Free( &copySrc );
+    MTX_ERROR_MSG( "MTX_erfinv_Inplace returned FALSE." );
+    return FALSE;
+  }
+  MTX_Free( &copySrc );
+  return TRUE;
+}
+
 
 
 
@@ -21366,20 +21618,365 @@ double MTX_static_gammln(double xx)
 
 
 
-/*
-   for( i = 0; i < src->ncols; i++ )
-    {  
-      z = fabs(src->data[j][i]);
-      
-      t = 1.0 / (1.0 + 0.5*z);
+BOOL MTX_find_column_values_equalto( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector corresponding to the equal values in the source matrix.  
+  const double re,       //!< The real part of the equal to value.
+  const double im,       //!< The imaginary part of the equal to value.
+  const double tolerance //!< The search tolerance. e.g. 1.0e-12.  
+  )
+{
+  unsigned i = 0;
+  unsigned k = 0;
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src is a NULL matrix" );
+    return FALSE;
+  }
+  if( indexVector == NULL )
+  {
+    MTX_ERROR_MSG( "indexVector is NULL" );
+    return FALSE;
+  }
+  if( col >= src->ncols )
+  {
+    MTX_ERROR_MSG( "Invalid column specified." );
+    return FALSE;
+  }
+  if( tolerance < 0 )
+  {
+    MTX_ERROR_MSG( "invalid tolerance (-ve)" );
+    return FALSE;
+  }
 
-      ans = t * exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+
-            t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+
-            t*(-0.82215223+t*0.17087277)))))))));
+  if( src->isReal && fabs(im) > tolerance )
+  {
+    MTX_Free( indexVector );
+    // there are no equal values.
+    return TRUE;
+  }
 
-      if( x >= 0.0 )
-        src->data[j][i] = ans;
-      else
-        src->data[j][i] = 2.0 - ans;
+  if( !MTX_Malloc( indexVector, src->nrows, 1, TRUE ) )
+  {
+    MTX_ERROR_MSG( "MTX_Malloc returned FALSE." );
+    return FALSE;
+  }
+
+  if( fabs(im) < tolerance && src->isReal )
+  {
+    // searching real only
+    for( i = 0; i < src->nrows; i++ )
+    {
+      if( fabs( src->data[col][i] - re ) <= tolerance )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
     }
-    */
+  }
+  else
+  {
+    // the src matrix must be complex
+    if( src->isReal )
+    {
+      MTX_ERROR_MSG("Unexpected real matrix");
+      return FALSE;
+    }
+
+    for( i = 0; i < src->nrows; i++ )
+    {
+      if( fabs( src->cplx[col][i].re - re ) <= tolerance &&
+        fabs( src->cplx[col][i].im - im ) <= tolerance )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+
+  if( k == 0 )
+  {
+    if( !MTX_Free( indexVector ) )
+    {
+      MTX_ERROR_MSG("MTX_Free returned FALSE.");
+      return FALSE;
+    }
+  }
+  else
+  {
+    if( !MTX_Redim( indexVector, k, 1 ) )
+    {
+      MTX_ERROR_MSG("Unexpected real matrix.");
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+BOOL MTX_find_column_values_not_equalto( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector corresponding to the values that are not equal in the source matrix.  
+  const double re,       //!< The real part of the value.
+  const double im,       //!< The imaginary part of the value.
+  const double tolerance //!< The search tolerance. e.g. 1.0e-12.  
+  )
+{
+  unsigned i = 0;
+  unsigned k = 0;
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src is a NULL matrix" );
+    return FALSE;
+  }
+  if( indexVector == NULL )
+  {
+    MTX_ERROR_MSG( "indexVector is NULL" );
+    return FALSE;
+  }
+  if( col >= src->ncols )
+  {
+    MTX_ERROR_MSG( "Invalid column specified." );
+    return FALSE;
+  }
+  if( tolerance < 0 )
+  {
+    MTX_ERROR_MSG( "invalid tolerance (-ve)" );
+    return FALSE;
+  }
+
+  if( src->isReal && fabs(im) > tolerance )
+  {
+    // All values are not equal
+    if( !MTX_Colon( indexVector, 0, 1, src->nrows - 1 ) )
+    {
+      MTX_ERROR_MSG( "invalid tolerance (-ve)" );
+      return FALSE;
+    }    
+    return TRUE;
+  }
+
+  if( !MTX_Malloc( indexVector, src->nrows, 1, TRUE ) )
+  {
+    MTX_ERROR_MSG( "MTX_Malloc returned FALSE." );
+    return FALSE;
+  }
+
+  if( fabs(im) <= tolerance && src->isReal )
+  {
+    // searching real only
+    for( i = 0; i < src->nrows; i++ )
+    {
+      if( fabs( src->data[col][i] - re ) > tolerance )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+  else
+  {
+    // the src matrix must be complex
+    if( src->isReal )
+    {
+      MTX_ERROR_MSG("Unexpected real matrix");
+      return FALSE;
+    }
+
+    for( i = 0; i < src->nrows; i++ )
+    {
+      if( fabs( src->cplx[col][i].re - re ) > tolerance ||
+        fabs( src->cplx[col][i].im - im ) > tolerance )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+
+  if( k == 0 )
+  {
+    if( !MTX_Free( indexVector ) )
+    {
+      MTX_ERROR_MSG("MTX_Free returned FALSE.");
+      return FALSE;
+    }
+  }
+  else
+  {
+    if( !MTX_Redim( indexVector, k, 1 ) )
+    {
+      MTX_ERROR_MSG("Unexpected real matrix.");
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+
+BOOL MTX_find_column_values_less_than( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector of the values desired.  
+  const double value     //!< The comparison value.   
+  )
+{
+  unsigned i = 0;
+  unsigned k = 0;
+  double re = 0;
+  double im = 0;
+  double magv = 0;
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src is a NULL matrix" );
+    return FALSE;
+  }
+  if( indexVector == NULL )
+  {
+    MTX_ERROR_MSG( "indexVector is NULL" );
+    return FALSE;
+  }
+  if( col >= src->ncols )
+  {
+    MTX_ERROR_MSG( "Invalid column specified." );
+    return FALSE;
+  }
+
+  if( !MTX_Malloc( indexVector, src->nrows, 1, TRUE ) )
+  {
+    MTX_ERROR_MSG( "MTX_Malloc returned FALSE." );
+    return FALSE;
+  }
+
+
+  if( src->isReal )
+  { 
+    for( i = 0; i < src->nrows; i++ )
+    {
+      if( src->data[col][i] < value )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+  else
+  {
+    for( i = 0; i < src->nrows; i++ )
+    {
+      re = src->cplx[col][i].re;
+      im = src->cplx[col][i].im;
+      magv = sqrt( re*re + im*im );    
+      if( magv < value )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+
+  if( k == 0 )
+  {
+    if( !MTX_Free( indexVector ) )
+    {
+      MTX_ERROR_MSG("MTX_Free returned FALSE.");
+      return FALSE;
+    }
+  }
+  else
+  {
+    if( !MTX_Redim( indexVector, k, 1 ) )
+    {
+      MTX_ERROR_MSG("Unexpected real matrix.");
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+
+BOOL MTX_find_column_values_more_than( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector of the values desired.  
+  const double value     //!< The comparison value.   
+  )
+{
+  unsigned i = 0;
+  unsigned k = 0;
+  double re = 0;
+  double im = 0;
+  double magv = 0;
+  if( MTX_isNull( src ) )
+  {
+    MTX_ERROR_MSG( "src is a NULL matrix" );
+    return FALSE;
+  }
+  if( indexVector == NULL )
+  {
+    MTX_ERROR_MSG( "indexVector is NULL" );
+    return FALSE;
+  }
+  if( col >= src->ncols )
+  {
+    MTX_ERROR_MSG( "Invalid column specified." );
+    return FALSE;
+  }
+
+  if( !MTX_Malloc( indexVector, src->nrows, 1, TRUE ) )
+  {
+    MTX_ERROR_MSG( "MTX_Malloc returned FALSE." );
+    return FALSE;
+  }
+
+
+  if( src->isReal )
+  { 
+    for( i = 0; i < src->nrows; i++ )
+    {
+      if( src->data[col][i] > value )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+  else
+  {
+    for( i = 0; i < src->nrows; i++ )
+    {
+      re = src->cplx[col][i].re;
+      im = src->cplx[col][i].im;
+      magv = sqrt( re*re + im*im );    
+      if( magv > value )
+      {
+        indexVector->data[0][k] = i;
+        k++;
+      }
+    }
+  }
+
+  if( k == 0 )
+  {
+    if( !MTX_Free( indexVector ) )
+    {
+      MTX_ERROR_MSG("MTX_Free returned FALSE.");
+      return FALSE;
+    }
+  }
+  else
+  {
+    if( !MTX_Redim( indexVector, k, 1 ) )
+    {
+      MTX_ERROR_MSG("Unexpected real matrix.");
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+

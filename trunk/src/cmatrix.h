@@ -2,14 +2,14 @@
 \file     cmatrix.h
 \brief    'c' functions for vector and matrix operations.
 \author   Glenn D. MacGougan (GDM)
-\date     2008-05-07
-\version  0.05 Beta
+\date     2009-01-08
+\version  0.07 Beta
 
 \b Version \b Information \n
 This is the open source version (BSD license). The Professional Version
 is avaiable via http://www.zenautics.com. The Professional Version
-is highly optimized using SIMD for INTEL processors and includes 
-optimization for multi-code processors.
+is highly optimized using SIMD and includes optimization for multi-core 
+processors.
 
 \b License \b Information \n
 Copyright (c) 2008, Glenn D. MacGougan, Zenautics Technologies Inc. \n
@@ -52,6 +52,8 @@ inevitable. Please report bugs and suggested fixes to glenn @ zenautics.com.\n
 extern "C" 
 {
 #endif
+
+typedef int BOOL;
 
 #ifndef FALSE
 #define FALSE (0)
@@ -396,6 +398,11 @@ BOOL MTX_FlipRow( MTX *M, const unsigned row );
 /// \return TRUE if successful, FALSE otherwise.
 BOOL MTX_Identity( MTX *dst );
 
+/// \brief  Force this square matrix to be symmetric 
+///         by M = (M + T.())/2 using minimal operations.
+///
+/// \return TRUE if successful, FALSE otherwise.
+BOOL MTX_ForceSymmetric( MTX *M );
 
 /// \brief  Transpose the matrix src into the matris dst.
 ///
@@ -1856,13 +1863,94 @@ erf(x) = 2/sqrt(pi) * [integral from 0 to x of]( e^(-t^2) )dt.
 */
 BOOL MTX_erf_Inplace( MTX* src );
 
+
 /** 
-\brief  Compute the complementary error function (erfc) for all values in the matrix inplace. \n
+\brief  Compute the inverse error function (erfinv) for all values in the matrix inplace. \n
+y = erf(x), compute x given y, i.e. x = erfinv(y).
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_erfinv_Inplace( MTX* src );
+
+/** 
+\brief  Compute the complementary error function (erfc) for all values in the matrix inplace.
 erfc(x) = 1 - erf(x) =  2/sqrt(pi) * [integral from x to inf of]( e^(-t^2) )dt.
 
 \return TRUE if successful, FALSE otherwise. 
 */
 BOOL MTX_erfc_Inplace( MTX* src );
+
+
+/** 
+\brief  Compute the inverse complementary error function (erfcinv) for all values in the matrix inplace.
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_erfcinv_Inplace( MTX* src );
+
+
+/**
+\brief  Set the index vector so that it contains are the indices of values that are equal
+        to the value specified with the given tolerance from the column of the src matrix.
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_find_column_values_equalto( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector corresponding to the equal values in the source matrix.  
+  const double re,       //!< The real part of the equal to value.
+  const double im,       //!< The imaginary part of the equal to value.
+  const double tolerance //!< The search tolerance. e.g. 1.0e-12.
+  );
+
+/**
+\brief  Set the index vector so that it contains are the indices of values that are not equal
+        to the value specified with the given tolerance from the column of the src matrix.
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_find_column_values_not_equalto( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector corresponding to the values that are not equal in the source matrix.  
+  const double re,       //!< The real part of the value.
+  const double im,       //!< The imaginary part of the value.
+  const double tolerance //!< The search tolerance. e.g. 1.0e-12.
+  );
+
+
+/**
+\brief  Set the index vector so that it contains are the indices of values that are less then
+        to the value specified with the given tolerance from the column of the src matrix.
+        Complex matrix values are compared to the value by magnitude (i.e. sqrt(re*re+im*im)).
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_find_column_values_less_than( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector of the values desired.  
+  const double value     //!< The comparison value.   
+  );
+
+
+/**
+\brief  Set the index vector so that it contains are the indices of values that are more then
+        to the value specified with the given tolerance from the column of the src matrix.
+        Complex matrix values are compared to the value by magnitude (i.e. sqrt(re*re+im*im)).
+
+\return TRUE if successful, FALSE otherwise. 
+*/
+BOOL MTX_find_column_values_more_than( 
+  const MTX* src,        //!< The source matrix to search.
+  const unsigned col,    //!< The zero-based index of the column which is searched.
+  MTX* indexVector,      //!< This is the index vector of the values desired.  
+  const double value     //!< The comparison value.   
+  );
+
+
+
 
 
 #ifdef __cplusplus
