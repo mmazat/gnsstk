@@ -2,8 +2,8 @@
 \file     Matrix.h
 \brief    The Zenautics Matrix Class
 \author   Glenn D. MacGougan (GDM)
-\date     2008-05-07
-\version  0.05 Beta
+\date     2009-02-08
+\version  0.07 Beta
 
 \b Version \b Information \n
 This is the open source version (BSD license). The Professional Version
@@ -504,6 +504,8 @@ namespace Zenautics
     \code
     A = "[1,2,3; 4,5,6; 7,8,9]";
     if( !A.Print( "data.txt", 14 ) ) // Print the matrix to data.txt
+      return false;
+    if( !A.Print( "data.txt", 14, true ) ) // Print the matrix again to data.txt
       return false;
     \endcode   
 
@@ -1198,6 +1200,23 @@ namespace Zenautics
   public: // Inplace Operations
 
     /**
+    \brief  Force this square matrix to be symmetric by M = (M + T.())/2 using minimal operations.
+    
+    \code
+    Matrix A;
+    A = "[1 2 3; 2.1 5 5.9; 2.9 6.1 7]";
+    bool result;
+    result = A.PrintStdout();            // Print Matrix A.
+    result = A.Inplace_ForceSymmetric(); // Make A symmetric.
+    cout << endl;
+    result = A.PrintStdout();         // Print Matrix A. A = [1 2.05 2.95; 2.05    5    6; 2.95    6    7]
+    \endcode              
+    
+    \return true if successful, false otherwise.    
+    */
+    bool Inplace_ForceSymmetric();
+
+    /**
     \brief  Transpose the matrix as an inplace operation.
     
     \code
@@ -1293,6 +1312,25 @@ namespace Zenautics
     bool Inplace_erf();
 
     /**
+    \brief  Compute the inverse error function (erfinv) for all values in the matrix inplace. \n
+    y = erf(x) = 2/sqrt(pi) * [integral from 0 to x of]( e^(-t^2) )dt.
+    x = erfinv(y);
+
+    \code
+    Matrix A;
+    A = "[-0.842700792949715 -0.520499877813047  0 0.520499877813047 0.842700792949715]"; 
+    bool result;
+    result = A.PrintStdout();     // Print Matrix A. A = "[-0.842700792949715 -0.520499877813047  0 0.520499877813047 0.842700792949715]"; 
+    result = A.Inplace_erfinv();  // Make A = erfinv(A).
+    cout << endl;
+    result = A.PrintStdout();     // Print Matrix A. A = "[-1 -0.5 0 0.5 1]";
+    \endcode    
+           
+    \return true if successful, false otherwise.    
+    */
+    bool Inplace_erfinv();
+
+    /**
     \brief  Compute the complementary error function (erfc) for all values in the matrix inplace. \n
     erfc(x) = 1 - erf(x) =  2/sqrt(pi) * [integral from x to inf of]( e^(-t^2) )dt.    
 
@@ -1309,6 +1347,25 @@ namespace Zenautics
     \return true if successful, false otherwise.    
     */
     bool Inplace_erfc();
+
+    /**
+    \brief  Compute the complementary error function (erfc) for all values in the matrix inplace. \n
+    erfc(x) = 1 - erf(x) =  2/sqrt(pi) * [integral from x to inf of]( e^(-t^2) )dt.    
+
+    \code
+    Matrix A;
+    A = "[1.84270079294971  1.52049987781305   1 0.479500122186953 0.157299207050285]";
+    bool result;
+    result = A.PrintStdout();     // Print Matrix A. A = "[1.84270079294971  1.52049987781305   1 0.479500122186953 0.157299207050285]";
+    result = A.Inplace_erfcinv(); // Make A = erfcinv(A).
+    cout << endl;
+    result = A.PrintStdout();     // Print Matrix A. A = "[-1 -0.5 0 0.5 1]";
+    \endcode    
+           
+    \return true if successful, false otherwise.    
+    */
+    bool Inplace_erfcinv();
+
 
     /**
     \brief  Rounds the matrix elements of X to the nearest integers towards zero.
@@ -3172,33 +3229,93 @@ namespace Zenautics
 
 
     /**
-    /// \brief  Set the elements of the matrix specified by the index vectors. 
-    /// The index vectors must be nx1 and preferably not complex.
-    ///
-    /// \return true if successful, false otherwise.
+    \brief  Set the elements of the matrix specified by the index vectors. 
+            The index vectors must be nx1 and preferably not complex.
+    
+    \return true if successful, false otherwise.
     */
     bool SetIndexedValues( Matrix& RowIndex, Matrix& ColIndex, Matrix& SourceData );
 
+    /*
+    \brief  Set the index vector so that it contains are the indices of values that are equal
+            to the real value specified with the given tolerance from the column of this matrix.            
+
+    \return true if successful, false otherwise.
+    */
+    bool Find_EqualTo( 
+      Matrix &IndexVector,            //!< Store the indexed values in this vector (nx1)
+      const unsigned col,             //!< Search this column (zero-based index).
+      const double value,             //!< Search for this value.
+      const double tolerance = 1e-12  //!< Search with this tolerance.
+      );     
 
     /*
-    /// \brief  
+    \brief  Set the index vector so that it contains are the indices of values that are equal
+            to the complex value specified with the given tolerance from the column of this matrix.
+
+    \return true if successful, false otherwise.
     */
-    //bool Find_EqualTo( const double value, const double tolerance = 1e-12, Matrix &IndexMatrix );     
+    bool Find_EqualTo( 
+      Matrix &IndexVector,    //!< Store the indexed values in this vector (nx1)
+      const unsigned col,     //!< Search this column (zero-based index).
+      const double value_re,  //!< Search for this complex value (re+i*im).
+      const double value_im,  //!< Search for this complex value (re+i*im).
+      const double tolerance  //!< Search with this tolerance. No default parameter so there is no function overload confusion.
+      );     
+
+
+    /*
+    \brief  Set the index vector so that it contains are the indices of values that are not equal
+            to the real value specified with the given tolerance from the column of this matrix.            
+
+    \return true if successful, false otherwise.
+    */
+    bool Find_NotEqualTo( 
+      Matrix &IndexVector,            //!< Store the indexed values in this vector (nx1)
+      const unsigned col,             //!< Search this column (zero-based index).
+      const double value,             //!< Search for this value.
+      const double tolerance = 1e-12  //!< Search with this tolerance.
+      );     
+
+    /*
+    \brief  Set the index vector so that it contains are the indices of values that are not equal
+            to the complex value specified with the given tolerance from the column of this matrix.
+
+    \return true if successful, false otherwise.
+    */
+    bool Find_NotEqualTo( 
+      Matrix &IndexVector,    //!< Store the indexed values in this vector (nx1)
+      const unsigned col,     //!< Search this column (zero-based index).
+      const double value_re,  //!< Search for this complex value (re+i*im).
+      const double value_im,  //!< Search for this complex value (re+i*im).
+      const double tolerance  //!< Search with this tolerance. No default parameter so there is no function overload confusion.
+      );
 
     /**
-    /// get the indices that are not this value
+    \brief  Set the index vector so that it contains are the indices of values that are less than
+            the value specified from the column specified of this matrix. Complex values are compared
+            in terms of magnitude (i.e. sqrt(re*re + im*im)).
+
+    \return true if successful, false otherwise.    
     */
-    //bool Find_NotEqualTo( const double value, const double tolerance = 1e-12 );     
+    bool Find_LessThan( 
+      Matrix &IndexVector, //!< Store the indexed values in this vector (nx1)
+      const unsigned col,  //!< Search this column (zero-based index).
+      const double value   //!< Search for this value.
+      );
    
     /**
-    /// get the indices less than this value
+    \brief  Set the index vector so that it contains are the indices of values that are more than
+            the value specified from the column specified of this matrix. Complex values are compared
+            in terms of magnitude (i.e. sqrt(re*re + im*im)).
+
+    \return true if successful, false otherwise.    
     */
-    //bool Find_LessThan( const double value );     
-   
-    /**
-    /// get the indices less than this value
-    */
-    //bool Find_MoreThan( const double value );     
+    bool Find_MoreThan( 
+      Matrix &IndexVector, //!< Store the indexed values in this vector (nx1)
+      const unsigned col,  //!< Search this column (zero-based index).
+      const double value   //!< Search for this value.
+      );
     
 
     
