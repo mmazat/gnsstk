@@ -2,8 +2,8 @@
 \file     Matrix.h
 \brief    The Zenautics Matrix Class
 \author   Glenn D. MacGougan (GDM)
-\date     2008-05-07
-\version  0.05 Beta
+\date     2009-02-08
+\version  0.07 Beta
 
 \b Version \b Information \n
 This is the open source version (BSD license). The Professional Version
@@ -55,7 +55,6 @@ necessary. \n
 #include <stdlib.h>
 #include <string.h>
 
-#include "basictypes.h"
 #include "Matrix.h"
 #include "cmatrix.h"
 
@@ -1212,6 +1211,19 @@ namespace Zenautics
     }
   }
 
+  bool Matrix::Inplace_ForceSymmetric()
+  {
+    if( MTX_ForceSymmetric( &m_Matrix ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_ForceSymmetric returned false." );
+      return false;
+    }
+  }
+
   bool Matrix::Inplace_Transpose()
   {
     if( MTX_TransposeInplace( &m_Matrix ) )
@@ -1273,6 +1285,19 @@ namespace Zenautics
     else 
     {
       MTX_ERROR_MSG( "MTX_erf_Inplace returned false." );
+      return false;
+    }
+  }
+
+  bool Matrix::Inplace_erfinv()
+  {
+    if( MTX_erfinv_Inplace( &m_Matrix ) )
+    {
+      return true;
+    }
+    else 
+    {
+      MTX_ERROR_MSG( "MTX_erfinv_Inplace returned false." );
       return false;
     }
   }
@@ -3235,6 +3260,118 @@ namespace Zenautics
       }
     }    
   }
+
+  bool Matrix::Find_EqualTo( 
+    Matrix &IndexVector,    //!< Store the indexed values in this vector (nx1)
+    const unsigned col,     //!< Search this column (zero-based index).
+    const double value,     //!< Search for this value.
+    const double tolerance  //!< Search with this tolerance.
+    )
+  {
+    if( MTX_find_column_values_equalto( &m_Matrix, col, &IndexVector.m_Matrix, value, 0.0, tolerance ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_find_column_values_equalto() returned FALSE." );
+      return false;
+    }
+  }
+
+  bool Matrix::Find_EqualTo( 
+    Matrix &IndexVector,            //!< Store the indexed values in this vector (nx1)
+    const unsigned col,             //!< Search this column (zero-based index).
+    const double value_re,          //!< Search for this complex value (re+i*im).
+    const double value_im,          //!< Search for this complex value (re+i*im).
+    const double tolerance          //!< Search with this tolerance.
+    )
+  {
+    if( MTX_find_column_values_equalto( &m_Matrix, col, &IndexVector.m_Matrix, value_re, value_im, tolerance ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_find_column_values_equalto() returned FALSE." );
+      return false;
+    }
+  }
+
+
+  bool Matrix::Find_NotEqualTo( 
+    Matrix &IndexVector,    //!< Store the indexed values in this vector (nx1)
+    const unsigned col,     //!< Search this column (zero-based index).
+    const double value,     //!< Search for this value.
+    const double tolerance  //!< Search with this tolerance.
+    )
+  {
+    if( MTX_find_column_values_not_equalto( &m_Matrix, col, &IndexVector.m_Matrix, value, 0.0, tolerance ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_find_column_values_not_equalto() returned FALSE." );
+      return false;
+    }
+  }
+
+  bool Matrix::Find_NotEqualTo( 
+    Matrix &IndexVector,    //!< Store the indexed values in this vector (nx1)
+    const unsigned col,     //!< Search this column (zero-based index).
+    const double value_re,  //!< Search for this complex value (re+i*im).
+    const double value_im,  //!< Search for this complex value (re+i*im).
+    const double tolerance  //!< Search with this tolerance. No default parameter so there is no function overload confusion.
+    )
+  {
+    if( MTX_find_column_values_not_equalto( &m_Matrix, col, &IndexVector.m_Matrix, value_re, value_im, tolerance ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_find_column_values_not_equalto() returned FALSE." );
+      return false;
+    }
+  }
+
+
+  bool Matrix::Find_LessThan( 
+    Matrix &IndexVector, //!< Store the indexed values in this vector (nx1)
+    const unsigned col,  //!< Search this column (zero-based index).
+    const double value   //!< Search for this value.
+    )   
+  {
+    if( MTX_find_column_values_less_than( &m_Matrix, col, &IndexVector.m_Matrix, value ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_find_column_values_less_than() returned FALSE." );
+      return false;
+    }
+  }
+
+
+  bool Matrix::Find_MoreThan( 
+    Matrix &IndexVector, //!< Store the indexed values in this vector (nx1)
+    const unsigned col,  //!< Search this column (zero-based index).
+    const double value   //!< Search for this value.
+    )   
+  {
+    if( MTX_find_column_values_more_than( &m_Matrix, col, &IndexVector.m_Matrix, value ) )
+    {
+      return true;
+    }
+    else
+    {
+      MTX_ERROR_MSG( "MTX_find_column_values_more_than() returned FALSE." );
+      return false;
+    }
+  }
+
 
 
   std::string Matrix::GetMatrixComment()
