@@ -38,10 +38,20 @@ SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <memory.h>
 #include "gnss_error.h"
 #include "novatel.h"
 #include "gps.h"
 #include "constants.h"
+
+/// \brief  Compares the received OEM3 message checksum to a calculated value.
+/// \return  TRUE if successful (isChecksumValid = TRUE or FALSE), FALSE otherwise, i.e. error condition.
+static BOOL NOVATELOEM3_CompareChecksums( 
+  unsigned char *message,         //!< A pointer to the message buffer beginning with the sync bytes.
+  const unsigned messageLength,   //!< The length of the message [bytes].
+  const unsigned messageChecksum, //!< The received crc in the message.
+  BOOL *isChecksumValid           //!< Is the Checksum valid? Does it match the calculated value.
+  );
 
 /// \brief   Calculate the CRC32 for a Novatel binary message. crcData != NULL.
 /// \return  The CRC32 value.
@@ -108,6 +118,41 @@ static const unsigned NOVATEL_CRC32_Table[256] =
   0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL, 0x2d02ef8dL
 };
 
+// static 
+BOOL NOVATELOEM3_CompareChecksums( 
+  unsigned char *message,         //!< A pointer to the message buffer beginning with the sync bytes.
+  const unsigned messageLength,   //!< The length of the message [bytes].
+  const unsigned messageChecksum, //!< The received crc in the message.
+  BOOL *isChecksumValid           //!< Is the Checksum valid? Does it match the calculated value.
+  )
+{
+  unsigned char tmpc;
+  unsigned char xorVal = 0;
+  unsigned i = 0;
+  
+  if( messageLength < 12 )
+    return FALSE;
+
+  tmpc = message[3];
+  message[3] = 0; // Set the checksum in the message to 0 as it was originally calculated.
+
+  // Compute the checksum
+  for( xorVal = 0; i < messageLength; i++ )
+  {
+    xorVal ^= message[i];
+  }
+  
+  // Reset the original data to its true state.
+  message[3] = tmpc;
+
+  if( xorVal == messageChecksum )
+    *isChecksumValid = TRUE;
+  else
+    *isChecksumValid = FALSE;
+
+  return TRUE;
+}                                
+
 
 // static 
 unsigned NOVATEL_CalculateCRC32(                                   
@@ -151,6 +196,1058 @@ BOOL NOVATEL_CheckCRC32(
 
   return TRUE;
 }
+
+
+
+
+BOOL NOVATELOEM3_FindNextMessageInFile(
+  FILE *fid,                       //!< A file pointer to an open file (input).
+  unsigned char *message,          //!< A message buffer in which to place the message found (input/output).
+  const unsigned maxMessageLength, //!< The maximum size of the message buffer (input).
+  BOOL *wasEndOfFileReached,       //!< Has the end of the file been reached (output).
+  BOOL *wasMessageFound,           //!< Was a valid message found (output).
+  unsigned *filePosition,          //!< The file position for the start of the message found (output).
+  unsigned *messageLength,         //!< The length of the entire message found and stored in the message buffer (output).
+  unsigned *messageID,             //!< The message ID of the message found.
+  unsigned *numberBadChecksums     //!< The number of bad checksum values found. (checksum fails or mistaken messages).
+  )
+{
+  unsigned i = 0;                  // The index into the message buffer.
+  unsigned char sync[3];           // 0xAA 0x44 0x11
+  unsigned byteCount = 0;          // This indicates the number of bytes read by fread().
+  unsigned dataLength = 0;         // The length of the data portion of the message. i.e. Entire message length - 12.
+  unsigned msgLength = 0;          // The entire length of the current message being examined.
+  int fpos = 0;                    // A signed file position (needs sign for error checking).
+  unsigned char rx_checksum = 0;   // The received message checksum value.
+  BOOL startSearch = TRUE;         // A boolean to indicate that the sync search is occurring.
+  BOOL isChecksumValid = FALSE;    // A boolean to indicate if the checksum is valid. Does it match the calculated value.
+
+  const unsigned char headerLength = 12;  // The length of the message header [bytes]. Fixed at 12.
+  
+  // Initialize the output parameters.
+  *wasEndOfFileReached = FALSE;
+  *wasMessageFound     = 0;
+  *filePosition        = 0;
+  *messageLength       = 0;
+  *messageID           = 0;
+  *numberBadChecksums  = 0;
+
+  // Ensure that the file pointer is valid.
+  if( fid == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
+    return FALSE;
+  }
+
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
+    return FALSE;
+  }
+
+  // Ensure that the maximum message length is appropriate.
+  if( maxMessageLength < 12 ) // at least the header.
+  {
+    GNSS_ERROR_MSG( "if( maxMessageLength < 12 )" );
+    return FALSE;
+  }
+  
+  // Ensure that the file pointer is not at the end of the file.
+  if( feof(fid) )
+  {
+    *wasEndOfFileReached = TRUE;
+    return TRUE;
+  }
+  
+  while( !(*wasEndOfFileReached) && !(*wasMessageFound) )
+  {
+    if( startSearch )
+    {
+      // Get the first two sync bytes.
+      sync[0] = (unsigned char)fgetc( fid );
+      if( feof( fid ) )
+      {
+        *wasEndOfFileReached = TRUE;
+        return TRUE;
+      }
+
+      sync[1] = (unsigned char)fgetc( fid );
+      if( feof( fid ) )
+      {
+        *wasEndOfFileReached = TRUE;
+        return TRUE;
+      }  
+
+      startSearch = FALSE;
+    }
+
+    // Get the last sync byte.
+    sync[2] = (unsigned char)fgetc( fid );
+    if( feof( fid ) )
+    {
+      *wasEndOfFileReached = TRUE;
+      return TRUE;
+    }
+
+    // Check the full sync.
+    if( sync[0] == 0xAA && sync[1] == 0x44 && sync[2] == 0x11 )
+    {
+      // Found a potential message.
+      i = 0;
+      message[i] = sync[0]; i++;
+      message[i] = sync[1]; i++;
+      message[i] = sync[2]; i++;
+
+      // Determine the file position of the start of the message
+      fpos = ftell(fid);
+      if( fpos < 2 ) // check less than 2 because we are at least 3 bytes into the file
+      {
+        GNSS_ERROR_MSG( "if( fpos < 2 )" );
+        return FALSE;
+      }
+      *filePosition = fpos - 3; // The start of the message sync.
+
+      // Get the rest of the header.
+      rx_checksum = (unsigned char)fgetc( fid );
+      if( feof( fid ) )
+      {
+        *wasEndOfFileReached = TRUE;
+        return TRUE;
+      }
+      message[i] = rx_checksum;
+      i++;
+
+      // Get the message ID.
+      byteCount = (int)fread( &(message[i]), sizeof(unsigned char), 4, fid );
+      if( byteCount != 4 )
+      {
+        *wasEndOfFileReached = TRUE;
+        return TRUE;
+      }
+      // Determine the 4 byte message ID.
+      *messageID  = message[i];       i++;
+      *messageID |= message[i] << 8;  i++;
+      *messageID |= message[i] << 16; i++;
+      *messageID |= message[i] << 24; i++;     
+
+      // Get the message byte count.
+      byteCount = (int)fread( &(message[i]), sizeof(unsigned char), 4, fid );
+      if( byteCount != 4 )
+      {
+        *wasEndOfFileReached = TRUE;
+        return TRUE;
+      }
+      // Determine the 4 byte message byte count (includes the header bytes).
+      msgLength  = message[i];       i++;
+      msgLength |= message[i] << 8;  i++;
+      msgLength |= message[i] << 16; i++;
+      msgLength |= message[i] << 24; i++;
+
+      // determine the length of the data only.
+      dataLength = msgLength - headerLength;
+
+      // Check that the entire message length will fit in the message buffer.
+      if( msgLength > maxMessageLength )
+      {
+        // Perhaps the data length was bad.
+        // Start searching again after the sync that was found.
+        // Set the file position to the last of the three sync bytes.
+        if( fseek( fid, fpos, SEEK_SET ) != 0 )
+        {
+          // The seek failed.
+          GNSS_ERROR_MSG( "fseek failed." );            
+          return FALSE;
+        }
+        startSearch = TRUE;
+        continue;
+      }
+
+      // Get the data part of the message.
+      // advance i to the start of the data
+      i = headerLength;
+      byteCount = (int)fread( &(message[i]), sizeof(unsigned char), dataLength, fid );
+      if( byteCount != dataLength )
+      {
+        // Either a message has an invalid length or a message was cut off.
+        // We do not want to read over any valid message so start the search again.
+        // Start searching again after the sync that was found.
+        // Set the file position to the last of the three sync bytes.
+        if( fseek( fid, fpos, SEEK_SET ) != 0 )
+        {
+          // The seek failed.
+          GNSS_ERROR_MSG( "fseek failed." );
+          return FALSE;
+        }
+        startSearch = TRUE;
+        continue;
+      }
+      i += dataLength;
+
+      // Compare the received message checksum with the calculated checksum.
+      if( !NOVATELOEM3_CompareChecksums( message, msgLength, rx_checksum, &isChecksumValid ) )
+      {
+        GNSS_ERROR_MSG( "NOVATELOEM3_CompareChecksums returned FALSE." );
+        return FALSE;
+      }
+      if( !isChecksumValid )
+      {
+        *numberBadChecksums += 1;
+
+        // Start searching again after the sync that was found.
+        // Set the file position to the last of the three sync bytes.
+        if( fseek( fid, fpos, SEEK_SET ) != 0 )
+        {
+          // The seek failed.
+          GNSS_ERROR_MSG( "fseek failed." );          
+          return FALSE;
+        }
+        startSearch = TRUE;
+        continue;
+      }
+
+      *wasMessageFound = TRUE;
+      *messageLength = msgLength;
+      break;
+    }
+    else
+    {
+      // Shift the first two bytes of the sync.
+      sync[0] = sync[1];
+      sync[1] = sync[2];
+    }
+  }
+  return TRUE;
+}
+
+
+
+BOOL NOVATELOEM3_FindNextMessageInBuffer(
+  unsigned char *buffer,           //!< A pointer to a buffer containing input data.
+  const unsigned bufferLength,     //!< The length of the valid data contained in the buffer.
+  unsigned char *message,          //!< A message buffer in which to place the message found (input/output).
+  const unsigned maxMessageLength, //!< The maximum size of the message buffer (input).
+  BOOL *wasEndOfBufferReached,     //!< Has the end of the buffer been reached (output).
+  BOOL *wasMessageFound,           //!< Was a valid message found (output).
+  unsigned *startPosition,         //!< The index into the buffer for the start of the message found (output).
+  unsigned *messageLength,         //!< The length of the entire message found and stored in the message buffer (output).
+  unsigned *messageID,             //!< The message ID of the message found.
+  unsigned *numberBadChecksums     //!< The number of bad checksum values found. (checksum fails or mistaken messages).
+  )
+{
+  unsigned bi = 0;                 // The index into the input buffer.
+  unsigned i = 0;                  // The index into the message buffer.
+  unsigned char sync[3];           // 0xAA 0x44 0x11
+  unsigned dataLength = 0;         // The length of the data portion of the message. i.e. Entire message length - 12.
+  unsigned msgLength = 0;          // The entire length of the current message being examined.
+  int bpos = 0;                    // An index into the buffer (needs sign for error checking).
+  unsigned char rx_checksum = 0;   // The received message checksum value.
+  BOOL startSearch = TRUE;         // A boolean to indicate that the sync search is occurring.
+  BOOL isChecksumValid = FALSE;    // A boolean to indicate if the checksum is valid. Does it match the calculated value.
+
+  const unsigned char headerLength = 12;  // The length of the message header [bytes]. Fixed at 12.
+  
+  // Initialize the output parameters.
+  *wasEndOfBufferReached = FALSE;
+  *wasMessageFound     = 0;
+  *startPosition       = 0;
+  *messageLength       = 0;
+  *messageID           = 0;
+  *numberBadChecksums  = 0;
+
+  // Ensure that the buffer pointer is valid.
+  if( buffer == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
+    return FALSE;
+  }
+
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
+    return FALSE;
+  }
+
+  // Ensure that the maximum message length is appropriate.
+  if( maxMessageLength < 12 ) // at least the header.
+  {
+    GNSS_ERROR_MSG( "if( maxMessageLength < 12 )" );
+    return FALSE;
+  }
+  
+  while( !(*wasEndOfBufferReached) && !(*wasMessageFound) )
+  {
+    if( startSearch )
+    {
+      // Get the first two sync bytes.
+      sync[0] = buffer[bi]; bi++;
+      if( bi >= bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+
+      sync[1] = buffer[bi]; bi++;
+      if( bi >= bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }  
+      startSearch = FALSE;
+    }
+
+    // Get the last sync byte.
+    sync[2] = buffer[bi]; bi++;
+    if( bi >= bufferLength )
+    {
+      *wasEndOfBufferReached = TRUE;
+      return TRUE;
+    }
+
+    // Check the full sync.
+    if( sync[0] == 0xAA && sync[1] == 0x44 && sync[2] == 0x11 )
+    {
+      // Found a potential message.
+      i = 0;
+      message[i] = sync[0]; i++;
+      message[i] = sync[1]; i++;
+      message[i] = sync[2]; i++;
+
+      // Determine the file position of the start of the message
+      bpos = bi;
+      *startPosition = bi - 3; // The start of the message sync.
+
+      // Get the rest of the header.
+      rx_checksum = buffer[bi]; bi++;
+      if( bi > bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      message[i] = rx_checksum;
+      i++;
+
+      // Get the message ID.
+      if( bi+4 > bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      memcpy( &message[i], buffer+bi, 4 ); 
+      bi+=4;
+      
+      // Determine the 4 byte message ID.
+      *messageID  = message[i];       i++;
+      *messageID |= message[i] << 8;  i++;
+      *messageID |= message[i] << 16; i++;
+      *messageID |= message[i] << 24; i++;     
+
+      // Get the message byte count.
+      if( bi+4 > bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      memcpy( &message[i], buffer+bi, 4 ); 
+      bi+=4;
+      
+      // Determine the 4 byte message byte count (includes the header bytes).
+      msgLength  = message[i];       i++;
+      msgLength |= message[i] << 8;  i++;
+      msgLength |= message[i] << 16; i++;
+      msgLength |= message[i] << 24; i++;
+
+      // determine the length of the data only.
+      dataLength = msgLength - headerLength;
+
+      // Check that the entire message length will fit in the message buffer.
+      if( msgLength > maxMessageLength )
+      {
+        // Perhaps the data length was bad.
+        // Start searching again after the sync that was found.
+        // Set the buffer index to the last of the three sync bytes.
+        bi = bpos;        
+        startSearch = TRUE;
+        continue;
+      }
+
+      // Get the data part of the message.
+      // advance i to the start of the data
+      i = headerLength;
+
+      if( bi+dataLength > bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      memcpy( &message[i], buffer+bi, dataLength );       
+      bi+=dataLength;
+      i += dataLength;
+
+      // Compare the received message checksum with the calculated checksum.
+      if( !NOVATELOEM3_CompareChecksums( message, msgLength, rx_checksum, &isChecksumValid ) )
+      {
+        GNSS_ERROR_MSG( "NOVATELOEM3_CompareChecksums returned FALSE." );
+        return FALSE;
+      }
+      if( !isChecksumValid )
+      {
+        *numberBadChecksums += 1;
+
+        // Start searching again after the sync that was found.
+        // Set the file position to the last of the three sync bytes.
+        bi = bpos;
+        startSearch = TRUE;
+        continue;
+      }
+
+      *wasMessageFound = TRUE;
+      *messageLength = msgLength;
+      break;
+    }
+    else
+    {
+      // Shift the first two bytes of the sync.
+      sync[0] = sync[1];
+      sync[1] = sync[2];
+    }
+  }
+  return TRUE;
+}
+
+
+BOOL NOVATELOEM3_DecodeREPB(
+  const unsigned char *message,           //!< The message buffer containing a complete RANGEB message (input).
+  const unsigned messageLength,           //!< The length of the entire message (input).
+  unsigned       *prn,                    //!< The satellite PRN number.
+  unsigned       *tow,                    //!< The time of week in subframe1, the time of the leading bit edge of subframe 2 [s]
+  unsigned short *iodc,                   //!< 10 bit issue of data (clock), 8 LSB bits will match the iode                  []    
+  unsigned char  *iode,                   //!< 8 bit  issue of data (ephemeris)                                              []
+  unsigned       *toe,                    //!< reference time ephemeris (0-604800)                                           [s]
+  unsigned       *toc,                    //!< reference time (clock)   (0-604800)                                           [s]      
+  unsigned short *week,                   //!< 10 bit gps week 0-1023 (user must account for week rollover )                 [week]    
+  unsigned char  *health,                 //!< 6 bit health parameter, 0 if healthy, unhealth othersize                      [0=healthy]    
+  unsigned char  *alert_flag,             //!< 1 = URA may be worse than indicated                                           [0,1]
+  unsigned char  *anti_spoof,             //!< anti-spoof flag from 0=off, 1=on                                              [0,1]    
+  unsigned char  *code_on_L2,             //!< 0=reserved, 1=P code on L2, 2=C/A on L2                                       [0,1,2]
+  unsigned char  *ura,                    //!< User Range Accuracy lookup code, 0 is excellent, 15 is use at own risk        [0-15], see p. 83 GPSICD200C
+  unsigned char  *L2_P_data_flag,         //!< flag indicating if P is on L2 1=true                                          [0,1]
+  unsigned char  *fit_interval_flag,      //!< fit interval flag (four hour interval or longer) 0=4 fours, 1=greater         [0,1]
+  unsigned short *age_of_data_offset,     //!< age of data offset                                                            [s]
+  double *tgd,     //!< group delay                                                                   [s]
+  double *af2,     //!< polynomial clock correction coefficient (rate of clock drift)                 [s/s^2]
+  double *af1,     //!< polynomial clock correction coefficient (clock drift)                         [s/s]
+  double *af0,     //!< polynomial clock correction coefficient (clock bias)                          [s]    
+  double *m0,      //!< mean anomaly at reference time                                                [rad]
+  double *delta_n, //!< mean motion difference from computed value                                    [rad/s]
+  double *ecc,     //!< eccentricity                                                                  []
+  double *sqrta,   //!< square root of the semi-major axis                                            [m^(1/2)]
+  double *omega0,  //!< longitude of ascending node of orbit plane at weekly epoch                    [rad]
+  double *i0,      //!< inclination angle at reference time                                           [rad]
+  double *w,       //!< argument of perigee                                                           [rad]
+  double *omegadot,//!< rate of right ascension                                                       [rad/s]
+  double *idot,    //!< rate of inclination angle                                                     [rad/s]
+  double *cuc,     //!< amplitude of the cosine harmonic correction term to the argument of latitude  [rad]
+  double *cus,     //!< amplitude of the sine harmonic correction term to the argument of latitude    [rad]
+  double *crc,     //!< amplitude of the cosine harmonic correction term to the orbit radius          [m]
+  double *crs,     //!< amplitude of the sine harmonic correction term to the orbit radius            [m]
+  double *cic,     //!< amplitude of the cosine harmonic correction term to the angle of inclination  [rad]
+  double *cis      //!< amplitude of the sine harmonic correction term to the angle of inclination    [rad]
+  )
+{
+  unsigned msgLength = 0;
+  unsigned index = 0; // An index in to the message.
+  BOOL result = FALSE;
+
+  // Perform sanity checks.
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
+    return FALSE;
+  }
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x11 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );    
+    return FALSE;
+  }
+
+  // Check that the length of the message is correct.
+  if( messageLength != 108 )
+  {
+    GNSS_ERROR_MSG( "if( messageLength != 108 )" );
+    return FALSE;
+  }
+
+  // Determine the 4 byte message byte count (includes the header bytes).
+  index = 8;
+  msgLength  = message[index];       index++;
+  msgLength |= message[index] << 8;  index++;
+  msgLength |= message[index] << 16; index++;
+  msgLength |= message[index] << 24; index++;
+
+  // Check that the length of the message is correct.
+  if( messageLength != msgLength )
+  {
+    GNSS_ERROR_MSG( "if( messageLength != msgLength )" );
+    return FALSE;
+  }  
+
+  index = 12; // after the header
+  *prn  = message[index];       index++;
+  *prn |= message[index] << 8;  index++;
+  *prn |= message[index] << 16; index++;
+  *prn |= message[index] << 24; index++;
+  
+  result = GPS_DecodeRawGPSEphemeris(
+    &message[index],
+    &message[index+30],
+    &message[index+60],    
+    (unsigned short)(*prn),
+    tow,
+    iodc,
+    iode,  
+    toe,   
+    toc,   
+    week,  
+    health,
+    alert_flag,
+    anti_spoof,
+    code_on_L2,
+    ura,       
+    L2_P_data_flag,
+    fit_interval_flag,
+    age_of_data_offset, 
+    tgd,                
+    af2,                
+    af1,                
+    af0,                
+    m0,                
+    delta_n,           
+    ecc,               
+    sqrta,             
+    omega0,            
+    i0,                
+    w,                 
+    omegadot,          
+    idot,              
+    cuc,               
+    cus,               
+    crc,               
+    crs,               
+    cic,               
+    cis                
+    );
+  if( !result )
+  {
+    GNSS_ERROR_MSG( "GPS_DecodeRawGPSEphemeris returned FALSE." );    
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+BOOL NOVATELOEM3_DecodeRGEB(
+  const unsigned char *message,            //!< The message buffer containing a complete RGEB message (input).
+  const unsigned messageLength,            //!< The length of the entire message (input).
+  NOVATELOEM3_structObservationHeader* obsHeader, //!< A pointer to a user provided struct with obs header info (output).
+  NOVATELOEM3_structObservation* obsArray, //!< A pointer to a user provided array of NOVATELOEM3_structObservation (output).
+  const unsigned char maxNrObs,            //!< The maximum number of elements in the array provided (input).
+  unsigned *nrObs                          //!< The number of valid elements set in the array (output).
+  )
+{
+  unsigned nrObsInMessage = 0;
+  unsigned messageID = 0;
+  unsigned utmp = 0;
+  unsigned i = 0;
+  unsigned j = 0;
+  unsigned obsIndex = 0;
+  unsigned char dbytes[8];        // Enough bytes to store a double.
+  unsigned char fbytes[4];        // Enough bytes to store a float.
+  double *dptr;                   // A pointer to a double.
+  float *fptr;                    // A pointer to a float.
+  
+  NOVATELOEM3_bitfieldTrackingStatus* ptrTrackStatus = NULL;
+  NOVATELOEM3_bitfieldSelfTestStatus* ptrSelfStatus = NULL;
+  
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );    
+    return FALSE;
+  }
+  if( messageLength < 12+20 ) // message header + rgeb header
+  {
+    GNSS_ERROR_MSG( "if( messageLength < 12+20 )" );
+    return FALSE;
+  }
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x11 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );    
+    return FALSE;
+  }
+
+  if( obsHeader == NULL )
+  {
+    GNSS_ERROR_MSG( "if( obsHeader == NULL )" );    
+    return FALSE;
+  }
+  if( obsArray == NULL )
+  {
+    GNSS_ERROR_MSG( "if( obsArray == NULL )" );    
+    return FALSE;
+  }
+  if( nrObs == NULL )
+  {
+    GNSS_ERROR_MSG( "if( nrObs == NULL )" );    
+    return FALSE;
+  }
+
+  memset( obsHeader, 0, sizeof(NOVATELOEM3_structObservationHeader) );
+  
+  i = 4; 
+  messageID  = message[i];       i++;
+  messageID |= message[i] << 8;  i++;
+  messageID |= message[i] << 16; i++;
+  messageID |= message[i] << 24; i++;     
+
+  if( messageID != NOVATELOEM3_RGEB )
+  {
+    GNSS_ERROR_MSG( "if( messageID != NOVATELOEM3_RGEB )" );    
+    return FALSE;
+  }
+
+  i = 24;
+  nrObsInMessage  = message[i];       i++;
+  nrObsInMessage |= message[i] << 8;  i++;
+  nrObsInMessage |= message[i] << 16; i++;
+  nrObsInMessage |= message[i] << 24; i++;
+
+  if( nrObsInMessage > maxNrObs )
+  {
+    GNSS_ERROR_MSG( "if( nrObsInMessage > maxNrObs )" );    
+    return FALSE;
+  }
+
+  obsHeader->nrObs = nrObsInMessage;
+
+  i = 12;
+  obsHeader->week = message[i];        i++;
+  obsHeader->week |= message[i] << 8;  i++;
+  obsHeader->week |= message[i] << 16; i++;
+  obsHeader->week |= message[i] << 24; i++;
+
+  // Get the time of week.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  obsHeader->tow = *dptr; 
+
+  // Get the receiver self test status.
+  i = 28;
+  utmp = message[i];        i++;
+  utmp |= message[i] << 8;  i++;
+  utmp |= message[i] << 16; i++;
+  utmp |= message[i] << 24; i++;
+
+  ptrSelfStatus = (NOVATELOEM3_bitfieldSelfTestStatus*)&utmp;
+  obsHeader->status = *ptrSelfStatus;
+
+  for( obsIndex = 0; obsIndex < nrObsInMessage; obsIndex++ )
+  {
+    utmp = message[i];        i++;
+    utmp |= message[i] << 8;  i++;
+    utmp |= message[i] << 16; i++;
+    utmp |= message[i] << 24; i++;
+    
+    // Get the prn
+    obsArray[obsIndex].prn = utmp;
+
+    // Get the psr
+    for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+    dptr = (double*)&dbytes;
+    obsArray[obsIndex].psr = *dptr; 
+
+    // Get the psr std
+    for( j=0; j<4; j++ ){ fbytes[j] = message[i]; i++; }
+    fptr = (float*)&fbytes;
+    obsArray[obsIndex].psrstd = *fptr; 
+
+    // Get the adr
+    for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+    dptr = (double*)&dbytes;
+    obsArray[obsIndex].adr = *dptr; 
+
+    // Get the adr std
+    for( j=0; j<4; j++ ){ fbytes[j] = message[i]; i++; }
+    fptr = (float*)&fbytes;
+    obsArray[obsIndex].adrstd = *fptr; 
+
+    // Get the Doppler
+    for( j=0; j<4; j++ ){ fbytes[j] = message[i]; i++; }
+    fptr = (float*)&fbytes;
+    obsArray[obsIndex].doppler = *fptr; 
+
+    // Get the CNo
+    for( j=0; j<4; j++ ){ fbytes[j] = message[i]; i++; }
+    fptr = (float*)&fbytes;
+    obsArray[obsIndex].cno = *fptr; 
+
+    // Get the locktime
+    for( j=0; j<4; j++ ){ fbytes[j] = message[i]; i++; }
+    fptr = (float*)&fbytes;
+    obsArray[obsIndex].locktime = *fptr; 
+
+    // Get the tracking status
+    utmp = message[i];        i++;
+    utmp |= message[i] << 8;  i++;
+    utmp |= message[i] << 16; i++;
+    utmp |= message[i] << 24; i++;
+
+    ptrTrackStatus = (NOVATELOEM3_bitfieldTrackingStatus*)&utmp;
+    obsArray[obsIndex].status = *ptrTrackStatus;
+  }
+
+  *nrObs = obsHeader->nrObs;
+
+  return TRUE;
+}
+
+
+BOOL NOVATELOEM3_DecodePOSB(
+  const unsigned char *message,  //!< The message buffer containing a complete RGEB message (input).
+  const unsigned messageLength,  //!< The length of the entire message (input).
+  unsigned short* gps_week,      //!< The GPS week number [0-1023], user must account for week rollover (output).
+  double* gps_tow,               //!< The GPS time of week [0-604800) (output).
+  double* latitude_degs,         //!< The latitude [deg] (output).
+  double* longitude_degs,        //!< The longitude [deg] (output).
+  double* height_msl,            //!< The height (with respect to mean sea level) [m] (output).
+  double* undulation,            //!< The geoidal undulation [m] (output).
+  unsigned int* datum_id,        //!< The datum id (61 is WGS84) (output).
+  double* lat_std,               //!< The estimated solution precision (1-sigma) (output).
+  double* lon_std,               //!< The estimated solution precision (1-sigma) (output).
+  double* hgt_std,               //!< The estimated solution precision (1-sigma) (output).
+  NOVATELOEM3_enumSolutionStatus* status //!< The solution status indicator.
+  )
+{
+  unsigned messageID = 0;
+  unsigned utmp = 0;
+  unsigned i = 0;
+  unsigned j = 0;
+  unsigned obsIndex = 0;
+  unsigned char dbytes[8];        // Enough bytes to store a double.
+  double *dptr;                   // A pointer to a double.
+  
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );    
+    return FALSE;
+  }
+  if( messageLength != 88 ) 
+  {
+    GNSS_ERROR_MSG( "if( messageLength != 88 )" );
+    return FALSE;
+  }
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x11 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );    
+    return FALSE;
+  }
+
+  if( gps_week == NULL ||
+    gps_tow == NULL ||
+    latitude_degs == NULL ||
+    longitude_degs == NULL ||
+    height_msl == NULL ||
+    undulation == NULL ||
+    datum_id == NULL ||
+    lat_std == NULL ||
+    lon_std == NULL ||
+    hgt_std == NULL ||
+    status == NULL )
+  {
+    GNSS_ERROR_MSG( "NULL parameter not allowed." );    
+    return FALSE;
+  }
+
+  i = 4; 
+  messageID  = message[i];       i++;
+  messageID |= message[i] << 8;  i++;
+  messageID |= message[i] << 16; i++;
+  messageID |= message[i] << 24; i++;     
+
+  if( messageID != NOVATELOEM3_POSB )
+  {
+    GNSS_ERROR_MSG( "if( messageID != NOVATELOEM3_POSB )" );    
+    return FALSE;
+  }
+
+  i = 12;
+  // Get the week number
+  utmp  = message[i];       i++;
+  utmp |= message[i] << 8;  i++;
+  utmp |= message[i] << 16; i++;
+  utmp |= message[i] << 24; i++;     
+   
+  *gps_week = (unsigned short)utmp;
+
+  // Get the time of week.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *gps_tow = *dptr; 
+
+  // Get the latitude.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *latitude_degs = *dptr; 
+
+  // Get the longitude.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *longitude_degs = *dptr; 
+
+  // Get the height.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *height_msl = *dptr; 
+
+  // Get the undulation.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *undulation = *dptr; 
+
+  // Get the datum id.
+  utmp  = message[i];       i++;
+  utmp |= message[i] << 8;  i++;
+  utmp |= message[i] << 16; i++;
+  utmp |= message[i] << 24; i++;     
+  *datum_id = utmp;
+
+  // Get the latitude std.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *lat_std = *dptr; 
+
+  // Get the longitude std.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *lon_std = *dptr; 
+
+  // Get the height std.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *hgt_std = *dptr; 
+
+  // Get the solution status.
+  utmp  = message[i];       i++;
+  utmp |= message[i] << 8;  i++;
+  utmp |= message[i] << 16; i++;
+  utmp |= message[i] << 24; i++;    
+  *status = (NOVATELOEM3_enumSolutionStatus)utmp;
+
+  return TRUE;
+}
+
+
+BOOL NOVATELOEM3_DecodeTM1B(
+  const unsigned char *message,  //!< The message buffer containing a complete RGEB message (input).
+  const unsigned messageLength,  //!< The length of the entire message (input).
+  unsigned short* gps_week,      //!< The GPS week number [0-1023], user must account for week rollover (output).
+  double* gps_tow,               //!< The GPS time of week [0-604800) (output).
+  double* clk_offset,            //!< The receiver clock offset [s] (output). GPSTime = receiver_time - offset.
+  double* clk_offset_std,        //!< The estimated precision of the clock offset [s] at 1 sigma (output).
+  double* utc_offset,            //!< The estimated difference between UTC and GPS time. UTC_time = GPS_time + utc_offset. (e.g. -13.0) (output).
+  BOOL* is_clk_stabilized        //!< A boolean to indicate if the clock is stable (output).
+  )
+{
+  unsigned messageID = 0;
+  unsigned utmp = 0;
+  unsigned i = 0;
+  unsigned j = 0;
+  unsigned obsIndex = 0;
+  unsigned char dbytes[8];        // Enough bytes to store a double.
+  double *dptr;                   // A pointer to a double.
+  
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );    
+    return FALSE;
+  }
+  if( messageLength != 52 ) 
+  {
+    GNSS_ERROR_MSG( "if( messageLength != 52 )" );
+    return FALSE;
+  }
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x11 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );    
+    return FALSE;
+  }
+
+  if( gps_week == NULL ||
+    gps_tow == NULL ||
+    clk_offset == NULL ||
+    clk_offset_std == NULL ||
+    utc_offset == NULL ||
+    is_clk_stabilized == NULL ) 
+  {
+    GNSS_ERROR_MSG( "NULL parameter not allowed." );    
+    return FALSE;
+  }
+
+  i = 4; 
+  messageID  = message[i];       i++;
+  messageID |= message[i] << 8;  i++;
+  messageID |= message[i] << 16; i++;
+  messageID |= message[i] << 24; i++;     
+
+  if( messageID != NOVATELOEM3_TM1B )
+  {
+    GNSS_ERROR_MSG( "if( messageID != NOVATELOEM3_TM1B )" );    
+    return FALSE;
+  }
+
+  i = 12;
+  // Get the week number
+  utmp  = message[i];       i++;
+  utmp |= message[i] << 8;  i++;
+  utmp |= message[i] << 16; i++;
+  utmp |= message[i] << 24; i++;     
+   
+  *gps_week = (unsigned short)utmp;
+
+  // Get the time of week.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *gps_tow = *dptr; 
+
+  // Get the clock offset.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *clk_offset = *dptr; 
+
+  // Get the clock offset std.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *clk_offset_std = *dptr; 
+
+  // Get the utc offset.
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *utc_offset = *dptr; 
+
+  // Get the clock status.
+  utmp  = message[i];       i++;
+  utmp |= message[i] << 8;  i++;
+  utmp |= message[i] << 16; i++;
+  utmp |= message[i] << 24; i++;     
+
+  if( utmp == 0 )
+  {
+    *is_clk_stabilized = TRUE;
+  }
+  else
+  {
+    *is_clk_stabilized = FALSE;
+  }
+
+  return TRUE;
+}
+
+
+
+BOOL NOVATELOEM3_DecodeIONB(
+  const unsigned char *message, //!< The message buffer containing a complete RGEB message (input).
+  const unsigned messageLength, //!< The length of the entire message (input).
+  double *alpha0,     //!< coefficients of a cubic equation representing the amplitude of the vertical delay [s] (output).
+  double *alpha1,     //!< coefficients of a cubic equation representing the amplitude of the vertical delay [s/semi-circle] (output).
+  double *alpha2,     //!< coefficients of a cubic equation representing the amplitude of the vertical delay [s/semi-circle^2] (output).
+  double *alpha3,     //!< coefficients of a cubic equation representing the amplitude of the vertical delay [s/semi-circle^3] (output).
+  double *beta0,      //!< coefficients of a cubic equation representing the period of the model [s] (output).
+  double *beta1,      //!< coefficients of a cubic equation representing the period of the model [s/semi-circle] (output).
+  double *beta2,      //!< coefficients of a cubic equation representing the period of the model [s/semi-circle^2] (output).
+  double *beta3       //!< coefficients of a cubic equation representing the period of the model [s/semi-circle^3] (output).
+  )
+{
+  unsigned messageID = 0;
+  unsigned i = 0;
+  unsigned j = 0;
+  unsigned char dbytes[8]; // Enough bytes to store a double.
+  double *dptr = NULL;     // A pointer to a double.
+
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )");
+    return FALSE;
+  }
+  if( messageLength != 76 )
+  {
+    GNSS_ERROR_MSG( "if( messageLength != 76 )");
+    return FALSE;
+  }
+
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x11 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );    
+    return FALSE;
+  }
+  if( alpha0 == NULL ||
+      alpha1 == NULL || 
+      alpha2 == NULL || 
+      alpha3 == NULL || 
+      beta0  == NULL || 
+      beta1  == NULL || 
+      beta2  == NULL ||
+      beta3  == NULL )      
+  {
+    GNSS_ERROR_MSG( "NULL alpha or beta parameters.");
+    return FALSE;
+  }
+  
+  i = 4; 
+  messageID  = message[i];       i++;
+  messageID |= message[i] << 8;  i++;
+  messageID |= message[i] << 16; i++;
+  messageID |= message[i] << 24; i++;     
+
+  if( messageID != NOVATELOEM3_IONB )
+  {
+    GNSS_ERROR_MSG( "if( messageID != NOVATELOEM3_IONB )");
+    return FALSE;
+  }
+
+  i = 12;  
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *alpha0 = *dptr;
+
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *alpha1 = *dptr;
+
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *alpha2 = *dptr;
+
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *alpha3 = *dptr;
+
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *beta0 = *dptr;
+
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *beta1 = *dptr;
+  
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *beta2 = *dptr;
+
+  for( j=0; j<8; j++ ){ dbytes[j] = message[i]; i++; }
+  dptr = (double*)&dbytes;
+  *beta3 = *dptr;
+
+  return TRUE;
+}
+
 
 
 BOOL NOVATELOEM4_FindNextMessageInFile(
@@ -376,6 +1473,211 @@ BOOL NOVATELOEM4_FindNextMessageInFile(
   }
   return TRUE;
 }
+
+
+
+BOOL NOVATELOEM4_FindNextMessageInBuffer(
+  unsigned char *buffer,           //!< A pointer to a buffer containing input data.
+  const unsigned bufferLength,     //!< The length of the valid data contained in the buffer.
+  unsigned char *message,          //!< A message buffer in which to place the message found (input/output).
+  const unsigned maxMessageLength, //!< The maximum size of the message buffer (input).
+  BOOL *wasEndOfBufferReached,     //!< Has the end of the buffer been reached (output).
+  BOOL *wasMessageFound,           //!< Was a valid message found (output).
+  unsigned *startPosition,         //!< The index into the buffer for the start of the message found (output).
+  unsigned short *messageLength,   //!< The length of the entire message found and stored in the message buffer (output).
+  unsigned short *messageID,       //!< The message ID of the message found.
+  unsigned *numberBadCRC           //!< The number of bad crc values found. (crc fails or mistaken messages).  
+  )
+{
+  unsigned bi = 0;                 // The index into the input buffer.
+  unsigned i = 0;                  // The index into the message buffer.
+  unsigned char sync[3];           // 0xAA 0x44 0x11
+  unsigned dataLength = 0;         // The length of the data portion of the message. i.e. Entire message length - 12.
+  unsigned msgLength = 0;          // The entire length of the current message being examined.
+  int bpos = 0;                    // An index into the buffer (needs sign for error checking).
+  unsigned messageCRC = 0;         // The message CRC value.
+  BOOL startSearch = TRUE;         // A boolean to indicate that the sync search is occurring.
+  BOOL isCRCValid = FALSE;         // A boolean to indicate if the CRC is valid. Does it match the calculated value.
+  unsigned char headerLength = 0;  // The length of the message header [bytes].
+  
+  // Initialize the output parameters.
+  *wasEndOfBufferReached = FALSE;
+  *wasMessageFound     = 0;
+  *startPosition       = 0;
+  *messageLength       = 0;
+  *messageID           = 0;
+  *numberBadCRC        = 0;
+
+  // Ensure that the buffer pointer is valid.
+  if( buffer == NULL )
+  {
+    GNSS_ERROR_MSG( "if( fid == NULL )" );
+    return FALSE;
+  }
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
+    return FALSE;
+  }
+
+  // Ensure that the maximum message length is appropriate.
+  if( maxMessageLength < 32 ) // at least 3 sync bytes plus 25 header bytes plus the 4 byte CRC.
+  {
+    GNSS_ERROR_MSG( "if( maxMessageLength < 32 )" );
+    return FALSE;
+  }  
+  
+  while( !(*wasEndOfBufferReached) && !(*wasMessageFound) )
+  {
+    if( startSearch )
+    {
+      // Get the first two sync bytes.
+      sync[0] = buffer[bi]; bi++;
+      if( bi >= bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+
+      sync[1] = buffer[bi]; bi++;
+      if( bi >= bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }  
+      startSearch = FALSE;
+    }
+
+    // Get the last sync byte.
+    sync[2] = buffer[bi]; bi++;
+    if( bi >= bufferLength )
+    {
+      *wasEndOfBufferReached = TRUE;
+      return TRUE;
+    }
+
+    // Check the full sync.
+    if( sync[0] == 0xAA && sync[1] == 0x44 && sync[2] == 0x12 )
+    {
+      // Found a potential message.
+      i = 0;
+      message[i] = sync[0]; i++;
+      message[i] = sync[1]; i++;
+      message[i] = sync[2]; i++;
+
+      // Determine the file position of the start of the message
+      bpos = bi;
+      *startPosition = bi - 3; // The start of the message sync.
+
+      
+      // Get the header length.
+      headerLength = buffer[bi]; bi++;
+      if( bi > bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      message[i] = headerLength;
+      i++;
+
+      // Get rest of the header (maximum of 255 bytes).
+      if( bi+headerLength-4 > bufferLength )
+      {
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      memcpy( &(message[i]), (buffer+bi), (headerLength-4) );
+      bi += headerLength-4;
+
+      // Determine the 2 byte message ID.
+      *messageID  = message[i]; 
+      i++;
+      *messageID |= message[i] << 8;      
+      i++;
+
+      // Skip the message type and the port address.
+      i += 2;
+
+      // Determine the 2 byte data length.
+      dataLength = message[i];
+      i++;
+      dataLength |= message[i] << 8;
+      i++;
+
+      // Check that the entire message length will fit in the message buffer.
+      msgLength = headerLength + dataLength + 4; // plus 4 for the CRC.
+      if( msgLength > maxMessageLength )
+      {
+        // Perhaps the data length was bad.
+        // Start searching again after the sync that was found.
+        // Set the buffer index to the last of the three sync bytes.
+        bi = bpos;        
+        startSearch = TRUE;
+        continue;
+      }
+
+      // Get the data part of the message.
+      // advance i to the start of the data
+      i = headerLength;
+      if( bi+dataLength > bufferLength )
+      {
+        // if all of the message is not yet in the buffer this will occur.
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      memcpy( &(message[i]), (buffer+bi), dataLength );
+      bi += dataLength;      
+      i += dataLength;
+
+      // Get the CRC.
+      if( bi + 4 > bufferLength )
+      {
+        // if all of the message is not yet in the buffer this will occur.
+        *wasEndOfBufferReached = TRUE;
+        return TRUE;
+      }
+      message[i] = buffer[bi]; i++; bi++;
+      message[i] = buffer[bi]; i++; bi++;
+      message[i] = buffer[bi]; i++; bi++;
+      message[i] = buffer[bi]; i++; bi++;
+
+      i -= 4;
+      messageCRC  = message[i];       i++;
+      messageCRC |= message[i] << 8;  i++;
+      messageCRC |= message[i] << 16; i++;
+      messageCRC |= message[i] << 24; i++;
+
+      // Compare the received message CRC with the calculated CRC.
+      if( !NOVATEL_CheckCRC32( message, msgLength, messageCRC, &isCRCValid ) )
+      {
+        GNSS_ERROR_MSG( "NOVATEL_CheckCRC32 returned FALSE." );
+        return FALSE;
+      }
+      if( !isCRCValid )
+      {
+        *numberBadCRC += 1;
+        
+        // Start searching again after the sync that was found.
+        // Set the file position to the last of the three sync bytes.
+        bi = bpos;
+        startSearch = TRUE;
+        continue;
+      }
+
+      *wasMessageFound = TRUE;
+      *messageLength = msgLength;
+      break;
+    }
+    else
+    {
+      // Shift the first two bytes of the sync.
+      sync[0] = sync[1];
+      sync[1] = sync[2];
+    }
+  }
+  return TRUE;
+}
+
 
 
 BOOL NOVATELOEM4_DecodeBinaryMessageHeader(
@@ -807,6 +2109,263 @@ BOOL NOVATELOEM4_DecodeRANGEB(
  
   return TRUE;
 }
+
+
+BOOL NOVATELOEM4_DecodeBESTPOSB(
+  const unsigned char *message,            //!< The message buffer containing a complete RANGEB message (input).
+  const unsigned short messageLength,      //!< The length of the entire message (input).
+  NOVATELOEM4_structBinaryHeader* header,  //!< A pointer to a NovAtel OEM4 header information struct (output).
+  NOVATELOEM4_structBestPosition* bestpos  //!< A pointer to a NovAtel OEM4 best position information struct (output).
+  )
+{
+  unsigned i = 0;                 // A counter.
+  unsigned j = 0;                 // A counter.
+  unsigned index = 0;             // An index into the message buffer.
+  unsigned char headerLength = 0; // The length of the header only as indicated in the header.
+  unsigned short dataLength = 0;  // The length of the data part of the message as indicated in the header.  
+  unsigned short msgLength = 0;   // The computed length of the entire message.
+  unsigned char dbytes[8];        // Enough bytes to store a double.
+  unsigned char fbytes[4];        // Enough bytes to store a float.
+  double *dptr;                   // A pointer to a double.
+  float *fptr;                    // A pointer to a float.
+  unsigned utmp = 0;
+  
+  // Perform sanity checks.
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
+    return FALSE;
+  }
+  if( header == NULL || bestpos == NULL )
+  {
+    GNSS_ERROR_MSG( "if( header == NULL || bestpos == NULL )" );
+    return FALSE;
+  }
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x12 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );
+    return FALSE;
+  }
+
+  // Decode the binary header.
+  if( !NOVATELOEM4_DecodeBinaryMessageHeader( message, messageLength, header ) )
+  {
+    GNSS_ERROR_MSG( "NOVATELOEM4_DecodeBinaryMessageHeader returned FALSE." );
+    return FALSE;
+  }
+
+  // Get the header length.
+  headerLength = message[3];
+
+  // Get the data length.
+  dataLength = message[8];
+  dataLength |= message[9] << 8;
+
+  // Check that the data length + header length + 4 (crc) == messageLength provided.
+  msgLength = dataLength + headerLength + 4;
+  if( msgLength != messageLength )
+  {
+    GNSS_ERROR_MSG( "if( msgLength != messageLength )" );
+    return FALSE;
+  }
+
+  // get the solution status.
+  index = headerLength;
+  utmp = message[index];        index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  bestpos->solution_status = (NOVATELOEM4_enumSolutionStatus)(utmp);
+
+  // get the solution type.
+  utmp = message[index];        index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  bestpos->solution_type = (NOVATELOEM4_enumSolutionType)(utmp);
+
+  // get the latitude
+  for( j=0; j<8; j++ ){ dbytes[j] = message[index]; index++; }
+  dptr = (double*)&dbytes;
+  bestpos->latitude_in_deg = *dptr;
+
+  // get the longitude
+  for( j=0; j<8; j++ ){ dbytes[j] = message[index]; index++; }
+  dptr = (double*)&dbytes;
+  bestpos->longitude_in_deg = *dptr;
+
+  // get the height (msl)
+  for( j=0; j<8; j++ ){ dbytes[j] = message[index]; index++; }
+  dptr = (double*)&dbytes;
+  bestpos->height_msl = *dptr;
+
+  // get the undulation
+  for( j=0; j<4; j++ ){ fbytes[j] = message[index]; index++; }
+  fptr = (float*)&fbytes;
+  bestpos->undulation = *fptr;
+
+  // get the datum id.
+  utmp = message[index];        index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  bestpos->datum_id = utmp;
+
+  // get the latitude standard deviation
+  for( j=0; j<4; j++ ){ fbytes[j] = message[index]; index++; }
+  fptr = (float*)&fbytes;
+  bestpos->lat_std = *fptr;
+
+  // get the longitude standard deviation
+  for( j=0; j<4; j++ ){ fbytes[j] = message[index]; index++; }
+  fptr = (float*)&fbytes;
+  bestpos->lon_std = *fptr;
+
+  // get the height standard deviation
+  for( j=0; j<4; j++ ){ fbytes[j] = message[index]; index++; }
+  fptr = (float*)&fbytes;
+  bestpos->hgt_std = *fptr;
+
+  // get the base station id
+  bestpos->station_id[0] = message[index]; index++;
+  bestpos->station_id[1] = message[index]; index++;
+  bestpos->station_id[2] = message[index]; index++;
+  bestpos->station_id[3] = message[index]; index++;
+
+  // get the diff age
+  for( j=0; j<4; j++ ){ fbytes[j] = message[index]; index++; }
+  fptr = (float*)&fbytes;
+  bestpos->diff_age = *fptr;
+
+  // get the solution age
+  for( j=0; j<4; j++ ){ fbytes[j] = message[index]; index++; }
+  fptr = (float*)&fbytes;
+  bestpos->sol_age = *fptr;
+
+  bestpos->nr_obs_tracked = message[index]; index++;
+  bestpos->nr_GPS_L1_ranges = message[index]; index++;
+  bestpos->nr_GPS_L1_ranges_above_RTK_mask_angle = message[index]; index++;
+  bestpos->nr_GPS_L2_ranges_above_RTK_mask_angle = message[index]; index++;
+
+  bestpos->reserved[0] = message[index]; index++;
+  bestpos->reserved[1] = message[index]; index++;
+  bestpos->reserved[2] = message[index]; index++;
+  bestpos->reserved[3] = message[index]; index++;
+
+  return TRUE;
+}
+
+
+BOOL NOVATELOEM4_DecodeTIMEB(
+  const unsigned char *message,            //!< The message buffer containing a complete RANGEB message (input).
+  const unsigned short messageLength,      //!< The length of the entire message (input).
+  NOVATELOEM4_structBinaryHeader* header,  //!< A pointer to a NovAtel OEM4 header information struct (output).
+  NOVATELOEM4_structTime* time_data        //!< A pointer to a NovAtel OEM4 best position information struct (output).
+  )
+{
+  unsigned i = 0;                 // A counter.
+  unsigned j = 0;                 // A counter.
+  unsigned index = 0;             // An index into the message buffer.
+  unsigned char headerLength = 0; // The length of the header only as indicated in the header.
+  unsigned short dataLength = 0;  // The length of the data part of the message as indicated in the header.  
+  unsigned short msgLength = 0;   // The computed length of the entire message.
+  unsigned char dbytes[8];        // Enough bytes to store a double.
+  double *dptr;                   // A pointer to a double.
+  unsigned utmp = 0;
+  
+  // Perform sanity checks.
+  if( message == NULL )
+  {
+    GNSS_ERROR_MSG( "if( message == NULL )" );
+    return FALSE;
+  }
+  if( header == NULL || time_data == NULL )
+  {
+    GNSS_ERROR_MSG( "if( header == NULL || time_data == NULL )" );
+    return FALSE;
+  }
+  if( message[0] != 0xAA || message[1] != 0x44 || message[2] != 0x12 ) // sync must be present
+  {
+    GNSS_ERROR_MSG( "sync not present" );
+    return FALSE;
+  }
+
+  // Decode the binary header.
+  if( !NOVATELOEM4_DecodeBinaryMessageHeader( message, messageLength, header ) )
+  {
+    GNSS_ERROR_MSG( "NOVATELOEM4_DecodeBinaryMessageHeader returned FALSE." );
+    return FALSE;
+  }
+
+  // Get the header length.
+  headerLength = message[3];
+
+  // Get the data length.
+  dataLength = message[8];
+  dataLength |= message[9] << 8;
+
+  // Check that the data length + header length + 4 (crc) == messageLength provided.
+  msgLength = dataLength + headerLength + 4;
+  if( msgLength != messageLength )
+  {
+    GNSS_ERROR_MSG( "if( msgLength != messageLength )" );
+    return FALSE;
+  }
+
+  // get the clock status.
+  index = headerLength;
+  utmp  = message[index];       index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  time_data->clock_status = (NOVATELOEM4_enumClockStatus)(utmp);
+
+  // get the rx clock offset
+  for( j=0; j<8; j++ ){ dbytes[j] = message[index]; index++; }
+  dptr = (double*)&dbytes;
+  time_data->receiver_clock_offset = *dptr;
+
+  // get the rx clock offset std
+  for( j=0; j<8; j++ ){ dbytes[j] = message[index]; index++; }
+  dptr = (double*)&dbytes;
+  time_data->receiver_clock_offset_std = *dptr;
+
+  // get the utc offset
+  for( j=0; j<8; j++ ){ dbytes[j] = message[index]; index++; }
+  dptr = (double*)&dbytes;
+  time_data->utc_offset = *dptr;
+
+  // get the utc year
+  utmp  = message[index];       index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  time_data->utc_year = utmp;
+
+  time_data->utc_month = message[index]; index++;
+  time_data->utc_day = message[index]; index++;
+  time_data->utc_hour = message[index]; index++;
+  time_data->utc_minute = message[index]; index++;
+
+  utmp  = message[index];       index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  time_data->utc_milliseconds = utmp;  
+
+  utmp  = message[index];       index++;
+  utmp |= message[index] << 8;  index++;
+  utmp |= message[index] << 16; index++;
+  utmp |= message[index] << 24; index++;
+  if( utmp == 0 )
+    time_data->isUTCValid = FALSE;
+  else
+    time_data->isUTCValid = TRUE;
+
+  return TRUE;
+}
+
+
 
 
 BOOL NOVATELOEM4_DecodeTrackingStatus(
