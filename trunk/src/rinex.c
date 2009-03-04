@@ -1921,8 +1921,35 @@ BOOL RINEX_GetNextObservationSet(
     GNSS_ERROR_MSG( "if( token[7].length == 0 )" );
     return FALSE;
   }
+
+  // Some RINEX data has a clock offset term following the number of satellites and there id's
+  // Sometimes, this value is part of the eighth token
+  j = 0;
+  for( i = 0; i < (int)token[7].length; i++ )
+  {    
+    if( token[7].str[i] == '-' || token[7].str[i] == '+' )
+    {
+      // ignore the rest of the token string
+      tmpstr[j] = '\0';
+      j++;
+      break;
+    }
+    if( j < 128 )
+    {
+      tmpstr[j] = token[7].str[i];
+      j++;
+    }
+  }
+  if( j < 128 )
+  {
+    tmpstr[j] = '\0';
+    j++;
+  }
+  strcpy( token[7].str, tmpstr );
+  token[7].length = strlen( token[7].str );
   
   // The eighth token contains the number of satellites and there id's
+  j = 0;
   for( i = 0; i < (int)token[7].length; i++ )
   {
     // Satellite can be denoted by the following letters (RINEX_v_ 2.1)
