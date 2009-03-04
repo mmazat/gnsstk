@@ -87,6 +87,43 @@ BOOL TIMECONV_GetSystemTime(
   );
 
 
+#ifdef WIN32
+/**
+\brief    Sets the PC time to the UTC time provided.
+
+\author   Glenn D. MacGougan (GDM)
+\date     2008-12-03
+\since    2008-12-03
+\return   TRUE(1) if successful, FALSE(0) otherwise.
+*/
+BOOL TIMECONV_SetSystemTime(
+  const unsigned short  utc_year,     //!< Universal Time Coordinated    [year]
+  const unsigned char   utc_month,    //!< Universal Time Coordinated    [1-12 months] 
+  const unsigned char   utc_day,      //!< Universal Time Coordinated    [1-31 days]
+  const unsigned char   utc_hour,     //!< Universal Time Coordinated    [hours]
+  const unsigned char   utc_minute,   //!< Universal Time Coordinated    [minutes]
+  const float           utc_seconds   //!< Universal Time Coordinated    [s]
+  );
+#endif
+
+
+/**
+\brief    Computes the day of the week from the Julian date.
+
+\author   Glenn D. MacGougan (GDM)
+\date     2008-12-03
+\since    2008-12-03
+\return   TRUE(1) if successful, FALSE(0) otherwise.
+
+\b REFERENCES \n
+http://en.wikipedia.org/wiki/Julian_day
+*/
+BOOL TIMECONV_GetDayOfWeekFromJulianDate(
+  const double julian_date,   //!< Number of days since noon Universal Time Jan 1, 4713 BCE (Julian calendar) [days]
+  unsigned char *day_of_week  //!< 0-Sunday, 1-Monday, 2-Tuesday, 3-Wednesday, 4-Thursday, 5-Friday, 6-Saturday [].
+  );
+
+
 /**
 \brief    Computes the Julian date from GPS time
 

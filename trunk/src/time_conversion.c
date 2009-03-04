@@ -43,7 +43,6 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 
-#include <sys/types.h>
 #include <sys/timeb.h>
 #include <time.h>
 #include <math.h> // for fmod()
@@ -52,7 +51,11 @@ SUCH DAMAGE.
 #include "constants.h"
 
 #ifndef WIN32
-#define _CRT_SECURE_NO_DEPRECATE
+  #define _CRT_SECURE_NO_DEPRECATE  
+#endif
+
+#ifdef WIN32
+  #include <windows.h>
 #endif
 
 
@@ -219,6 +222,100 @@ BOOL TIMECONV_GetSystemTime(
 }
 
 
+#ifdef WIN32
+BOOL TIMECONV_SetSystemTime(
+  const unsigned short  utc_year,     //!< Universal Time Coordinated    [year]
+  const unsigned char   utc_month,    //!< Universal Time Coordinated    [1-12 months] 
+  const unsigned char   utc_day,      //!< Universal Time Coordinated    [1-31 days]
+  const unsigned char   utc_hour,     //!< Universal Time Coordinated    [hours]
+  const unsigned char   utc_minute,   //!< Universal Time Coordinated    [minutes]
+  const float           utc_seconds   //!< Universal Time Coordinated    [s]
+  )
+{
+  BOOL result;
+  SYSTEMTIME t;
+  double julian_date = 0;
+  unsigned char day_of_week = 0;
+
+  result = TIMECONV_GetJulianDateFromUTCTime(
+    utc_year,
+    utc_month,
+    utc_day,
+    utc_hour,
+    utc_minute,
+    utc_seconds,
+    &julian_date
+    );
+  if( !result )
+  {
+    GNSS_ERROR_MSG( "TIMECONV_GetJulianDateFromUTCTime returned FALSE.");
+    return FALSE;
+  }
+
+  result = TIMECONV_GetDayOfWeekFromJulianDate( julian_date, &day_of_week );
+  if( !result )
+  {
+    GNSS_ERROR_MSG( "TIMECONV_GetDayOfWeekFromJulianDate returned FALSE.");
+    return FALSE;
+  }
+  
+  t.wDayOfWeek = day_of_week;
+  t.wYear = utc_year;
+  t.wMonth = utc_month;
+  t.wDay = utc_day;
+  t.wHour = utc_hour;
+  t.wMinute = utc_minute;
+  t.wSecond = (WORD)(floor(utc_seconds));
+  t.wMilliseconds = (WORD)((utc_seconds - t.wSecond)*1000);
+
+  // Set the PC system time.
+  result = SetSystemTime( &t );
+  
+  return result;
+}
+#endif
+
+
+BOOL TIMECONV_GetDayOfWeekFromJulianDate(
+  const double julian_date,   //!< Number of days since noon Universal Time Jan 1, 4713 BCE (Julian calendar) [days]
+  unsigned char *day_of_week  //!< 0-Sunday, 1-Monday, 2-Tuesday, 3-Wednesday, 4-Thursday, 5-Friday, 6-Saturday [].
+  )
+{
+  // "If the Julian date of noon is applied to the entire midnight-to-midnight civil 
+  // day centered on that noon,[5] rounding Julian dates (fractional days) for the 
+  // twelve hours before noon up while rounding those after noon down, then the remainder 
+  // upon division by 7 represents the day of the week, with 0 representing Monday, 
+  // 1 representing Tuesday, and so forth. Now at 17:48, Wednesday December 3 2008 (UTC) 
+  // the nearest noon JDN is 2454804 yielding a remainder of 2." (http://en.wikipedia.org/wiki/Julian_day, 2008-12-03)
+  int dow = 0;
+  int jd = 0;
+
+  if( julian_date - floor(julian_date) > 0.5 )
+  {
+    jd = (int)floor(julian_date+0.5);
+  }
+  else
+  {
+    jd = (int)floor(julian_date);
+  }
+  dow = jd%7; // 0 is monday, 1 is tuesday, etc
+
+  switch( dow )
+  {
+    case 0: *day_of_week = 1; break;
+    case 1: *day_of_week = 2; break;
+    case 2: *day_of_week = 3; break;
+    case 3: *day_of_week = 4; break;
+    case 4: *day_of_week = 5; break;
+    case 5: *day_of_week = 6; break;
+    case 6: *day_of_week = 0; break;
+    default: return FALSE; break;
+  }
+  
+  return TRUE;
+}
+
+
 BOOL TIMECONV_GetJulianDateFromGPSTime(
   const unsigned short    gps_week,      //!< GPS week (0-1024+)             [week]
   const double            gps_tow,       //!< GPS time of week (0-604800.0)  [s]
@@ -233,7 +330,7 @@ BOOL TIMECONV_GetJulianDateFromGPSTime(
   }
 
   // GPS time is ahead of UTC time and Julian time by the UTC offset
-  *julian_date = (gps_week + (gps_tow-utc_offset)/604800.0)*7.0 + TIMECONV_JULIAN_DATE_START_OF_GPS_TIME;  
+  *julian_date = ((double)gps_week + (gps_tow-(double)utc_offset)/604800.0)*7.0 + TIMECONV_JULIAN_DATE_START_OF_GPS_TIME;  
   return TRUE;
 }
 
