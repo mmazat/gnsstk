@@ -41,7 +41,6 @@ SUCH DAMAGE.
 #include <ctype.h>  // for isalpha
 #include <math.h>
 #include <float.h>
-#include "basictypes.h"
 #include "cplot.h"
 
 // deal with msvc empry projects
