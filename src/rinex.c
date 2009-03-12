@@ -1622,6 +1622,7 @@ BOOL RINEX_GetNextObservationSet(
   int j = 0;                        // A counter.
   int obsArray_index = 0;           // A counter.
   char numstr[64];                  // A string to hold a number.
+  char tmpstr[128];                 // A temporary string.  
   BOOL isL1data_present = FALSE;
   BOOL isL2data_present = FALSE;
   BOOL overwriteCNoL1 = TRUE;
@@ -1967,9 +1968,11 @@ BOOL RINEX_GetNextObservationSet(
     if( token[7].str[i] == '-' || token[7].str[i] == '+' || token[7].str[i] == '.' || token[7].str[i] == 'E' || token[7].str[i] == 'e' )
     {
       // Any float numbers should not be present on this line.
+      // unless the clock offset is output (e.g. Trimble R8 receivers)
       GNSS_ERROR_MSG( "float numbers should not be present on this line." );
-      return FALSE;
-    }
+      break;
+      //return FALSE;
+    }    
 
     if( isdigit( token[7].str[i] ) )
     {
