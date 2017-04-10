@@ -699,10 +699,11 @@ BOOL TIMECONV_DetermineUTCOffset(
   else if( julian_date < 2450630.5000 ) *utc_offset = 11;
   else if( julian_date < 2451179.5000 ) *utc_offset = 12;  
   else if( julian_date < 2453736.5000 ) *utc_offset = 13; // 2006-01-01 https://confluence.qps.nl/display/KBE/UTC+to+GPS+Time+Correction
-	else if( julian_date < 2454832.5000 ) *utc_offset = 14; // 2009-01-01
-	else if( julian_date < 2456109.5000 ) *utc_offset = 15; // 2012-07-01
-	else if( julian_date < 2457204.5000 ) *utc_offset = 16; // 2015-07-01	
-   else                                 *utc_offset = 17;
+  else if( julian_date < 2454832.5000 ) *utc_offset = 14; // 2009-01-01
+  else if( julian_date < 2456109.5000 ) *utc_offset = 15; // 2012-07-01
+  else if( julian_date < 2457204.5000 ) *utc_offset = 16; // 2015-07-01
+  else if (julian_date < 2457754.5000 ) *utc_offset = 17; // 2017 JAN  1
+   else                                 *utc_offset = 18;
 
   return TRUE;
 }  
